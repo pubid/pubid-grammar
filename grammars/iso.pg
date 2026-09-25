@@ -1,35 +1,30 @@
-# Pubid ISO flavor — pilot port of lib/pubid/iso/parser.rb (pubid monorepo).
+# Pubid ISO flavor — port of lib/pubid/iso/parser.rb (pubid monorepo).
 #
-# Pilot scope: the identifier spine — the copublisher identifier form
-# (Guide prefix, publishers + copublishers, typed stages, number/part,
-# date, edition, language, all-parts) and the JCGM form. Typed stages,
-# supplement stages and copublisher organizations are data-driven from
-# the tables/ directory, extracted from the pubid gem (identical lists).
+# Scope: the full identifier root — NSB stage prefixes (FprISO, WD/ISO),
+# TC documents (ISO/TC 184/SC 4/WG 3 N 123), directives (plain,
+# supplement, bundled "DIR 1 + IEC SUP"), JCGM, legacy ISO/R forms
+# (including supplements), the three-level supplement chains
+# (/Amd/../Cor/../Amd..), and the copublisher identifier spine.
 #
-# Remaining for full fidelity (port next):
-# - tc_document (ISO/TC 184/SC 4/WG 3 N 123) + tc_types table
-# - supplement_identifier chains (Amd/Cor/Suppl/Add/Ext, incl. the
-#   supplement-of-supplement rules)
-# - iso_r_identifier / iso_r_supplement_identifier (legacy ISO/R forms)
-# - nsb_iso_identifier (FprISO / WD/ISO stage prefixes)
-# - joint_identifier (ISO 5537|IDF 26) and directives identifiers
+# Omitted (next iteration):
+# - joint_identifier (ISO 5537|IDF 26) — requires the Idf flavor grammar
 #
-# Notes:
-# - the published stage has an empty abbreviation in the gem data; in PG
-#   it is represented by the absence of type_with_stage, so the empty
-#   entry is excluded from the table
-# - the gem's ORGANIZATIONS list contains a duplicated "ISO"; duplicates
-#   are excluded (identical alternatives are a PG lint error)
+# Data-driven from tables/ (extracted from the pubid gem): typed stages
+# (114 main / 64 supplement), directives stages (5 / 3), TC types (42),
+# WG types (21), copublisher organizations (12). The gem's empty-string
+# published-stage abbreviation is represented by the absence of
+# type_with_stage; duplicate list entries are excluded (identical
+# alternatives are a PG lint error).
 
-grammar PubidIso version "0.1.0" {
+grammar PubidIso version "0.2.0" {
 
-  # ---- lexical (pubid/parser/common_parse_rules.rb) ----
+  # ---- lexical (pubid/parser/common_parse_rules.rb + ISO override) ----
   digit = %x30-39
   digits = 1*digit
   letter = %x41-5A / %x61-7A
   word_digit = %x30-39 / %x41-5A / %x61-7A
   space = " "
-  dash = "-"
+  dash = "-" / "‑" / "‐"
   dot = "."
   slash = "/"
   colon = ":"
@@ -39,13 +34,13 @@ grammar PubidIso version "0.1.0" {
   month_digits = 2*digit
   day_digits = 2*digit
 
-  # ---- prefix_sole_publisher ----
+  # ---- publishers and copublishers ----
   publisher = ("ISO" / "IEC") as publisher
-
-  # ---- copublishers (ORGANIZATIONS table) ----
   organization = alt from_table "organizations" column "name"
   copublishers_item = slash [space] organization as copublisher
   copublishers = *copublishers_item as copublishers
+  prefix_sole_publisher = publisher
+  prefix_with_copublishers = prefix_sole_publisher [space] [copublishers]
 
   # ---- number and parts ----
   number = 1*5digit
@@ -58,7 +53,7 @@ grammar PubidIso version "0.1.0" {
   # ---- stage iteration: "ISO 11243.1" ----
   stage_iteration = dot digit as stage_iteration
 
-  # ---- date: ":2005-02", ":--", legacy dash form ----
+  # ---- date: ":2005-02", ":--", ":—", legacy dash form ----
   undated = "--" / "—"
   full_date = year_digits [(dash month_digits)] [(dash day_digits)]
   date_core = undated as undated_marker / full_date as date
@@ -66,9 +61,10 @@ grammar PubidIso version "0.1.0" {
 
   second_part = number_with_part [stage_iteration] [space] [date]
 
-  # ---- typed stages (TYPED_STAGES table, longest-first) ----
+  # ---- typed stages ----
   typed_stage = alt from_table "typed_stages" column "abbr"
   type_with_stage = typed_stage as type_with_stage [digit as stage_iteration space]
+  supplement_type_with_stage = alt from_table "typed_stages_supplements" column "abbr"
 
   # ---- third part: edition, language, all-parts ----
   edition_str = "Edition" / "Ed." / "ED" / "Ed"
@@ -82,31 +78,66 @@ grammar PubidIso version "0.1.0" {
   third_part_edition = [space] [edition]
   third_part = third_part_edition [language] [space] [all_parts]
 
-  # ---- supplement stages (TYPED_STAGES_SUPPLEMENTS table) ----
-  supplement_type_with_stage = alt from_table "typed_stages_supplements" column "abbr"
-
-  # ---- guide prefix: "Guide ISO/CEI 51:1999" ----
+  # ---- guide prefix ----
   guide_prefix = "Guide" / "GUIDE"
 
-  # ---- the copublisher identifier form (identifier_copublishers) ----
-  prefix_sole_publisher = publisher
-  prefix_with_copublishers = prefix_sole_publisher [space] [copublishers]
+  # ---- the copublisher identifier form ----
   identifier_copublishers_no_third = [guide_prefix as type_with_stage_fr space] [prefix_with_copublishers] [space] [slash] [type_with_stage] [space] second_part third_part_edition
   identifier_copublishers = identifier_copublishers_no_third third_part
 
   # ---- JCGM: "JCGM 200:2008(F)" ----
   jcgm_identifier = "JCGM" as publisher space second_part third_part
 
-  # ---- root (identifier) — pilot order; later ports slot in ahead of
-  # identifier_copublishers per the source ordering ----
-  identifier = jcgm_identifier / identifier_copublishers
+  # ---- NSB stage prefixes: "FprISO 105-A03", "WD/ISO 10360-5:2000" ----
+  nsb_iso_identifier = ("Fpr" as nsb_stage prefix_sole_publisher [space] [copublishers] [space] [type_with_stage] [space] second_part third_part) / ("WD" as nsb_stage slash prefix_sole_publisher [space] [copublishers] [space] [type_with_stage] [space] second_part third_part)
+
+  # ---- TC documents: "ISO/TC 184/SC 4/WG 3 N 123" ----
+  tc_type = alt from_table "tc_types" column "name" as tc_type
+  wg_type = alt from_table "wg_types" column "name" as wg_type
+  sc_type = ("SC/QC" / "SC") as sc_type
+  tc_subcommittee_part = (slash sc_type space digits as sc_number slash wg_type space digits as wg_number) / (slash sc_type space digits as sc_number)
+  tc_document = prefix_sole_publisher (slash / space) tc_type space digits as tc_number [tc_subcommittee_part] space "N" [space] digits as number [(colon year_digits as year)]
+
+  # ---- legacy ISO/R ----
+  iso_r_prefix = "ISO/R" as iso_r_prefix
+  iso_r_second_part = number as number_with_part [stage_iteration] [space] [date]
+  iso_r_identifier = iso_r_prefix space iso_r_second_part third_part
+  iso_r_supplement_separator = slash / ([space] "—" [space]) / (space dash space)
+  iso_r_supplement_identifier = (iso_r_prefix space iso_r_second_part) as base iso_r_supplement_separator supplement_type_with_stage [space] second_part third_part
+
+  # ---- supplements (up to three levels) ----
+  supplement_identifier_no_third = identifier_copublishers_no_third as base slash supplement_type_with_stage [([space] second_part) / (dot digits as number) / ([space] date)]
+  supplement_identifier = supplement_identifier_no_third third_part
+  supplement_supplement_identifier = supplement_identifier_no_third as base slash supplement_type_with_stage (([space] second_part third_part) / (dot digits as number third_part))
+  supplement_supplement_supplement_identifier = supplement_supplement_identifier as base slash supplement_type_with_stage (([space] second_part third_part) / (dot digits as number third_part))
+
+  # ---- directives: "ISO/IEC DIR 1", "ISO/IEC JTC 1 DIR", supplements,
+  # bundled "ISO/IEC DIR 1:2022 + IEC SUP:2022" ----
+  directives_publisher_subgroup = "JTC 1" as subgroup
+  directives_part_and_subpart = space ("ISO" / "IEC") !slash !(space "SUP")
+  directives_number_with_part = (number [directives_part_and_subpart]) as number_with_part
+  directives_typed_stage = alt from_table "directives_typed_stages" column "abbr"
+  directives_identifier_no_third = prefix_with_copublishers [space] [directives_publisher_subgroup space] directives_typed_stage as type_with_stage [space directives_publisher_subgroup !(space "SUP")] [[space directives_number_with_part] [(colon date)]]
+  directives_identifier = directives_identifier_no_third [third_part] [space] [date]
+  directives_supplement_typed_stage = alt from_table "directives_supplements_typed_stages" column "abbr"
+  directives_supplement_part_no_third = [[space] "--" [space] "Consolidated" space] ("ISO/IEC" / "ISO" / "IEC" / "JTC 1") as publisher (space directives_supplement_typed_stage as type_with_stage) [date]
+  directives_supplement_part = directives_supplement_part_no_third [third_part]
+  directives_supplement_identifier = directives_identifier_no_third as base [space] directives_supplement_part
+  directives_base_document = (directives_identifier_no_third [[third_part] [space]] [[date] [space]]) as base_document
+  bundled_supplement = "+ " directives_supplement_part_no_third as supplement
+  directives_bundled_identifier = directives_base_document 1*bundled_supplement as supplements
+  directives_identifiers = directives_bundled_identifier / directives_supplement_identifier / directives_identifier
+
+  # ---- root (identifier), source ordering; joint_identifier lands
+  # before identifier_copublishers once the Idf flavor is ported ----
+  identifier = nsb_iso_identifier / tc_document / directives_identifiers / jcgm_identifier / iso_r_supplement_identifier / iso_r_identifier / supplement_supplement_supplement_identifier / supplement_supplement_identifier / supplement_identifier / identifier_copublishers
 }
 
 entry identifier: identifier
 
 # Model-side bindings (PN 4). The pilot binds the flat identity fields;
-# the full builder-parity mapping (number_with_part composition, date
-# nesting, languages) lands with the conformance corpora milestone.
+# the full builder-parity mapping lands with the conformance corpora
+# milestone.
 bindings identifier {
   publisher -> publisher (string)
 }
