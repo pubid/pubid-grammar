@@ -1,0 +1,10 @@
+# Port of lib/pubid/iana/parser.rb: "IANA <slug>[/<sub-slug>]", the
+# optional prefix consumed and discarded.
+
+grammar PubidIana version "0.1.0" {
+  slug_char = %x30-39 / %x41-5A / %x61-7A / %x2E / %x5F / %x2D
+  slug = 1*slug_char
+  identifier = ["IANA "] slug as registry [slash slug as sub_registry]
+  slash = "/"
+  entry identifier: identifier
+}

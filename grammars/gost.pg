@@ -1,0 +1,25 @@
+# Port of lib/pubid/gost/parser.rb — GOST identifiers in Latin and
+# Cyrillic: ГОСТ [Р|R] [copublisher/subtype] <raw>[/adopted|(reference)].
+# prefix_text and raw are captured verbatim; the builder splits them.
+# The Cyrillic character class uses codepoint ranges (%x0410-042F
+# = А-Я, %x0430-044F = а-я), faithful to the source class.
+
+grammar PubidGost version "0.1.0" {
+  gost_word = ("GOST" / "ГОСТ") as gost_word space
+  scope_r = ("R" / "Р") as scope_r space
+  prefix_char = %x0410-042F / %x0430-044F / %x2F / %x41-5A / %x61-7A
+  prefix_text = (1*prefix_char *(space 1*prefix_char)) as prefix_text space
+  raw_body = (1*digit *((dot / year_sep_core) [space] 1*digit)) as raw
+  year_sep_core = dash / "—" / "–"
+  adopted_part = [[space]] slash 1*any_noln_char as adopted_raw
+  adopted_reference_part = [[space]] "(" 1*no_rparen_char as adopted_reference_raw ")"
+  identifier = gost_word [scope_r] [prefix_text] raw_body [adopted_part] [adopted_reference_part]
+  any_noln_char = %x01-09 / %x0B-FF
+  no_rparen_char = %x01-28 / %x2A-FF
+  digit = %x30-39
+  dot = "."
+  dash = "-"
+  slash = "/"
+  space = " "
+  entry identifier: identifier
+}

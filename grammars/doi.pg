@@ -1,0 +1,15 @@
+# Port of lib/pubid/doi/parser.rb: [doi:|DOI:|URL]10.{registrar}/{suffix}
+# per ISO 26324. Suffix is printable non-whitespace minus the DOI-reserved
+# exclusions, per the parslet class.
+
+grammar PubidDoi version "0.1.0" {
+  digit = %x30-39
+  suffix_char = %x30-39 / %x41-5A / %x61-7A / %x2E / %x5F / %x2D / %x2F / %x28 / %x29
+  doi_prefix = "10" "." 2*digit as prefix
+  doi_suffix = 1*suffix_char as suffix
+  url_prefix = [["https://" / "http://"] ["doi.org"]]
+  scheme_prefix = ["doi:" / "DOI:" / "Doi:"]
+  identifier = [url_prefix] [scheme_prefix] [slash] doi_prefix slash doi_suffix
+  slash = "/"
+  entry identifier: identifier
+}
