@@ -1,0 +1,112 @@
+# Pubid ISO flavor — pilot port of lib/pubid/iso/parser.rb (pubid monorepo).
+#
+# Pilot scope: the identifier spine — the copublisher identifier form
+# (Guide prefix, publishers + copublishers, typed stages, number/part,
+# date, edition, language, all-parts) and the JCGM form. Typed stages,
+# supplement stages and copublisher organizations are data-driven from
+# the tables/ directory, extracted from the pubid gem (identical lists).
+#
+# Remaining for full fidelity (port next):
+# - tc_document (ISO/TC 184/SC 4/WG 3 N 123) + tc_types table
+# - supplement_identifier chains (Amd/Cor/Suppl/Add/Ext, incl. the
+#   supplement-of-supplement rules)
+# - iso_r_identifier / iso_r_supplement_identifier (legacy ISO/R forms)
+# - nsb_iso_identifier (FprISO / WD/ISO stage prefixes)
+# - joint_identifier (ISO 5537|IDF 26) and directives identifiers
+#
+# Notes:
+# - the published stage has an empty abbreviation in the gem data; in PG
+#   it is represented by the absence of type_with_stage, so the empty
+#   entry is excluded from the table
+# - the gem's ORGANIZATIONS list contains a duplicated "ISO"; duplicates
+#   are excluded (identical alternatives are a PG lint error)
+
+grammar PubidIso version "0.1.0" {
+
+  # ---- lexical (pubid/parser/common_parse_rules.rb) ----
+  digit = %x30-39
+  digits = 1*digit
+  letter = %x41-5A / %x61-7A
+  word_digit = %x30-39 / %x41-5A / %x61-7A
+  space = " "
+  dash = "-"
+  dot = "."
+  slash = "/"
+  colon = ":"
+
+  century = "19" / "20"
+  year_digits = century 2*digit !digit
+  month_digits = 2*digit
+  day_digits = 2*digit
+
+  # ---- prefix_sole_publisher ----
+  publisher = ("ISO" / "IEC") as publisher
+
+  # ---- copublishers (ORGANIZATIONS table) ----
+  organization = alt from_table "organizations" column "name"
+  copublishers_item = slash [space] organization as copublisher
+  copublishers = *copublishers_item as copublishers
+
+  # ---- number and parts ----
+  number = 1*5digit
+  part_sub = dash 1*word_digit
+  part_modern = dash [space] 1*word_digit *part_sub
+  part_legacy = slash [space] !supplement_type_with_stage 1*word_digit
+  part_and_subpart = part_modern / part_legacy
+  number_with_part = (number [part_and_subpart]) as number_with_part
+
+  # ---- stage iteration: "ISO 11243.1" ----
+  stage_iteration = dot digit as stage_iteration
+
+  # ---- date: ":2005-02", ":--", legacy dash form ----
+  undated = "--" / "—"
+  full_date = year_digits [(dash month_digits)] [(dash day_digits)]
+  date_core = undated as undated_marker / full_date as date
+  date = (colon / dash) [date_core]
+
+  second_part = number_with_part [stage_iteration] [space] [date]
+
+  # ---- typed stages (TYPED_STAGES table, longest-first) ----
+  typed_stage = alt from_table "typed_stages" column "abbr"
+  type_with_stage = typed_stage as type_with_stage [digit as stage_iteration space]
+
+  # ---- third part: edition, language, all-parts ----
+  edition_str = "Edition" / "Ed." / "ED" / "Ed"
+  edition = (edition_str [space] [digits]) as edition
+  lang_word = 1*letter [","]
+  lang_code = %x45 / %x46 / %x41 / %x52 / %x44 / %x53
+  lang_item = lang_word / lang_code
+  languages = *lang_item as languages
+  language = "(" languages ")"
+  all_parts = "(all parts)" as all_parts
+  third_part_edition = [space] [edition]
+  third_part = third_part_edition [language] [space] [all_parts]
+
+  # ---- supplement stages (TYPED_STAGES_SUPPLEMENTS table) ----
+  supplement_type_with_stage = alt from_table "typed_stages_supplements" column "abbr"
+
+  # ---- guide prefix: "Guide ISO/CEI 51:1999" ----
+  guide_prefix = "Guide" / "GUIDE"
+
+  # ---- the copublisher identifier form (identifier_copublishers) ----
+  prefix_sole_publisher = publisher
+  prefix_with_copublishers = prefix_sole_publisher [space] [copublishers]
+  identifier_copublishers_no_third = [guide_prefix as type_with_stage_fr space] [prefix_with_copublishers] [space] [slash] [type_with_stage] [space] second_part third_part_edition
+  identifier_copublishers = identifier_copublishers_no_third third_part
+
+  # ---- JCGM: "JCGM 200:2008(F)" ----
+  jcgm_identifier = "JCGM" as publisher space second_part third_part
+
+  # ---- root (identifier) — pilot order; later ports slot in ahead of
+  # identifier_copublishers per the source ordering ----
+  identifier = jcgm_identifier / identifier_copublishers
+}
+
+entry identifier: identifier
+
+# Model-side bindings (PN 4). The pilot binds the flat identity fields;
+# the full builder-parity mapping (number_with_part composition, date
+# nesting, languages) lands with the conformance corpora milestone.
+bindings identifier {
+  publisher -> publisher (string)
+}

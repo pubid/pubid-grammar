@@ -8,8 +8,9 @@ One grammar. One engine (parsanol). N language models.
 
 ```
 pubid-grammar (this repo — the CONTRACT)
-├── grammars/<flavor>.rb         parsanol DSL sources (computed rules allowed)
+├── grammars/<flavor>.pg         PG sources — the contract (see TODO/9)
 ├── grammars/<flavor>.json       exported artifacts (versioned, checksummed)
+├── tables/                      data tables referenced by alt from_table
 ├── schemas/<flavor>.schema.json capture schema (derived)
 ├── corpora/<flavor>/            inputs + expected parsanol trees + model JSON
 ├── bindings/<flavor>/           per-language binding specs
