@@ -39,5 +39,5 @@ Consumers:
 ## Milestones
 
 See `TODO.parsanol-grammar/0-scope-repositories.md` through
-`7-expressir-rs-ts.md`, in order. The engine prerequisites (milestone 1)
+`9-pg-language.md`, in order. The engine prerequisites (milestone 1)
 are tracked partly in parsanol-rs/parsanol-ruby.
