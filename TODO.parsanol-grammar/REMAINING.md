@@ -66,6 +66,9 @@ repetition iterations as defense in depth.
       closing brackets, multi-binding repetition. Remaining: the
       shape->IR builder that retires the hand-written front end —
       a focused follow-on whose input contract is now fully proven.
+      Front-end semantics filed as a decision point: parsanol-rs#150
+      (structuring grammar vs dual artifact vs actions; recommendation
+      B) - implementation follows the owner's call.
 - [x] **F11 v1 — PG LSP**: stdio JSON-RPC server (`parsanol pg lsp`)
       with publishDiagnostics (parse + lint + inline-test failures) and
       ## doc-comment hover; zero framework deps (c55ef38). Rule-granular
