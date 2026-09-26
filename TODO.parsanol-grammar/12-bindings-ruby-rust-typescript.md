@@ -54,14 +54,25 @@ residue.
 
 ### TypeScript (pubid-ts)
 
-- [ ] **T1 — runtime materialization.** A TS runtime that reads the
+- [x] **T1 — runtime materialization.** A TS runtime that reads the
       schema (from the artifact) and materializes typed objects from
       `WasmParser.fromArtifact(...).parse` + bindings (C9).
+      DONE 2026-09-26 (pubid-ts 798c9cc): src/pg/runtime.ts —
+      checksum-verified load of the vendored parsanol wasm (PgArtifactJs),
+      schema-driven materialization (card `*` arrays, `0..1` nullable);
+      artifacts read from the sibling pubid-grammar checkout
+      (baked artifacts committed 98fe51a-1).
 - [ ] **T2 — schema→TS types.** `parsanol pg schema --ts` codegen as the
       optional accelerator (types for IDEs; runtime stays
-      schema-driven).
-- [ ] **T3 — suite/corpus runner.** The `*.pgtest` + corpora run under
+      schema-driven). The engine side exists (Rust schema_typescript +
+      Ruby `pg schema --ts`); the CLI plumbing into pubid-ts tooling is
+      open.
+- [x] **T3 — suite/corpus runner.** The `*.pgtest` + corpora run under
       vitest through wasm; green = TS conformance.
+      DONE 2026-09-26 (pubid-ts 798c9cc): src/pg/suite.ts runs
+      *.pgtest suites through the wasm engine under node --test (the
+      repo's runner; vitest not adopted); embedded artifact tests and
+      suites/iso.pgtest green. Corpora through wasm remain open.
 
 ### Rust (pubid-rs)
 
