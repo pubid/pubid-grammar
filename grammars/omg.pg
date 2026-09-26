@@ -18,4 +18,10 @@
   slash = "/"
   space = " "
   entry identifier: identifier
+
+  test {
+    accept "OMG IDL 4.2"
+    accept "OMG UML 2.5.1"
+    reject "nonsense"
+  }
 }

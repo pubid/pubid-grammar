@@ -7,4 +7,9 @@ grammar PubidOasis version "0.1.0" {
   slug = 1*any_char as original
   identifier = "OASIS " slug
   entry identifier: identifier
+
+  test {
+    accept "OASIS saml-core-2.0-os"
+    reject "nonsense"
+  }
 }

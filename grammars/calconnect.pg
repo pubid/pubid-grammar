@@ -12,4 +12,11 @@ grammar PubidCalconnect version "0.1.0" {
   slash = "/"
   colon = ":"
   entry identifier: identifier
+
+  test {
+    accept "CC 9101"
+    accept "CC/CD 9101"
+    accept "CC 9101:2024"
+    reject "nonsense"
+  }
 }

@@ -22,4 +22,10 @@ grammar PubidGost version "0.1.0" {
   slash = "/"
   space = " "
   entry identifier: identifier
+
+  test {
+    accept "GOST 12.0.004"
+    accept "GOST R 8.568"
+    reject "nonsense"
+  }
 }

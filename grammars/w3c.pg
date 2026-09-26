@@ -9,4 +9,10 @@ grammar PubidW3c version "0.1.0" {
   rest = 1*any_char as rest
   identifier = "W3C " [type_part] rest
   entry identifier: identifier
+
+  test {
+    accept "W3C REC-html40-19981224"
+    accept "W3C NOTE-datetime-19980827"
+    reject "nonsense"
+  }
 }

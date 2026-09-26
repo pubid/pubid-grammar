@@ -6,4 +6,10 @@ grammar PubidUn version "0.1.0" {
   identifier = ["UN "] token 1*(slash token)
   slash = "/"
   entry identifier: identifier
+
+  test {
+    accept "UN/CEFACT/TBG14"
+    accept "CEFACT/TBG14"
+    reject "nonsense"
+  }
 }

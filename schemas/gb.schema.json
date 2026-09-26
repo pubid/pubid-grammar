@@ -1,1 +1,1 @@
-{"grammar":"gb","artifact_checksum":"sha256:33d651fbd64b7ed6115184508085b15061f98eee870db9d12ac7a87daad3fb2d","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}
+{"grammar":"gb","artifact_checksum":"sha256:6ec30305ee91560641fc464642b0ff8383c19cc2a479518e6f1e3dbadedd39b9","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"GB/T 19001-2016","captures":{}},{"input":"GB 4943","captures":{}},{"input":"nonsense","captures":{}}]}}}

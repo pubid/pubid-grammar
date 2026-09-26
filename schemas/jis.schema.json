@@ -1,1 +1,1 @@
-{"grammar":"jis","artifact_checksum":"sha256:86ae33c068d13659d7c20f09e027c033f6b20fac1ad601506cdb8a59cdfe60cd","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}
+{"grammar":"jis","artifact_checksum":"sha256:7f0f223af0c2a07d4fcd957b8225720b07192c7ec528ecf5719a0e458602ad78","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"JIS B 0001","captures":{}},{"input":"JIS X 0208:1997","captures":{}},{"input":"nonsense","captures":{}}]}}}

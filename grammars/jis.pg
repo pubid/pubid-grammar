@@ -27,4 +27,10 @@ grammar PubidJis version "0.1.0" {
   digit = %x30-39
   slash = "/"
   entry identifier: identifier
+
+  test {
+    accept "JIS B 0001"
+    accept "JIS X 0208:1997"
+    reject "nonsense"
+  }
 }

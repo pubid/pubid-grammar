@@ -25,4 +25,10 @@ grammar PubidEtsi version "0.1.0" {
   dot = "."
   space = " "
   entry identifier: identifier
+
+  test {
+    accept "ETSI EN 300 175"
+    accept "ETSI TR 101 999"
+    reject "nonsense"
+  }
 }

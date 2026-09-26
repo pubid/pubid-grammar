@@ -114,9 +114,9 @@ grammar PubidIeee version "0.1.0" {
   trailing_month_year = (((((("," / space) (month_name) as trailing_month space ((year_digits)) as trailing_year))) / ((((("," / space) (month_numeric) as trailing_month ((space / dash)) ((year_digits)) as trailing_year))))))
 
   combined_aiee_identifier = ((&(aiee.aiee_identifier) ((aiee.aiee_identifier)) as first_aiee) space "and" space ((aiee.aiee_identifier)) as second_aiee)
-  aiee_identifier = ((&(aiee.aiee_identifier) ((aiee.aiee_identifier)) as aiee))
-  ire_identifier = ((&(ire.ire_identifier) ((ire.ire_identifier)) as ire))
-  nesc_identifier = ((&(nesc.nesc_identifier) (((([("IEEE" space "Std" space)]) (((nesc.nesc_identifier)) as nesc))))))
+  aiee_identifier = ((&(aiee.aiee_prefix) ((aiee.aiee_identifier)) as aiee))
+  ire_identifier = ((&((ire.ire_identifier_year_first / ire.ire_identifier_prefix_first)) ((ire.ire_identifier)) as ire))
+  nesc_identifier = ((&((nesc.draft_nesc / nesc.name_first / nesc.c2_standard / nesc.year_first)) (((([("IEEE" space "Std" space)]) (((nesc.nesc_identifier)) as nesc))))))
   psi_draft = (((slash "D" [dash] (((digits)) as draft_version))))
   psi_date = (((((comma ((month_name / month_numeric))) as month ((space / dash)) ((year_digits)) as year)) / ((((dash ((year_digits)) as year [(dash (2digit) as month)]))))))
   ieee_astm_si_psi = ((((("IEEE/ASTM" / "IEEE"))) as publishers) space (("PSI" / "SI")) as si_type ((space / ".")) ((digits)) as number [(((("." ((year_digits)) as year))))] [(((psi_draft [psi_date])) / ((psi_date [psi_draft])))] [parenthetical])

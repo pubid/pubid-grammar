@@ -13,4 +13,11 @@ grammar PubidEasc version "0.1.0" {
   dot = "."
   space = " "
   entry identifier: identifier
+
+  test {
+    accept "ПМГ 4-96"
+    accept "RMG 76"
+    accept "РМГ 29-2013"
+    reject "nonsense"
+  }
 }

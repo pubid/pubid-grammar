@@ -1,1 +1,1 @@
-{"grammar":"ecma","artifact_checksum":"sha256:6e99196890644e353c9cff5b317eaa9576976d39ba7e9a2167d6fd32165e343f","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}
+{"grammar":"ecma","artifact_checksum":"sha256:72f0b97d779154936cf2676a168c6a3426762526980217bf948eb1296423f437","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"ECMA-262","captures":{}},{"input":"ECMA TR/104","captures":{}},{"input":"ECMA-262 ed3","captures":{}},{"input":"nonsense","captures":{}}]}}}

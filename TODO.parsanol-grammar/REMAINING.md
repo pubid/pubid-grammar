@@ -35,8 +35,8 @@ repetition iterations as defense in depth.
 ## Language (pubid-grammar)
 
 - [x] F1, F2, F3 (schemas/<flavor>.schema.json ×47, checksum-pinned),
-      F4 (corpora/<flavor>/corpus.json from the reference; ~20 early
-      flavors await inline-test seeds or P1's rake), F5, F10 phase 1 —
+      F4 (corpora ×47, 159 frozen cases — every flavor now carries
+      inline tests; idf inherits via the iso artifact), F5, F10 phase 1 —
       see 10-grammar-testing-binding-requirements.md.
 - [ ] **F6 — render/derive specs** (rs#144, G1): ordered segments +
       derive data in the artifact, generic renderer per language.

@@ -14,4 +14,10 @@ grammar PubidGb version "0.1.0" {
   space = " "
   digit = %x30-39
   entry identifier: identifier
+
+  test {
+    accept "GB/T 19001-2016"
+    accept "GB 4943"
+    reject "nonsense"
+  }
 }

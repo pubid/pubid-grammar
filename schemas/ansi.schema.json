@@ -1,1 +1,1 @@
-{"grammar":"ansi","artifact_checksum":"sha256:bfb822685ba075c8a910af3ede9979df6d4a9c55bf61700db68424ff93381abe","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}
+{"grammar":"ansi","artifact_checksum":"sha256:9fd582b3650fcdf021755e1f7694403d26351ecf1bec3a2a1fd9479f5a0cff3d","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"ANSI C63.4","captures":{}},{"input":"ANSI/IEEE C63.4","captures":{}},{"input":"ANSI Std A119.1","captures":{}},{"input":"nonsense","captures":{}}]}}}

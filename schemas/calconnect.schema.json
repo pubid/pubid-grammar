@@ -1,1 +1,1 @@
-{"grammar":"calconnect","artifact_checksum":"sha256:9038186af6d840bb9e932e400165f42c327065bec1e36bfb06b341d3f935c33e","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}
+{"grammar":"calconnect","artifact_checksum":"sha256:e1b4add2d5bc203a7bba6ea592e4c1d97c806d2bd624a172060f796cf425fbb8","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"CC 9101","captures":{}},{"input":"CC/CD 9101","captures":{}},{"input":"CC 9101:2024","captures":{}},{"input":"nonsense","captures":{}}]}}}

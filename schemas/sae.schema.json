@@ -1,1 +1,1 @@
-{"grammar":"sae","artifact_checksum":"sha256:523fdd339aee61f0f756c392b7418f2bae2ce234e35743bac3dde050067cae7e","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}
+{"grammar":"sae","artifact_checksum":"sha256:d40333f3cfad25e23fdbd11d4841a6ca7ff6c1b30c81de3a0b5af6eecf9b7b85","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"SAE J1939","captures":{}},{"input":"SAE AMS2430","captures":{}},{"input":"SAE ARP4754A:2010","captures":{}},{"input":"nonsense","captures":{}}]}}}

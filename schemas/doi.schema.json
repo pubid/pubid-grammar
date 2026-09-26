@@ -1,1 +1,1 @@
-{"grammar":"doi","artifact_checksum":"sha256:1e5312ddf75a630a972d0b3fd8b80917d4be261ae533541dfaca8c645312409a","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}
+{"grammar":"doi","artifact_checksum":"sha256:f06f12a7b4e54cc6c512cb82642167329428c41482e8656aebedb7195276c61c","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"10.1000/182","captures":{}},{"input":"doi:10.1000/182","captures":{}},{"input":"https://doi.org/10.1000/182","captures":{}},{"input":"nonsense","captures":{}}]}}}

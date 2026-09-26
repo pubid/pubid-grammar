@@ -20,4 +20,10 @@ grammar PubidCcsds version "0.1.0" {
   digit = %x30-39
   letter = %x41-5A / %x61-7A
   entry identifier: identifier
+
+  test {
+    accept "CCSDS 650.0-G-2"
+    accept "CCSDS 100.0-G-1"
+    reject "nonsense"
+  }
 }

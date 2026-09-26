@@ -1,1 +1,1 @@
-{"grammar":"plateau","artifact_checksum":"sha256:f85f2bb597fac8842426d606abab1744ce30de1a713aa44e690ea8a0bfded740","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}
+{"grammar":"plateau","artifact_checksum":"sha256:404216f139fcf381c4c65a1abaa926e40ce4c1fd84e8e03bab6e00c5c3499729","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"PLATEAU Handbook #3","captures":{}},{"input":"PLATEAU Technical Report #1","captures":{}},{"input":"nonsense","captures":{}}]}}}

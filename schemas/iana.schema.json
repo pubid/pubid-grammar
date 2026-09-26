@@ -1,1 +1,1 @@
-{"grammar":"iana","artifact_checksum":"sha256:0d8ec3a6a99852c2bed75c6d6765bd7dcb3c01857cc4c75cca51c32e9866c9d4","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}
+{"grammar":"iana","artifact_checksum":"sha256:3fceb4023a6aae339d255ada88b0fde1d5a03dea31336327881223f0aaa26af0","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"IANA media-types","captures":{}},{"input":"media-types/application","captures":{}},{"input":"no sense","captures":{}}]}}}

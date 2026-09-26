@@ -24,4 +24,10 @@ grammar PubidIala version "0.1.0" {
   dot = "."
   space = " "
   entry identifier: identifier
+
+  test {
+    accept "G1040"
+    accept "GA1040"
+    reject "nonsense"
+  }
 }

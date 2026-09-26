@@ -26,4 +26,11 @@ grammar PubidAnsi version "0.1.0" {
   slash = "/"
   space = " "
   entry identifier: identifier
+
+  test {
+    accept "ANSI C63.4"
+    accept "ANSI/IEEE C63.4"
+    accept "ANSI Std A119.1"
+    reject "nonsense"
+  }
 }

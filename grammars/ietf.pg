@@ -12,4 +12,12 @@ grammar PubidIetf version "0.1.0" {
   digit = %x30-39
   space = " "
   entry identifier: identifier
+
+  test {
+    accept "RFC 2616"
+    accept "RFC2616"
+    accept "BCP 14"
+    accept "draft-ietf-httpbis-messaging-19"
+    reject "nonsense"
+  }
 }

@@ -6,4 +6,10 @@
   number = (1*digit / special_number) as number
   identifier = "XEP " number
   entry identifier: identifier
+
+  test {
+    accept "XEP 0001"
+    accept "XEP README"
+    reject "nonsense"
+  }
 }

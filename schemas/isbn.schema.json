@@ -1,1 +1,1 @@
-{"grammar":"isbn","artifact_checksum":"sha256:e273bf7e70b00c74856169a31684ac8623d9ab763f19956170db6c46cdd1d11f","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}
+{"grammar":"isbn","artifact_checksum":"sha256:ea98dbb5ffd2933f63735c4ce11b72467091aa48d92941e29d3d7f14e0e26631","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"ISBN 978-0-306-40615-7","captures":{}},{"input":"978-0-306-40615-7","captures":{}},{"input":"0-306-40615-2","captures":{}},{"input":"nonsense","captures":{}}]}}}

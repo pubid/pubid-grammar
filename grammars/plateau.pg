@@ -20,4 +20,10 @@ grammar PubidPlateau version "0.1.0" {
   space = " "
   dash = "-"
   entry identifier: identifier
+
+  test {
+    accept "PLATEAU Handbook #3"
+    accept "PLATEAU Technical Report #1"
+    reject "nonsense"
+  }
 }

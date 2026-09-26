@@ -10,4 +10,11 @@ grammar PubidSae version "0.1.0" {
   space = " "
   colon = ":"
   entry identifier: identifier
+
+  test {
+    accept "SAE J1939"
+    accept "SAE AMS2430"
+    accept "SAE ARP4754A:2010"
+    reject "nonsense"
+  }
 }

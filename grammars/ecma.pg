@@ -14,4 +14,11 @@ grammar PubidEcma version "0.1.0" {
   digit = %x30-39
   dot = "."
   entry identifier: identifier
+
+  test {
+    accept "ECMA-262"
+    accept "ECMA TR/104"
+    accept "ECMA-262 ed3"
+    reject "nonsense"
+  }
 }

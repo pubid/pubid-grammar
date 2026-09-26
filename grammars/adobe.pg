@@ -23,4 +23,11 @@ grammar PubidAdobe version "0.1.0" {
   dot = "."
   dash = "-"
   entry identifier: identifier
+
+  test {
+    accept "Adobe TN 15"
+    accept "ATN 30"
+    accept "Adobe Technical Note #12"
+    reject "###"
+  }
 }

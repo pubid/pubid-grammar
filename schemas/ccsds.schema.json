@@ -1,1 +1,1 @@
-{"grammar":"ccsds","artifact_checksum":"sha256:27f68b1b4db7f335019863b4ab30d7c43b8c40b0fb29a7acca8f123be75318e8","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}
+{"grammar":"ccsds","artifact_checksum":"sha256:dcf1b7fb411f5392523ba180a8c9fd075d8d336727771f41db1f7d63d14bb10f","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"CCSDS 650.0-G-2","captures":{}},{"input":"CCSDS 100.0-G-1","captures":{}},{"input":"nonsense","captures":{}}]}}}

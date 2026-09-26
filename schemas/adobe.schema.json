@@ -1,1 +1,1 @@
-{"grammar":"adobe","artifact_checksum":"sha256:fb5ab100987d3ff6c0fcc1c3973b2068506568eb19346ee900eaf0fd353944ca","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}
+{"grammar":"adobe","artifact_checksum":"sha256:3511b8393c939f7086313c065f330ffb6a46cf30b5c4170aec9e454844f4439a","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"Adobe TN 15","captures":{}},{"input":"ATN 30","captures":{}},{"input":"Adobe Technical Note #12","captures":{}},{"input":"###","captures":{}}]}}}

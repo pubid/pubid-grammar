@@ -21,4 +21,10 @@ grammar PubidTgpp version "0.1.0" {
   colon = ":"
   slash = "/"
   entry identifier: identifier
+
+  test {
+    accept "3GPP TS 21.101"
+    accept "TS 25.999"
+    reject "nonsense"
+  }
 }
