@@ -119,9 +119,9 @@ repetition iterations as defense in depth.
       Remaining flavors repeat the proven per-flavor workflow (artifact
       widening → swap → spec gate); the workflow is now TOOLEd —
       scripts/parity-probe.rb (6100981) classifies all flavors in one
-      sweep. Full-sweep classification (41 flavors): 17 swapped (iso adobe
+      sweep. Full-sweep classification (41 flavors): 19 swapped (iso adobe
       doi ogc w3c xsf easc iana isbn amca calconnect ccsds ecma iala
-      ietf oasis tgpp), 4 tree-clean but held
+      ietf oasis tgpp bipm sae), 4 tree-clean but held
       (ashrae gost cie omg — see below), ~8 DELTA (capture structures need per-flavor
       work — un/jis confirmed), 13 NO_DATA (spec scrape found no
       monorepo-parseable inputs; fixtures-based input sourcing needed),
@@ -130,9 +130,12 @@ repetition iterations as defense in depth.
       sub-port) and gost (adoption-fragment capture routes bare
       numbers to foreign flavors). The second wrap sweep (4ac6187)
       turned calconnect ccsds ecma iala ietf oasis tgpp CLEAN — all
-      seven swapped and spec-gated; remaining DELTA: bipm bsi
-      cen_cenelec etsi gb ieee itu jis sae un (sequence-fold and
-      multi-capture restructuring, not mechanical). cie and omg's capture fixes probe
+      seven swapped and spec-gated; the count-form sweep (8646b63:
+      (4digit) as year — 44 no-star count captures across 12
+      flavors) turned bipm cen_cenelec sae itu CLEAN — bipm and
+      sae swapped (49fc9e0f), cen_cenelec and itu held on form
+      coverage; remaining DELTA: adobe(1) bsi etsi gb(1) ieee(2)
+      jis un (sequence-fold and multi-capture restructuring). cie and omg's capture fixes probe
       CLEAN (commit above) but their spec suites gate on identifier
       forms still uncovered (joint/paren + x-proceedings; tails).
 - [x] **R2 — ingestion hooks (iso)**: the ISO Normalizer's
