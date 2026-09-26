@@ -75,7 +75,18 @@ open for extension.
       walker AND VM with tree equality in CI (BYTE_DISPATCH + packrat
       paths already in place; the gate makes it contractual).
 
-## Acceptance
+## Live gate: found by the self-description corpus (2026-09-26)
+
+- [ ] **C-BUG1 — native hang on pq-threaded grammars.** `grammars/pg.pg`
+      (the self-description artifact) parses its accept tests instantly
+      on the Ruby interpreter and HANGS/OOMs on the native engine
+      (VM/walker) for the same inputs (37-char input, unbounded memory).
+      The grammar is pq-threaded (`pq = *ws` threaded through seq/choice
+      nesting). Repro: compile pg.pg, `Artifact#run_tests` (native
+      default). Suspects: packrat memoization of zero-width pq matches
+      inside nested choice recursion, or VM repetition handling of
+      empty-capable sub-expressions. Fix in rs, then make the pg.pg
+      native gate green (this is the C8 parity gate doing its job).
 
 - [ ] Adding a lint, a preprocess op, or an importer touches ZERO
       existing pipeline code (registration only).
