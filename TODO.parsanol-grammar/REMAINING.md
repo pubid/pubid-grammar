@@ -119,9 +119,9 @@ repetition iterations as defense in depth.
       Remaining flavors repeat the proven per-flavor workflow (artifact
       widening → swap → spec gate); the workflow is now TOOLEd —
       scripts/parity-probe.rb (6100981) classifies all flavors in one
-      sweep. Full-sweep classification (41 flavors): 9 CLEAN &
-      swapped (iso adobe doi ogc w3c xsf easc iana isbn), 9 CLEAN &
-      awaiting wiring, ~20 DELTA (capture structures need per-flavor
+      sweep. Full-sweep classification (41 flavors): 9 swapped (iso adobe
+      doi ogc w3c xsf easc iana isbn), 2 tree-clean but held
+      (ashrae gost — see below), ~10 DELTA (capture structures need per-flavor
       work — un/jis confirmed), 13 NO_DATA (spec scrape found no
       monorepo-parseable inputs; fixtures-based input sourcing needed),
       plus owner-held releases. Two tree-CLEAN flavors are held back
