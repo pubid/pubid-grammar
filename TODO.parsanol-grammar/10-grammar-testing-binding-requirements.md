@@ -26,9 +26,9 @@ tests, and the capture/binding schemas that language models implement.
 
 ## Tasks
 
-- [ ] **F1 — flavor completion (medium).** Port cie, asme, oiml, astm,
+- [x] **F1 — flavor completion (medium).** DONE 2026-09-26 (48e8176, f6bce9e, 4c143c9, 80bbf4a, 502a2fd): all 44 flavors compile with green inline tests. Port cie, asme, oiml, astm,
       bipm with compile-time test blocks. ~1,500 parslet lines total.
-- [ ] **F2 — flavor completion (giants).** ieee (1932 lines), ashrae,
+- [x] **F2 — flavor completion (giants).** DONE 2026-09-26 (4c143c9, 502a2fd): ieee/ashrae/nist/itu/bsi ported; aiee/ire/nesc sub-grammars as `use` imports. ieee (1932 lines), ashrae,
       nist, itu, bsi. The bulk is stage/type/sponsor enumerations:
       extract them as gem-generated tables (`tables/<flavor>_*.yaml`,
       same pattern as iso/iec) and port the rule spines faithfully.
@@ -43,7 +43,7 @@ tests, and the capture/binding schemas that language models implement.
       reference. Suites iterate; corpora are the frozen cross-runtime
       conformance set. Define the promotion rule: a suite case that
       passes on the reference becomes a corpus case.
-- [ ] **F5 — PG cross-file imports (`use`).** Today cen/idf spines are
+- [x] **F5 — PG cross-file imports (`use`).** DONE 2026-09-25 (ruby aa47efc..88d81c1): Imports.merge! with namespaced rules, cycle/collision errors; evs→cen_cenelec and iso→idf live on it. Today cen/idf spines are
       inlined (evs, iso joint). Design: `use cen_cenelec` imports rules
       namespaced (`cen.publisher`); cycles are compile errors; the
       artifact bakes the expansion so consumers never see imports.
@@ -62,7 +62,7 @@ tests, and the capture/binding schemas that language models implement.
 - [ ] **F9 — preprocessing vocabulary policy** (rs#147, G6): freeze or
       grow-with-minor after the flavor set stabilizes; ops stay
       registered strategies (data ops only — Tier 1).
-- [ ] **F10 — self-hosting.** Parse PG with PG (the .pg grammar written
+- [x] **F10 — self-hosting (phase 1).** DONE 2026-09-26 (a92a1fb): pg.pg parses with its own compiled artifact via the native engine. Three grammar gaps fixed (top-level use/comments, dstring escape ordering, test-line repetition) plus the >BMP class-escape compiler bug (ruby eafd74a). Phase 2 (artifact consumed end-to-end by the Ruby compiler as its own parser) remains open. Parse PG with PG (the .pg grammar written
       in .pg, parsed by the compiled artifact). The end-user proof of
       the language; also the G7 import test bed.
 - [ ] **F11 — PG LSP.** Diagnostics (lint + failing tests on save),

@@ -31,13 +31,13 @@ open for extension.
 
 ### Compiler (Ruby — reference implementation)
 
-- [ ] **C1 — IR + visitor.** Replace ad-hoc walks with a visitor over
+- [x] **C1 — IR + visitor.** DONE 2026-09-24 (pg-language branch): Document IR + visitor.rb. Replace ad-hoc walks with a visitor over
       the node set; port lint/table-collect/emission onto it (OCP
       prerequisite for everything below).
-- [ ] **C2 — lint registry.** Each lint (left recursion, prefix
+- [x] **C2 — lint registry.** DONE 2026-09-24: PG::Lints registered strategies (LeftRecursion, Alternatives), pure errors/warnings. Each lint (left recursion, prefix
       shadowing, empty shadowing, duplicates, order warnings) is a
       registered strategy with severity; flavors can add project lints.
-- [ ] **C3 — preprocess op registry.** `table_lookup` becomes the first
+- [x] **C3 — preprocess op registry.** DONE 2026-09-25: PG::Preprocess registry, table_lookup first; mirrored in Rust (bindings.rs) with the op check. `table_lookup` becomes the first
       registered op; new ops (G6 policy) register without touching the
       compiler or Bindings.
 - [ ] **C4 — error recovery.** Implement ranked multi-error reporting
@@ -46,7 +46,7 @@ open for extension.
 - [ ] **C5 — CLI hardening.** `--json` machine output, `--trace`
       (cause tree on failure), batch mode (`pg test grammars/`) used by
       CI as the drift alarm for all flavors.
-- [ ] **C6 — self-hosting** (F10's engine side): the PG grammar in PG.
+- [x] **C6 — self-hosting (engine side).** DONE 2026-09-26 (a92a1fb): the pg artifact parses pg.pg; see F10 for the open phase-2 slice.
 
 ### Artifact runtime (Rust + wasm — consumers)
 
