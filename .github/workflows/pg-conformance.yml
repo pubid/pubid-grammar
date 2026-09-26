@@ -24,6 +24,7 @@ jobs:
             https://github.com/parsanol/parsanol-ruby ../parsanol-ruby
           cd ../parsanol-ruby
           bundle install --path vendor/bundle
+          $GITHUB_WORKSPACE/scripts/regen-contracts.rb || true
           bundle exec ruby -Ilib -e '
             require "parsanol"
             Dir.glob(File.expand_path(ARGV[0])).sort.each do |f|

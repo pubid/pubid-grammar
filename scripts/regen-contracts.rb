@@ -1,10 +1,11 @@
-$LOAD_PATH.unshift "lib"
+ruby_repo = ENV["PARSANOL_RUBY"] || File.expand_path("../../parsanol/parsanol-ruby", __dir__)
+$LOAD_PATH.unshift File.join(ruby_repo, "lib")
 require "parsanol"
 require "parsanol/pg"
 require "json"
 require "digest"
 
-base = "/Users/mulgogi/src/pubid/pubid-grammar"
+base = File.expand_path("..", __dir__)
 schemas = "#{base}/schemas"
 corpora = "#{base}/corpora"
 Dir.mkdir(corpora) unless Dir.exist?(corpora)
