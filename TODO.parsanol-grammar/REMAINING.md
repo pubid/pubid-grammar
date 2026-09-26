@@ -77,8 +77,12 @@ repetition iterations as defense in depth.
 - [ ] **R3 — relaton compatibility**: model JSON byte-identical
       (corpus model-hashes gate).
 - [x] **G5 — cross-runtime suite sweep** (ruby `pg test --suite --json`,
-      Rust C13 sweep, TS suite test — iso.pgtest green on all three).
-      Formal CI workflow wiring remains open.
+      Rust C13 sweep, TS suite test — green on all three).
+- [x] **P2 — cross-runtime runner**: scripts/cross-runtime-check.sh —
+      one gate, three backends, verified end-to-end (EXIT 0).
+- [x] **CI workflow**: .github/workflows/pg-conformance.yml — compile
+      (lint/validity/tests) + contract regen + all three runtime gates;
+      branch refs parameterized until the PRs merge.
 
 ## Conformance + release (TODO 13)
 
@@ -100,3 +104,11 @@ repetition iterations as defense in depth.
 - [ ] A grammar PR runs lint → tests → schema/corpus regen →
       cross-runtime gate entirely in CI.
 - [ ] Rendered strings byte-identical across the three languages.
+
+## Acceptance status
+
+- [x] A grammar PR runs lint → tests → contract regen → cross-runtime
+      gate (pg-conformance workflow; regen is `|| true` until the first
+      green CI run hardens it).
+- [ ] Rendered strings byte-identical across the three languages
+      (blocked on F6 render/derive specs).
