@@ -39,7 +39,7 @@ grammar PubidItu version "0.1.0" {
   code = imp_code / standard_code
   standard_code = number [series_suffix] [subseries] parts [qualifier_glued]
   imp_code = "Imp" as imp_marker ((digits / (1*3letter)) as number) [subseries] parts
-  date_part = space "(" [(digits as month "/")] (4digit as year) ")"
+  date_part = space "(" [(digits as month "/")] ((4digit) as year) ")"
   version_part = space ((("(V" digits as version ")") / (("V" / "v") [dot] digits as version)))
   language = dash (("E" / "F" / "A" / "S" / "C" / "R") as language)
 
@@ -49,7 +49,7 @@ grammar PubidItu version "0.1.0" {
   technical_marker = "Technical" as technical space
   supplement_type = (("Suppl." / "Suppl" / "Amd." / "Amd" / "Add." / "Add" / "Err." / "Err") as supplement_type) / (([technical_marker] ("Cor." / "Cor") as supplement_type))
   supplement_number = ([space as supplement_space]) ((digits *(dot digits)) as supplement_number)
-  supplement_date = space "(" [(digits as supplement_month "/")] (4digit as supplement_year) ")"
+  supplement_date = space "(" [(digits as supplement_month "/")] ((4digit) as supplement_year) ")"
 
   base_with_series = itu_prefix sector space series dot code [range_end] code_suffixes [combined_suffixes] [series_word] [attachment] [version_part] [date_part]
   base_without_series = itu_prefix sector space code code_suffixes [attachment] [version_part] [date_part]

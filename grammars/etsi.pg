@@ -14,7 +14,7 @@ grammar PubidEtsi version "0.1.0" {
   version = "V" (1*version_char) as version
   edition = "ed." (1*digit) as edition
   version_or_edition = version / edition
-  date_part = "(" 4digit as year dash 2digit as month ")"
+  date_part = "(" (4digit) as year dash (2digit) as month ")"
   single_supplement = (("/A" 1*digit) as amendment / ("/C" 1*digit) as corrigendum)
   supplements = (1*single_supplement) as supplements
   identifier = "ETSI " type space number [minor] [parts] [supplements] [(space version_or_edition)] [(space date_part)]

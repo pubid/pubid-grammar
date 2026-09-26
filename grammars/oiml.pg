@@ -25,7 +25,7 @@ grammar PubidOiml version "0.1.0" {
   bulletin_date = space year_digits as year [(dash two_digits as issue)] [(dash two_digits as sequence)]
   roman_numeral = 1*%x49 / 1*(%x49 / %x56 / %x58 / %x4C / %x43 / %x44 / %x4D)
   roman = (1*(%x49 / %x56 / %x58 / %x4C / %x43 / %x44 / %x4D)) as volume_roman
-  bulletin_citation = space roman lparen (1*digit) as issue_arabic rparen space 8digit as article_id
+  bulletin_citation = space roman lparen (1*digit) as issue_arabic rparen space (8digit) as article_id
   bulletin_identifier = "OIML" as publisher space "Bulletin" as type [bulletin_citation / bulletin_date] [language_portion as language]
 
   number_only = digits as number

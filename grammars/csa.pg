@@ -31,8 +31,8 @@ grammar PubidCsa version "0.1.0" {
   year_4digit = 4*digit
   colon_year = (year_prefix (year_4digit / year_2digit) as year)
   dash_year = (dash (year_prefix (year_4digit / year_2digit) as year))
-  reaffirmation = space "(R" (4digit as reaffirmation_4digit / 2digit as reaffirmation_2digit) ")"
-  amendment_slash = slash ["Amd " ] ["A"] (1*digit) as amendment_number [(colon 2digit as amendment_year)]
+  reaffirmation = space "(R" ((4digit) as reaffirmation_4digit / (2digit) as reaffirmation_2digit) ")"
+  amendment_slash = slash ["Amd " ] ["A"] (1*digit) as amendment_number [(colon (2digit) as amendment_year)]
   package_keyword = "Code" / "Handbook" / "Training Package" / "Package"
   package_portion = space package_keyword *((", " package_keyword) / (space "& " package_keyword))
   series_prefix = 2*3upper as series_prefix

@@ -36,7 +36,7 @@ grammar PubidAsme version "0.1.0" {
   ptc_number = [space] (1*digit *(dot 1*digit)) as number [(space letters as ptc_suffix)]
   tr_number = [space] (1*num_letter *(dot 1*num_letter) [(dash 1*digit *(dot 1*digit))]) as number
   spaced_number_part = [space] number_part
-  year_4digit = 4digit as year
+  year_4digit = (4digit) as year
   draft_year = ("20XX" / "202X" / ("20" digit "X")) as draft_year
   reaffirmation = space "(R" year_4digit as reaffirmation ")"
   csa_portion = slash "CSA" space (letter 1*(digit / dot)) as csa_number

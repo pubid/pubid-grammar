@@ -16,7 +16,7 @@ grammar PubidAstm version "0.1.0" {
   publisher = ["ASTM" as publisher [space]]
   standard_letter = %x41-47 as letter
   year_2digit = (2*digit) as year
-  reapproval = "(" 4digit as reapproval ")"
+  reapproval = "(" (4digit) as reapproval ")"
   comment = [[space] "#" *non_hash]
   non_hash = %x01-22 / %x24-FF
   edition = (("e" (1*digit) as edition_number) / "9TH" / "8TH" / "7TH" / "6TH" / "5TH" / "4TH" / "3RD" / "2ND" / "1ST") as edition

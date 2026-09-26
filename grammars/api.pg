@@ -8,7 +8,7 @@ grammar PubidApi version "0.1.0" {
   doc_type = ("MPMS" / "BULL" / "SPEC" / "STD" / "RP" / "TR" / "COS" / "PUBL") as type
   chapter_notation = space "CH" space (1*digit) as chapter
   digits_with_letter = (1*digit [*upper])
-  year = 4digit as year
+  year = (4digit) as year
   date_dash = dash year
   date_colon = colon year
   reaffirmation = space "(R" year ")"

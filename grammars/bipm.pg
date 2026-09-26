@@ -16,7 +16,7 @@ grammar PubidBipm version "0.1.0" {
   lparen = "("
   rparen = ")"
   number = (1*digit *(dash 1*digit)) as number
-  year = 4digit as year
+  year = (4digit) as year
   lang = ("EN" / "FR" / %x45 / %x46) as language
   year_paren = "(" year [(", " lang)] ")"
   year_paren_nolang = "(" year ")"
