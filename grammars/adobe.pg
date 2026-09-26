@@ -7,11 +7,16 @@ grammar PubidAdobe version "0.1.0" {
   tech_note_long_prefix = "Adobe" space "Technical" space "Note" [[space] ["#"] [space]]
   tech_note_atn_prefix = "ATN" [space]
   tech_note_prefix = tech_note_tn_prefix / tech_note_long_prefix / tech_note_atn_prefix
-  tech_note = (tech_note_prefix 1*digit as number [(dot 1*slug_char as slug)]) as tech_note
-  bare_number = 1*digit as tech_note_bare
+  # Capture precedence: (*rep) as name wraps the whole repetition, so a
+  # digit run joins to one string instead of re-keying every character;
+  # slug is captured exactly once (the bare form) or as a sibling of
+  # version inside the publication_version capture.
+  tech_note = (tech_note_prefix (1*digit) as number [(dot (1*slug_char) as slug)]) as tech_note
+  bare_number = (1*digit) as tech_note_bare
   slug_segment = 1*lower1 *lowerd
-  slug_inner = (slug_segment *(dash slug_segment)) as slug
-  publication_with_version = ((slug_inner as slug) dash 1*digit as version) as publication_version
+  slug_text = slug_segment *(dash slug_segment)
+  slug_inner = (slug_text) as slug
+  publication_with_version = ((slug_text) as slug dash (1*digit) as version) as publication_version
   publication_slug_or_version = publication_with_version / slug_inner
   publication = ["Adobe Publication "] publication_slug_or_version
   identifier = tech_note / bare_number / publication
