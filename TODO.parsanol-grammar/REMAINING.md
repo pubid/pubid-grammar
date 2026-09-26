@@ -66,6 +66,17 @@ repetition iterations as defense in depth.
       closing brackets, multi-binding repetition. Remaining: the
       shape->IR builder that retires the hand-written front end —
       a focused follow-on whose input contract is now fully proven.
+
+      Builder implementation status (this session): a line-routing
+      artifact-driven front end was built and reached checksum-equality
+      with the reference for 46/47 grammars, including full rule,
+      entry, bindings-deferral, render, derive, preprocess and
+      doc-comment reconstruction. The last flavor (iso, whose deferred
+      bindings preamble must also embed the top-level preprocess
+      sections) plus the docs/tests capture-schema choice (rs#150,
+      recommendation B) remain the precise, enumerated remaining work:
+      with B, the structuring artifact's captures make the deferred
+      preamble unnecessary entirely.
       Builder status: a line-routing front end reached checksum-equality
       for 46/47 grammars (rs#150 decision governs the last mile: the
       docs/tests capture schema and iso's top-level preprocess in the
