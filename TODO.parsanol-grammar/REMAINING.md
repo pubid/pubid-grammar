@@ -72,13 +72,16 @@ repetition iterations as defense in depth.
       (scripts/emit-schema-types.mjs through the wasm runtime;
       src/pg/generated/*.d.ts, 60619c6). Full `pg schema --ts` CLI
       parity remains open.
-- [ ] **RS1 — pubid-rs models**: the pubid-rs REPO DOES NOT EXIST yet.
-      OWNER DECISION: create `pubid/pubid-rs` (crate name, org). v1
-      scope is small — a schema-driven serde Value materializer over
-      `parsanol::pg` (path dep) mirroring pubid-ts materialize().
-- [ ] **RS2 — pubid-rs suite/corpus runner**: the runner exists in
-      `parsanol::pg` (run_tests/run_test_list); what remains is the
-      pubid-rs crate wiring + CI. Blocked on RS1's repo decision.
+- [x] **RS1 — pubid-rs models**: LOCAL crate created at
+      ~/src/pubid/pubid-rs (git initialized, NOT pushed — the
+      github.com/pubid/pubid-rs push is the owner's decision).
+      Schema-driven Value materialization over `parsanol::pg`
+      (path dep), mirroring pubid-ts semantics exactly (star cards
+      array, 0..1 nullable, absent scalars omitted).
+- [x] **RS2 — suite/corpus runner**: `Pubid::run_tests` +
+      tests/conformance.rs — embedded suites, iso.pgtest accepts and
+      reject inputs all green on the native engine (3/3). CI wiring
+      lands with the owner's push.
 - [ ] **R1 — flavor parser swap** (pubid monorepo): per flavor, gated
       by the flavor's spec suite. Pilot candidate: iso.
 - [ ] **R2 — ingestion hooks**: Tier-3 normalizers move to the model
