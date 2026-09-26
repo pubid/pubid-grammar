@@ -14,7 +14,10 @@ reached 24GB on the host. Root causes fixed: invalid grammars
 by a compile-time lint; the Rust VM breaks on non-progressing
 repetition iterations as defense in depth.
 
-- [ ] **C4 — error recovery**: ranked multi-error reporting.
+- [x] **C4 — error recovery**: ranked multi-error reporting — the
+      portable VM retains up to 8 distinct failure positions with their
+      expected-sets (deepest first); `failure_ranks()` feeds
+      `ParseWire.ranked` (b822c67).
 - [x] **C5 — CLI hardening**: `pg test --json` ({ok, failures}) and
       `pg parse --json` ({entry, shape, bound}, shape as
       parsanol-tree/v2 JSON). (--trace remains open.)
@@ -51,7 +54,10 @@ repetition iterations as defense in depth.
       (binding_version bump on new ops); the flavor set is now stable.
 - [ ] **F10 phase 2 — full self-hosting**: the Ruby compiler consumes
       the pg artifact as its own front end.
-- [ ] **F11 — PG LSP**: diagnostics, hover, reorder code action.
+- [x] **F11 v1 — PG LSP**: stdio JSON-RPC server (`parsanol pg lsp`)
+      with publishDiagnostics (parse + lint + inline-test failures) and
+      ## doc-comment hover; zero framework deps (c55ef38). Reorder code
+      action and PG-source error positions remain open.
 - [x] **F12 — specification completion**: PN 6 (capture schema format,
       docs 82ec498) and PN 7 (conformance protocol, same commit).
 - [ ] **L1–L8** (8-lml-model-gaps.md): lutaml-model/lml-side work;
