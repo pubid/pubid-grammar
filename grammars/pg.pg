@@ -13,7 +13,7 @@ grammar PgMeta version "1.0.0" {
   ident_char = letter / digit / %x5F
   ident = 1*ident_char
   newline = %x0A
-  nonl = %x01-09 / %x0B-FF
+  nonl = %x01-09 / %x0B-10FFFF
   comment = "#" *nonl
   doc_marker = "##" *nonl
   ws = %x20 / %x09
@@ -21,8 +21,8 @@ grammar PgMeta version "1.0.0" {
   pq = *ws
 
   # ---- terminals ----
-  str_body_char = %x01-09 / %x0B-21 / %x23-FF
-  dstring = "\"" *(str_body_char / "\\" nonl) "\""
+  str_body_char = %x01-09 / %x0B-21 / %x23-10FFFF
+  dstring = "\"" *("\\" nonl / str_body_char) "\""
   istring = "%i" dstring
   sstring = "%s" dstring
   hexdigits = 2*6hexdig
@@ -50,12 +50,14 @@ grammar PgMeta version "1.0.0" {
   preprocess_section = "preprocess" pq ident nlws "{" *nlws step nlws "}"
   test_line = ("accept" / "reject" / "example") pq dstring [pq "{" *nlws test_pair *nlws "}"]
   test_pair = ident ":" pq (dstring / num / ("true" / "false"))
-  test_section = "test" [pq ident] nlws "{" *nlws test_line nlws "}"
+  test_section = "test" [pq ident] nlws "{" *nlws [test_line *(nlws test_line)] nlws "}"
   rule_line = rule / entry_section / bindings_section / preprocess_section / test_section / doc_marker / comment
   grammar_block = "grammar" pq ident pq "version" pq dstring pq "{" *(nlws rule_line) *nlws "}"
   top = grammar_block / entry_section / bindings_section / preprocess_section / test_section
+  use_line = "use" pq ident
+  top_item = use_line / doc_marker / comment / top
 
-  pg_file = pq *(top [nlws]) pq
+  pg_file = pq *(top_item [nlws]) pq
 
   entry file: pg_file
 
