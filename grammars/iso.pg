@@ -42,7 +42,7 @@ grammar PubidIso version "0.3.0" {
   publisher = ("ISO" / "IEC") as publisher
   organization = alt from_table "organizations" column "name"
   copublishers_item = slash [space] organization as copublisher
-  copublishers = *copublishers_item as copublishers
+  copublishers = (*copublishers_item) as copublishers
   prefix_sole_publisher = publisher
   prefix_with_copublishers = prefix_sole_publisher [space] [copublishers]
 
@@ -68,15 +68,20 @@ grammar PubidIso version "0.3.0" {
   # ---- typed stages ----
   typed_stage = alt from_table "typed_stages" column "abbr"
   type_with_stage = typed_stage as type_with_stage [digit as stage_iteration space]
-  supplement_type_with_stage = alt from_table "typed_stages_supplements" column "abbr"
+  supplement_type_with_stage = alt from_table "typed_stages_supplements" column "abbr" as type_with_stage
 
   # ---- third part: edition, language, all-parts ----
   edition_str = "Edition" / "Ed." / "ED" / "Ed"
   edition = (edition_str [space] [digits]) as edition
   lang_word = 1*letter [","]
   lang_code = %x45 / %x46 / %x41 / %x52 / %x44 / %x53
-  lang_item = lang_word / lang_code
-  languages = *lang_item as languages
+  # Separator-first: "(E/F)" and "(E,F)" only parse if each code item
+  # claims its following separator before the bare-word alternative
+  # commits (PEG ordered choice — parslet retries fewer iterations, PG
+  # does not).
+  lang_sep = slash / ","
+  lang_item = (lang_code [lang_sep]) / lang_word
+  languages = (*lang_item) as languages
   language = "(" languages ")"
   all_parts = "(all parts)" as all_parts
   third_part_edition = [space] [edition]
@@ -104,7 +109,7 @@ grammar PubidIso version "0.3.0" {
 
   # ---- legacy ISO/R ----
   iso_r_prefix = "ISO/R" as iso_r_prefix
-  iso_r_second_part = number as number_with_part [stage_iteration] [space] [date]
+  iso_r_second_part = (number [part_and_subpart]) as number_with_part [stage_iteration] [space] [date]
   iso_r_identifier = iso_r_prefix space iso_r_second_part third_part
   iso_r_supplement_separator = slash / ([space] "—" [space]) / (space dash space)
   iso_r_supplement_identifier = (iso_r_prefix space iso_r_second_part) as base iso_r_supplement_separator supplement_type_with_stage [space] second_part third_part
@@ -129,7 +134,7 @@ grammar PubidIso version "0.3.0" {
   directives_supplement_identifier = directives_identifier_no_third as base [space] directives_supplement_part
   directives_base_document = (directives_identifier_no_third [[third_part] [space]] [[date] [space]]) as base_document
   bundled_supplement = "+ " directives_supplement_part_no_third as supplement
-  directives_bundled_identifier = directives_base_document 1*bundled_supplement as supplements
+  directives_bundled_identifier = directives_base_document (1*bundled_supplement) as supplements
   directives_identifiers = directives_bundled_identifier / directives_supplement_identifier / directives_identifier
 
   # ---- joint: "ISO 5537|IDF 26" — the IDF grammar is IMPORTED via
