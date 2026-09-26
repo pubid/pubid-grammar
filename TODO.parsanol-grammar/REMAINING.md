@@ -15,14 +15,16 @@ by a compile-time lint; the Rust VM breaks on non-progressing
 repetition iterations as defense in depth.
 
 - [ ] **C4 — error recovery**: ranked multi-error reporting.
-- [ ] **C5 — CLI hardening**: `--json` machine output, `--trace`.
+- [x] **C5 — CLI hardening**: `pg test --json` ({ok, failures}) and
+      `pg parse --json` ({entry, shape, bound}, shape as
+      parsanol-tree/v2 JSON). (--trace remains open.)
 - [x] **C10 — shape validation at load** (F8): `shape` checked against
       the engine's supported contract in Rust (`PgArtifact::from_json`,
       SUPPORTED_SHAPE = "parsanol-tree/v2"); Ruby already validated.
-- [ ] **C11 / F7 — structured parse error wire**: `{offset, expected[],
-      message}` flat wire on walker/VM/wasm/C ABI; Ruby cause trees stay
-      the deep diagnostic. (PgError variants exist; the portable
-      ParseError still stringifies.)
+- [x] **C11 / F7 — structured parse error wire**:
+      `PortableParser::failure_wire` → `PgError::ParseWire
+      {offset, line, column, expected}` on the artifact parse path;
+      wasm inherits it. (C-ABI mapping remains open.)
 - [x] **C13 — artifact grammars on the VM gate**: all 47 baked
       artifacts run their embedded suites green on the Rust VM
       (`every_baked_artifact_runs_green_on_the_rust_vm`), executed
@@ -32,21 +34,23 @@ repetition iterations as defense in depth.
 
 ## Language (pubid-grammar)
 
-- [x] F1, F2, F3 (schemas re-generated below), F4 (corpora generated
-      below), F5, F10 phase 1 — see 10-grammar-testing-binding-requirements.md.
+- [x] F1, F2, F3 (schemas/<flavor>.schema.json ×47, checksum-pinned),
+      F4 (corpora/<flavor>/corpus.json from the reference; ~20 early
+      flavors await inline-test seeds or P1's rake), F5, F10 phase 1 —
+      see 10-grammar-testing-binding-requirements.md.
 - [ ] **F6 — render/derive specs** (rs#144, G1): ordered segments +
       derive data in the artifact, generic renderer per language.
       Needs its design note before implementation.
-- [ ] **F8 — parsanol-shape v2 freeze**: the written contract document
-      (the `shape` field is verified in Ruby; C10 completes it).
+- [x] **F8 — parsanol-shape v2 freeze**: contract is normative Annex A
+      of PN 6; engines verify `shape` at load (Ruby + Rust).
 - [ ] **F9 — preprocessing vocabulary policy** (rs#147): OWNER DECISION
       — freeze vs grow-with-minor. Recommendation: grow-with-minor
       (binding_version bump on new ops); the flavor set is now stable.
 - [ ] **F10 phase 2 — full self-hosting**: the Ruby compiler consumes
       the pg artifact as its own front end.
 - [ ] **F11 — PG LSP**: diagnostics, hover, reorder code action.
-- [ ] **F12 — specification completion**: PN 6 (capture-schema format)
-      and PN 7 (conformance protocol) in parsanol/docs.
+- [x] **F12 — specification completion**: PN 6 (capture schema format,
+      docs 82ec498) and PN 7 (conformance protocol, same commit).
 - [ ] **L1–L8** (8-lml-model-gaps.md): lutaml-model/lml-side work;
       L2 done, L3 done with C11.
 
@@ -55,8 +59,10 @@ repetition iterations as defense in depth.
 - [x] Ruby: parser runtime + bindings + schema + CLI (parsanol-ruby).
 - [x] Rust: C7/C8/C9 (parsanol-rs pg-artifact-wasm branch).
 - [x] TypeScript: T1/T3 (pubid-ts 798c9cc).
-- [ ] **T2 — schema→TS CLI plumbing** into pubid-ts tooling (the
-      emitter exists in both engines).
+- [x] **T2 — schema→TS emission** into pubid-ts
+      (scripts/emit-schema-types.mjs through the wasm runtime;
+      src/pg/generated/*.d.ts, 60619c6). Full `pg schema --ts` CLI
+      parity remains open.
 - [ ] **RS1 — pubid-rs models**: the pubid-rs REPO DOES NOT EXIST yet.
       OWNER DECISION: create `pubid/pubid-rs` (crate name, org). v1
       scope is small — a schema-driven serde Value materializer over
@@ -70,8 +76,9 @@ repetition iterations as defense in depth.
       ingestion end, declared per flavor.
 - [ ] **R3 — relaton compatibility**: model JSON byte-identical
       (corpus model-hashes gate).
-- [ ] **G5 — per-flavor *.pgtest CI sweep** on ruby AND rs from one
-      artifact set.
+- [x] **G5 — cross-runtime suite sweep** (ruby `pg test --suite --json`,
+      Rust C13 sweep, TS suite test — iso.pgtest green on all three).
+      Formal CI workflow wiring remains open.
 
 ## Conformance + release (TODO 13)
 
