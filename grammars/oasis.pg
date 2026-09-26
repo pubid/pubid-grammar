@@ -1,0 +1,10 @@
+# Port of lib/pubid/oasis/parser.rb: the "OASIS " prefix is stripped and
+# the slug captured verbatim; decomposition is builder-side by design.
+# parslet `any` is approximated byte-wise (%x01-FF; excludes NUL only).
+
+grammar PubidOasis version "0.1.0" {
+  any_char = %x01-FF
+  slug = 1*any_char as original
+  identifier = "OASIS " slug
+  entry identifier: identifier
+}

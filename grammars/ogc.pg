@@ -1,0 +1,12 @@
+# Port of lib/pubid/ogc/parser.rb: "<yy>-<nnn>[<revision>]" with an
+# optional lenient "OGC " prefix. \s = %x09-0D / %x20.
+
+grammar PubidOgc version "0.1.0" {
+  ws_char = %x09-0D / %x20
+  space = 1*ws_char
+  digit = %x30-39
+  alnum_char = %x41-5A / %x61-7A / %x30-39
+  revision = 1*alnum_char as revision
+  identifier = ["OGC" space] 1*digit as year "-" 1*digit as number [revision] [*ws_char]
+  entry identifier: identifier
+}

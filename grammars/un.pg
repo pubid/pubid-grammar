@@ -1,0 +1,9 @@
+# Port of lib/pubid/un/parser.rb. `token` matches [A-Z0-9.] runs.
+
+grammar PubidUn version "0.1.0" {
+  token_char = %x41-5A / %x30-39 / %x2E
+  token = 1*token_char as token
+  identifier = ["UN "] token 1*(slash token)
+  slash = "/"
+  entry identifier: identifier
+}

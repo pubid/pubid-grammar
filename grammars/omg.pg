@@ -1,0 +1,21 @@
+# Port of lib/pubid/omg/parser.rb: OMG <acronym>[ <version>[<sep><part>]]
+# with the beta-label word-boundary guards (a bare "beta" must not be
+# swallowed by the part rule).
+  grammar PubidOmg version "0.1.0" {
+  digit = %x30-39
+  acronym_char = %x41-5A / %x61-7A / %x30-39 / %x2B
+  acronym_join = %x2D / %x2F
+  acronym = (letter 1*acronym_char *1(acronym_join 1*acronym_char)) as acronym
+  word_boundary = !alnum_char
+  beta = " beta" !alnum_char ([space 1*digit !alnum_char])
+  version = (1*digit *(dot 1*digit) [beta]) as version
+  part_separator = space / slash
+  part = 1*alnum_char as part
+  identifier = "OMG" space acronym [((space version [part_separator part]) / (space part))]
+  alnum_char = %x41-5A / %x61-7A / %x30-39
+  letter = %x41-5A / %x61-7A
+  dot = "."
+  slash = "/"
+  space = " "
+  entry identifier: identifier
+}

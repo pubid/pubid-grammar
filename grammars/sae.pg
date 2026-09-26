@@ -1,0 +1,13 @@
+# Port of lib/pubid/sae/parser.rb: SAE <AMS|AIR|ARP|AS|J|MA> <number>[:year]
+
+grammar PubidSae version "0.1.0" {
+  doc_type = ("AMS" / "AIR" / "ARP" / "AS" / "J" / "MA") as type
+  number = ((1*1letter 1*digit) / (1*digit *1letter)) as number
+  year = 4digit as year
+  identifier = "SAE" as publisher space doc_type [space] number [(colon year)]
+  letter = %x41-5A
+  digit = %x30-39
+  space = " "
+  colon = ":"
+  entry identifier: identifier
+}
