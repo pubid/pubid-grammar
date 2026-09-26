@@ -1,0 +1,72 @@
+# Port of lib/pubid/ashrae/parser.rb — ASHRAE identifiers: standards
+# (Guideline/Standard, dotted codes, comma-letter codes), ANSI/ASHRAE
+# copublications, reaffirmations, errata (month/numeric dates plus
+# suffixes), Interpretations, combined Addenda listings, Addendum and
+# Addenda Supplement/Package forms. The gem's parse() normalization
+# (whitespace collapsing, RA spacing, ", and" folding, paren balancing)
+# is Tier-3 preprocessing outside the grammar. Source deviations:
+# `str("")` alternatives expressed as bracketed optionals; `space?`
+# inlined as [space].
+
+grammar PubidAshrae version "0.1.0" {
+  digit = %x30-39
+  letter = %x41-5A / %x61-7A
+  digits = 1*digit
+  space = " "
+  dash = "-"
+  dot = "."
+  slash = "/"
+  lparen = "("
+  rparen = ")"
+  comma = ","
+  colon = ":"
+
+  year_digits = (("19" / "20") 2digit)
+  reaffirmation_year = (year_digits / 2digit)
+  publisher = "ASHRAE"
+  type = "Guideline" / "Standard"
+  code = ((digits 0*2(dot digits) [(letter 0*10(comma letter))])) as code
+  code_with_year = ((((digits 0*2(dot digits) [(letter 0*10(comma letter))])) as code [[space] dash (year_digits) as year])) as code_with_year
+  suffix = ("R" / "P") as suffix
+  additional_copublisher = ((slash ((4*10letter space [(digits [dash digits])])) as additional_copublisher)) / ((lparen ((("ANSI" slash (2*10letter 0*2(slash 2*10letter)))) as additional_copublisher) space [(digits [dash digits])] rparen))
+  optional_suffix = [space] lparen ("PDF" / ((1*20letter 0*500(space / digit / comma / dash / dot / letter / "–")))) rparen
+  reaffirmed = (([space] lparen "RA" [space] (reaffirmation_year) as reaffirmed rparen)) / (([space] lparen "RA" dash (reaffirmation_year) as reaffirmed rparen)) / ((space "RA" space (reaffirmation_year) as reaffirmed)) / ((space "RA" dash (reaffirmation_year) as reaffirmed))
+  addendum_code = (([digits] 1*3letter)) as addendum_code
+  month_name = "January" / "February" / "March" / "April" / "May" / "June" / "July" / "August" / "September" / "October" / "November" / "December"
+
+  errata_date = (([space] lparen (month_name) as month space (1*2digit) as day [comma] (space / [comma]) (year_digits) as errata_year rparen) as errata_date) / (([space] lparen (month_name) as month space (1*2digit) as day rparen) as errata_date) / (([space] lparen ((1*2digit dash 1*2digit dash [space] year_digits) as numeric_date) rparen) as errata_date)
+  errata_suffix = 0*3(space ("-" / "–") space (letter 0*50(space / letter / digit / comma)))
+  errata_date_and_suffix = (errata_suffix errata_date) / (errata_date errata_suffix) / errata_date / errata_suffix
+  errata_paren_date = ([space] lparen month_name space 1*2digit [comma] (space / [comma]) year_digits rparen) / ([space] lparen month_name space 1*2digit rparen) / ([space] lparen 1*2digit dash 1*2digit dash [space] year_digits rparen)
+  errata_suffix_on_addendum = space "Errata" as errata_keyword [errata_paren_date]
+
+  ansi_copub = (("ANSI" dash "ASHRAE") / ("ANSI" slash "ASHRAE" 0*10(slash 3*10letter))) as copublisher
+  ansi_copub_space = ((("ANSI" slash "ASHRAE" 0*10(slash 3*10letter))) as copublisher space)
+
+  errata_identifier = ((((ansi_copub space (type) as type space code [([space] dash (year_digits) as year)] [(space additional_copublisher)] [suffix] [reaffirmed])) as base) space "Errata" as errata_keyword [errata_date_and_suffix] ((0*2 optional_suffix) as optional_suffixes)) / ((((ansi_copub space code_with_year [(space additional_copublisher)] [suffix] [reaffirmed])) as base) space "Errata" as errata_keyword [errata_date_and_suffix] ((0*2 optional_suffix) as optional_suffixes)) / ((((publisher) as publisher space (type) as type space code [([space] dash (year_digits) as year)] [(space additional_copublisher)] [suffix] [reaffirmed])) as base) space "Errata" as errata_keyword [errata_date_and_suffix] ((0*2 optional_suffix) as optional_suffixes)
+
+  interpretation_identifier = ((("Interpretations" space "for" space (((type) as type space code [(dash (year_digits) as year)])) as base)) as interpretation_identifier)
+
+  combined_addenda_identifier = (((publisher) as publisher space "Addenda" space addendum_code ((0*20((comma space "and" space addendum_code) / (space "and" space addendum_code) / 1*50(comma space addendum_code) / 1*50(comma addendum_code))) as additional_codes) space ("to" / "for") space [ansi_copub_space] (type) as type space code [(dash (year_digits) as year)] [(space additional_copublisher)] [addendum_date_suffix] 0*2optional_suffix) as combined_addenda) / (((publisher) as publisher space (type) as type space code (dash (year_digits) as year) ((":" space) / space) "Addenda" space addendum_code [((1*50(comma space addendum_code) / 1*50(comma addendum_code))) as additional_codes] 0*2optional_suffix) as combined_addenda) / (("Addenda" space addendum_code ((0*20((comma space "and" space addendum_code) / (space "and" space addendum_code) / 1*20(comma space addendum_code) / 1*20(comma addendum_code))) as additional_codes) space ("to" / "for") space [ansi_copub_space] (type) as type space code [(dash (year_digits) as year)] 0*2optional_suffix) as combined_addenda) / (((publisher) as publisher space "Addenda" space ("to" / "for") space (type) as type space code [(dash (year_digits) as year)] 0*2optional_suffix) as combined_addenda) / (((publisher) as publisher space "Addenda" space addendum_code ((0*20((comma space "and" space addendum_code) / (space "and" space addendum_code) / 1*20(comma space addendum_code) / 1*20(comma addendum_code))) as additional_codes) space ("to" / "for") space code_with_year 0*2optional_suffix) as combined_addenda) / (("Addenda" space addendum_code ((0*20((comma space "and" space addendum_code) / (space "and" space addendum_code) / 1*20(comma space addendum_code) / 1*20(comma addendum_code))) as additional_codes) space ("to" / "for") space code_with_year 0*2optional_suffix) as combined_addenda) / (((publisher) as publisher space (type) as type space code [(dash (year_digits) as year)] ((":" space) / space) "Addenda" space addendum_code [((space "through" space addendum_code) / 1*200((space / (comma space)) addendum_code) / 1*200(comma space addendum_code) / 1*200(comma addendum_code)) as additional_codes] [(space additional_copublisher)] [addendum_date_suffix] 0*2optional_suffix) as combined_addenda)
+
+  year_first_addenda_package_identifier = ((((year_digits) as package_year space (("Addenda" space "Supplement" [(space "Package")] space "to" space [ansi_copub_space] (type) as type space code [(dash (year_digits) as year)]) / ("Supplement" space "Addenda" space addendum_code [((1*50(comma space addendum_code) / 1*50(comma addendum_code)) as additional_codes)] space "to" space [ansi_copub_space] (type) as type space code [(dash (year_digits) as year)]) / ("Addenda" space "Supplement" space "to" space [ansi_copub_space] (type) as type space code [(dash (year_digits) as year)]) / ("Supplement" space "to" space [ansi_copub_space] (type) as type space code [(dash (year_digits) as year)] [errata_suffix_on_addendum])) 0*2optional_suffix)) as addenda_package)
+
+  addenda_package_identifier = ((ansi_copub_space (type) as type space code [(dash (year_digits) as year)] ((":" space) / space) "Addenda" space ((("Supplement" [(space "Package")]) / "Package") as package_description) [(space "for" space (year_digits) as target_year)] 0*3optional_suffix) as addenda_package) / (((publisher) as publisher space (type) as type space code [(dash (year_digits) as year)] comma space "Addenda" space (year_digits) as package_year space "Supplement" colon space "Addenda" space ((("Supplement" [(space "Package")]) / "Package") as package_description) 0*3optional_suffix) as addenda_package) / (((publisher) as publisher space (type) as type space code [(dash (year_digits) as year)] [(space (year_digits) as package_year)] [additional_copublisher] [suffix] [reaffirmed] ((":" space) / space) "Addenda" space ((("Supplement" [(space "Package")]) / "Package") as package_description) [(space "for" space (year_digits) as target_year)] 0*3optional_suffix) as addenda_package)
+
+  addendum_date_suffix = space lparen month_name space 1*2digit [comma] (space / [comma]) year_digits rparen
+
+  addendum_identifier = ((((publisher) as publisher space "Addendum" space addendum_code space ("to" / "for") space (type) as type space code [(dash (year_digits) as year)] [additional_copublisher] [addendum_date_suffix] [errata_suffix_on_addendum] 0*2optional_suffix)) as publisher_addendum) / ((((publisher) as publisher space "Addendum" space addendum_code space ("to" / "for") space (publisher) as base_publisher space (type) as type space code [(dash (year_digits) as year)] [additional_copublisher] [addendum_date_suffix] [errata_suffix_on_addendum] 0*2optional_suffix)) as publisher_base_addendum) / ((([[ansi_copub_space]] "Addendum" space addendum_code space ("to" / "for") space (publisher) as base_publisher space (type) as type space code [(dash (year_digits) as year)] [additional_copublisher] [addendum_date_suffix] [errata_suffix_on_addendum] 0*2optional_suffix)) as publisher_base_addendum) / ((((publisher) as publisher space "Addendum" space addendum_code space ("to" / "for") space (ansi_copub_space) (type) as type space code [(dash (year_digits) as year)] [addendum_date_suffix] [errata_suffix_on_addendum] 0*2optional_suffix)) as publisher_addendum_copublisher) / ((((publisher) as publisher space "Addendum" space addendum_code space ("to" / "for") space (ansi_copub_space) code_with_year [additional_copublisher] [addendum_date_suffix] [errata_suffix_on_addendum] 0*2optional_suffix)) as publisher_addendum_copublisher_no_type) / ((([[ansi_copub_space]] "Addendum" space addendum_code space ("to" / "for") space [ansi_copub_space] code_with_year [additional_copublisher] [addendum_date_suffix] [errata_suffix_on_addendum] 0*2optional_suffix)) as addendum_no_type) / ((([[ansi_copub_space]] "Addendum" space addendum_code space ("to" / "for") space [ansi_copub_space] (type) as type space code [(dash (year_digits) as year)] [additional_copublisher] [addendum_date_suffix] [errata_suffix_on_addendum] 0*2optional_suffix)) as addendum) / ((((publisher) as publisher space (type) as type space code [(dash (year_digits) as year)] [additional_copublisher] [suffix] [reaffirmed] ((":" space) / space) ("Addendum" / "addendum") space addendum_code [addendum_date_suffix] [errata_suffix_on_addendum] 0*2optional_suffix)) as standard_addendum) / ((((publisher) as publisher space (type) as type space code [(dash (year_digits) as year)] [additional_copublisher] [suffix] [reaffirmed] space ("Addendum" / "addendum") space addendum_code [addendum_date_suffix] [errata_suffix_on_addendum] 0*2optional_suffix)) as standard_addendum)
+
+  identifier = errata_identifier / interpretation_identifier / combined_addenda_identifier / year_first_addenda_package_identifier / addenda_package_identifier / addendum_identifier / ((([("ANSI" slash)] 2*10(!("ASHRAE") letter)) as copublisher) space code_with_year 0*2optional_suffix) / ((ansi_copub) space code_with_year [(space additional_copublisher)] [suffix] [reaffirmed] 0*2optional_suffix) / ((ansi_copub) space [(type) as type] [space] code [([space] dash (year_digits) as year)] [(space additional_copublisher)] [suffix] [reaffirmed] 0*2optional_suffix) / (((publisher) as publisher space [((type) as type space)] code [([space] dash (year_digits) as year)] [(space additional_copublisher)] [suffix] [reaffirmed] 0*2optional_suffix)) as base
+
+  entry identifier: identifier
+
+  test {
+    accept "ASHRAE 62.1"
+    accept "ASHRAE Standard 55-2020"
+    accept "ANSI/ASHRAE Standard 135-2020"
+    accept "ASHRAE 55-2020 (RA 2019)"
+    accept "ASHRAE Addendum a to Standard 135-2020"
+    reject "nonsense"
+  }
+}
