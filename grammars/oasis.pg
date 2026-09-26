@@ -4,7 +4,7 @@
 
 grammar PubidOasis version "0.1.0" {
   any_char = %x01-FF
-  slug = 1*any_char as original
+  slug = (1*any_char) as original
   identifier = "OASIS " slug
   entry identifier: identifier
 

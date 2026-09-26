@@ -9,7 +9,7 @@ grammar PubidJcgm version "0.1.0" {
   digits = 1*digit
   publisher = "JCGM" as publisher
   ordinal_suffix = "st" / "nd" / "rd" / "th"
-  gum_number = "GUM-" 1*digit as gum_number
+  gum_number = "GUM-" (1*digit) as gum_number
   standard_number = digits as number
   number_portion = gum_number / standard_number
   full_date = (year_digits dash month_digits dash day_digits) as date

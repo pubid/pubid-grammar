@@ -43,7 +43,7 @@ grammar PubidBipm version "0.1.0" {
   si_brochure_variant = (("BIPM SI Brochure" / "SI Brochure") space brochure_variant) as si_brochure_variant
   si_brochure_section = (("BIPM SI Brochure" / "SI Brochure") [(space "Part" space digits as part)]) as si_brochure_section
   appendix_part = "Appendix" space digits as appendix [(space "Annex" space digits as annex)] space "Part" space (digits [(dot digits)]) as part
-  mep_code = 1*(digit / letter) as mep_code
+  mep_code = (1*(digit / letter)) as mep_code
   report_code = ("BIPM-" digits slash digits) as report_code
   mep_body = (("SI MEP" space mep_code) / ("Rapport" space report_code))
   mep = (("BIPM" space mep_body space appendix_part) / mep_body) as mep

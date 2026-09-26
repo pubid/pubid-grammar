@@ -32,7 +32,7 @@ grammar PubidCsa version "0.1.0" {
   colon_year = (year_prefix (year_4digit / year_2digit) as year)
   dash_year = (dash (year_prefix (year_4digit / year_2digit) as year))
   reaffirmation = space "(R" (4digit as reaffirmation_4digit / 2digit as reaffirmation_2digit) ")"
-  amendment_slash = slash ["Amd " ] ["A"] 1*digit as amendment_number [(colon 2digit as amendment_year)]
+  amendment_slash = slash ["Amd " ] ["A"] (1*digit) as amendment_number [(colon 2digit as amendment_year)]
   package_keyword = "Code" / "Handbook" / "Training Package" / "Package"
   package_portion = space package_keyword *((", " package_keyword) / (space "& " package_keyword))
   series_prefix = 2*3upper as series_prefix
@@ -42,7 +42,7 @@ grammar PubidCsa version "0.1.0" {
   cec_part = "C22.2" / "C22.3" / "C22.4" / "C22.6"
   cec_identifier = publisher (cec_part as cec_part) no_notation no_number [colon_year / dash_year] [reaffirmation]
   adoption_identifier = ("CSA" as adoption_pub) adoption_body [reaffirmation]
-  adoption_body = (("ISO/IEC" as adoption_org space ("TR" / "TS") as iso_type space 1*numdash as adoption_number) / ("ISO/IEC" as adoption_org_with_type space 1*numdash as adoption_number) / (("ISO" / "IEC" / "CEI/IEC" / "CISPR") as adoption_org space 1*numdash as adoption_number)) ((colon / dash) as adoption_year_sep (year_4digit / year_2digit) as adoption_year) [(slash "A" digit as adoption_amendment (colon / dash) (year_4digit / year_2digit) as adoption_amendment_year)]
+  adoption_body = (("ISO/IEC" as adoption_org space ("TR" / "TS") as iso_type space (1*numdash) as adoption_number) / ("ISO/IEC" as adoption_org_with_type space (1*numdash) as adoption_number) / (("ISO" / "IEC" / "CEI/IEC" / "CISPR") as adoption_org space (1*numdash) as adoption_number)) ((colon / dash) as adoption_year_sep (year_4digit / year_2digit) as adoption_year) [(slash "A" digit as adoption_amendment (colon / dash) (year_4digit / year_2digit) as adoption_amendment_year)]
   numdash = digit / "-"
   iso_iec_adoption = adoption_identifier
 

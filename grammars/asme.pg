@@ -40,8 +40,8 @@ grammar PubidAsme version "0.1.0" {
   draft_year = ("20XX" / "202X" / ("20" digit "X")) as draft_year
   reaffirmation = space "(R" year_4digit as reaffirmation ")"
   csa_portion = slash "CSA" space (letter 1*(digit / dot)) as csa_number
-  parenthetical_revision = space "(" ("Proposed revision of" / "Revision of") space 1*non_rparen as ref_standard ")"
-  revision_note = space "[" 1*non_rbracket as revision_note "]"
+  parenthetical_revision = space "(" ("Proposed revision of" / "Revision of") space (1*non_rparen) as ref_standard ")"
+  revision_note = space "[" (1*non_rbracket) as revision_note "]"
   language = space "(" letters as language ")"
   handbook_keyword = (space "Handbook") as handbook
   non_rparen = %x01-28 / %x29-FF
