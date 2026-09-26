@@ -1,0 +1,12 @@
+{
+  "flavor": "adobe",
+  "artifact_version": "0.1.0",
+  "binding_version": 1,
+  "entries": {
+    "identifier": {
+      "root": "identifier",
+      "fields": {},
+      "examples": []
+    }
+  }
+}
