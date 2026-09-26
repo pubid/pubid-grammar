@@ -128,7 +128,9 @@ repetition iterations as defense in depth.
       plus owner-held releases. Two tree-CLEAN flavors are held back
       by builder-internal semantics: ashrae (combined-addenda prose
       sub-port) and gost (adoption-fragment capture routes bare
-      numbers to foreign flavors). The second wrap sweep (4ac6187)
+      numbers to foreign flavors). adobe's bare-number nesting and
+      gb's all-parts ownership fixed (76e27e7 — gb's marker is the
+      backend suffix contract, so gb is swap-ready). The second wrap sweep (4ac6187)
       turned calconnect ccsds ecma iala ietf oasis tgpp CLEAN — all
       seven swapped and spec-gated; the count-form sweep (8646b63:
       (4digit) as year — 44 no-star count captures across 12
