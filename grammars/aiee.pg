@@ -18,7 +18,7 @@ grammar PubidAiee version "0.1.0" {
   month_name = "September" / "November" / "December" / "February" / "August" / "June" / "January" / "March" / "April" / "October" / "July" / "May" / "Sept" / "Jan" / "Feb" / "Mar" / "Apr" / "Jun" / "Jul" / "Aug" / "Sep" / "Oct" / "Nov" / "Dec"
   aiee_prefix = ("IEEE-AIEE" / "A.I.E.E." / "A. I. E. E." / "AIEE") as publisher
   aiee_type = ("Standard No." / "Standard No" / "Std No." / "Std No" / "Std" / "Nos" / "No." / "No" / "no" / "Standard" / "Trans.") as type
-  number = (((2*3upper dash digits)) / ((digits upper !((space "and")))) / ((digits dot digits)) / (((digits) as main_number space (((("(" digits) as alt_number ")"))) as parenthetical)) / ((digits !((space "and" space digits))))) as number
+  number = (((2*3upper dash digits)) / ((digits upper !((space "and")))) / ((digits dot digits)) / (((digits) as main_number space ((( "(" (digits) as alt_number ")"))) as parenthetical)) / ((digits !((space "and" space digits))))) as number
   date_long = ([space] (((("," / dot) as separator) [space] [((month_name) as month space)] (year) as year)) / (((space dash) as separator) [space] (year) as year) / (((month_name) as month dash (year) as year)))
   date_short = ([space] dash (year) as year)
   date = [(date_short / date_long)]
