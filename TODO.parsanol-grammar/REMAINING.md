@@ -27,7 +27,7 @@ repetition iterations as defense in depth.
 - [x] **C11 / F7 — structured parse error wire**:
       `PortableParser::failure_wire` → `PgError::ParseWire
       {offset, line, column, expected}` on the artifact parse path;
-      wasm inherits it. (C-ABI mapping remains open.)
+      wasm inherits it. C-ABI mapping landed: parsanol_pg_parse / parsanol_pg_error / parsanol_pg_free (03b2e25).
 - [x] **C13 — artifact grammars on the VM gate**: all 47 baked
       artifacts run their embedded suites green on the Rust VM
       (`every_baked_artifact_runs_green_on_the_rust_vm`), executed
