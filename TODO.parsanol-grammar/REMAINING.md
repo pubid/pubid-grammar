@@ -109,9 +109,17 @@ repetition iterations as defense in depth.
       ISO spec suite 3045/3045; full gem suite 15040/15040. Grammar
       widenings the gate forced landed in pubid-grammar cb4c675
       (capture precedence, supplement stage key, (E/F) languages,
-      ISO/R subparts). Remaining flavors repeat the proven per-flavor
-      workflow (artifact widening → swap → spec gate); the iso pilot
-      pins the pattern, the wiring is one declaration per flavor.
+      ISO/R subparts). Five more flavors swapped on stacked branches
+      (adobe 61594699 + doi/ogc/w3c/xsf): each gated green by its own
+      spec suite — adobe 30/30, doi 11/11, ogc 47/47, w3c 132/132,
+      xsf 73/73 — with the grammar-side capture wrapping committed as
+      pubid-grammar 1764e71. The backend hardening those gates forced:
+      Parsanol::Slice scalarization (the VM yields live Slices whose
+      as_json is the wire leaf; a normalizer must accept both shapes).
+      Remaining flavors repeat the proven per-flavor workflow (artifact
+      widening → swap → spec gate); un and jis still carry tree deltas
+      (their capture structures need restructuring, not just wrapping);
+      plateau probe inputs were inconclusive and need a real pass.
 - [x] **R2 — ingestion hooks (iso)**: the ISO Normalizer's
       parse_with_builder routes through the same PG backend as
       Identifier.parse — Tier-3 normalizations and direct parses feed
