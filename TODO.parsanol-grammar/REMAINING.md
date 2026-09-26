@@ -33,7 +33,9 @@ repetition iterations as defense in depth.
       (`every_baked_artifact_runs_green_on_the_rust_vm`), executed
       inside the 4GB docker container (docker-test.sh). Wire into CI
       with the rest of the pipeline.
-- [ ] **C12 (optional) — constrained-decoding export.**
+- [x] **C12 — constrained-decoding export**: `terminal_vocabulary()`
+      deduplicates every Str/Re terminal across all entries for LLM
+      constrained decoding.
 
 ## Language (pubid-grammar)
 
@@ -56,8 +58,9 @@ repetition iterations as defense in depth.
       the pg artifact as its own front end.
 - [x] **F11 v1 — PG LSP**: stdio JSON-RPC server (`parsanol pg lsp`)
       with publishDiagnostics (parse + lint + inline-test failures) and
-      ## doc-comment hover; zero framework deps (c55ef38). Reorder code
-      action and PG-source error positions remain open.
+      ## doc-comment hover; zero framework deps (c55ef38). Rule-granular
+      diagnostic positions (1af57fb) and the reorder-longest-first code
+      action (5373211) landed. PG-source error positions remain open.
 - [x] **F12 — specification completion**: PN 6 (capture schema format,
       docs 82ec498) and PN 7 (conformance protocol, same commit).
 - [ ] **L1–L8** (8-lml-model-gaps.md): lutaml-model/lml-side work;

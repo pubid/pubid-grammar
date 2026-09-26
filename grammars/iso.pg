@@ -136,6 +136,8 @@ grammar PubidIso version "0.3.0" {
   # `use idf` (rules namespaced idf.*, captures unchanged) ----
   joint_identifier = (identifier_copublishers_no_third as base) [space] "|" [space] (idf.identifier as joint_identifier)
 
+  ## The ISO identifier root: common-text twin form first, then the
+  ## single spine.
   identifier = nsb_iso_identifier / tc_document / directives_identifiers / jcgm_identifier / iso_r_supplement_identifier / iso_r_identifier / supplement_supplement_supplement_identifier / supplement_supplement_identifier / supplement_identifier / joint_identifier / identifier_copublishers
 }
 
