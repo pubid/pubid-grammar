@@ -66,6 +66,10 @@ repetition iterations as defense in depth.
       closing brackets, multi-binding repetition. Remaining: the
       shape->IR builder that retires the hand-written front end —
       a focused follow-on whose input contract is now fully proven.
+      Builder status: a line-routing front end reached checksum-equality
+      for 46/47 grammars (rs#150 decision governs the last mile: the
+      docs/tests capture schema and iso's top-level preprocess in the
+      deferred-bindings preamble).
       Front-end semantics decision filed: parsanol-rs#150 (A structuring
       grammar / B dual artifact / C actions; recommendation B). A first
       line-routing builder draft hit the docs/tests-metadata
