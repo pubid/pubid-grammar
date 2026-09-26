@@ -47,8 +47,13 @@ repetition iterations as defense in depth.
       segments (field/literal/cond-presence) compile into the envelope
       under the checksum; generic renderers in Ruby/Rust/TS render
       byte-identically (iso pilot: ISO-5537:2025; commits e698a64,
-      fd8659a, 0f5954c, 38b7621). Derive specs (URN/tiny) and
-      output-grammar graduation remain open.
+      fd8659a, 0f5954c, 38b7621). Derive specs landed too (dd31cd2,
+      5cc07b5, db6fc56, a608fc9): `derive urn "urn:..."` templates
+      interpolate bound fields; iso derives urn:iso:std:5537:2025
+      identically in all three engines, and pg.pg self-parses a
+      grammar carrying render/derive sections. Only output-grammar
+      graduation (engine-owned parse-in-reverse) remains — deferred
+      until 2+ flavors stabilize render specs per the rs#144 plan.
 - [x] **F8 — parsanol-shape v2 freeze**: contract is normative Annex A
       of PN 6; engines verify `shape` at load (Ruby + Rust).
 - [ ] **F9 — preprocessing vocabulary policy** (rs#147): OWNER DECISION
