@@ -77,16 +77,14 @@ open for extension.
 
 ## Live gate: found by the self-description corpus (2026-09-26)
 
-- [ ] **C-BUG1 — native hang on pq-threaded grammars.** `grammars/pg.pg`
-      (the self-description artifact) parses its accept tests instantly
-      on the Ruby interpreter and HANGS/OOMs on the native engine
-      (VM/walker) for the same inputs (37-char input, unbounded memory).
-      The grammar is pq-threaded (`pq = *ws` threaded through seq/choice
-      nesting). Repro: compile pg.pg, `Artifact#run_tests` (native
-      default). Suspects: packrat memoization of zero-width pq matches
-      inside nested choice recursion, or VM repetition handling of
-      empty-capable sub-expressions. Fix in rs, then make the pg.pg
-      native gate green (this is the C8 parity gate doing its job).
+- [x] **C-BUG1 — RESOLVED 2026-09-26 (grammar-level).** pg.pg's
+      `element` could match empty (`[rep_prefix pq] [pred / postfixed]`
+      with everything skippable) — a zero-width bomb the Ruby
+      interpreter absorbed but the native engine chased into unbounded
+      memory. Fix: `element = pq (rep_prefix pq [...] / pred /
+      postfixed)` — requires consumption; all pg.pg tests pass
+      NATIVELY. Root rs zero-width hardening remains an optional
+      follow-up; the C8 gate caught the divergence exactly as designed.
 
 - [ ] Adding a lint, a preprocess op, or an importer touches ZERO
       existing pipeline code (registration only).

@@ -1,0 +1,77 @@
+# Port of lib/pubid/oiml/parser.rb — OIML identifiers: the base form,
+# drafts, amendments (full/short/+/trailing), annexes, bulletins.
+
+grammar PubidOiml version "0.1.0" {
+  letter_bdegrsvx = %x42 / %x44 / %x45 / %x47 / %x52 / %x53 / %x56 / %x58
+  digit = %x30-39
+  letter = %x41-5A / %x61-7A
+  digits = 1*digit
+  two_digits = 2*digit
+  space = " "
+  dash = "-"
+  colon = ":"
+  slash = "/"
+  lparen = "("
+  rparen = ")"
+  dot = "."
+  plus = "+"
+  century = "19" / "20"
+  year_digits = century 2*digit !digit
+
+  publisher = "OIML" as publisher space
+  doc_type = letter_bdegrsvx as type space
+  two_digits_c = two_digits
+
+  bulletin_date = space year_digits as year [(dash two_digits as issue)] [(dash two_digits as sequence)]
+  roman_numeral = 1*%x49 / 1*(%x49 / %x56 / %x58 / %x4C / %x43 / %x44 / %x4D)
+  roman = 1*(%x49 / %x56 / %x58 / %x4C / %x43 / %x44 / %x4D) as volume_roman
+  bulletin_citation = space roman lparen 1*digit as issue_arabic rparen space 8digit as article_id
+  bulletin_identifier = "OIML" as publisher space "Bulletin" as type [bulletin_citation / bulletin_date] [language_portion as language]
+
+  number_only = digits as number
+  part_number = dash (digits *(slash dash digits)) as part
+  subpart_number = dash digits as subpart
+  named_suffix_gum = dash ("GUM" space digits / (1*letter *((["_"] digits)))) as code_suffix
+  named_suffix_brochure = space "Brochure" as code_suffix
+  named_suffix = named_suffix_gum / named_suffix_brochure
+  full_number = (number_only part_number subpart_number [named_suffix]) / (number_only part_number [named_suffix]) / (number_only [named_suffix])
+
+  edition_number = ("6th" / "5th" / "4th" / "3rd" / "2nd" / "1st" / (digits ("th" / "nd" / "rd" / "st"))) as edition
+  edition_text = "Edition" / "edition"
+  edition_portion = ((", " / space) [edition_number] [space] edition_text [space] year_digits as year) as edition_format
+  date = edition_portion / ([space] colon [space] year_digits as year) / ([space] lparen year_digits as year rparen)
+  stage_iteration = ((digits dot digits) / digits) as iteration
+  stage_abbr = ("WD" / "CD") as stage
+  draft_stage = space [stage_iteration] stage_abbr
+
+  lang_single = %x45 / %x46 / %x52 / %x58 / %x44 / %x53 / %x43 / %x41 / %x55
+  lang_multi_oiml = "PO" / "PT" / "PE" / "SR"
+  lang_multi = 2*2lower
+  lower = %x61-7A
+  language_code = ((lang_single slash lang_single) / lang_multi_oiml / lang_single / lang_multi) as language
+  language_with_space = space lparen language_code rparen
+  language_without_space = lparen language_code rparen
+  language_portion = language_with_space / language_without_space
+
+  amendment_identifier = "Amendment" space lparen year_digits as year rparen space "to" space (base_without_language as base) [language_portion as language]
+  amendment_short = publisher doc_type (full_number as base_code) space "Amendment" as amd_marker ((space edition_text [space] year_digits as year) as edition_format / (colon [space] year_digits as year)) [language_portion as language]
+  trailing_supplement_identifier = (base_without_language as base) space ("Amendment" / "Errata") as trailing_marker [language_portion as language]
+  plus_supplement_identifier = (base_without_language as base) plus ("Amendment" / "Errata") as plus_marker [(colon year_digits as year)] [language_portion as language]
+  annex_identifier = (base_without_language as base) space "Annexes" as annex_marker [((space edition_text space year_digits as year) as edition_format / (colon year_digits as year))] [language_portion as language]
+  annex_letter_value = (upper [(dash upper)]) as annex_letter
+  annex_letter_identifier = (base_without_language as base) space "Annex" space annex_letter_value [((space edition_text space year_digits as year) / (colon year_digits as year))] [language_portion as language]
+  base_without_language = publisher doc_type full_number [date] [draft_stage]
+  base = publisher doc_type full_number [date] [draft_stage] [language_portion]
+
+  identifier = amendment_identifier / amendment_short / annex_letter_identifier / annex_identifier / plus_supplement_identifier / trailing_supplement_identifier / bulletin_identifier / base
+
+  upper = %x41-5A
+  entry identifier: identifier
+
+  test {
+    accept "OIML V 2 Edition 2007"
+    accept "OIML R 137-1:2012"
+    accept "OIML D 11"
+    reject "nonsense"
+  }
+}

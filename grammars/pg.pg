@@ -32,7 +32,7 @@ grammar PgMeta version "1.0.0" {
   # ---- expressions (pq-threaded) ----
   choice = seq *(pq "/" pq seq)
   seq = element *(pq element)
-  element = [rep_prefix pq] [pred / postfixed]
+  element = pq (rep_prefix pq [pred / postfixed] / pred / postfixed)
   rep_prefix = num ["*" [num]] / "*" [num]
   num = 1*digit
   pred = ("!" / "&") postfixed

@@ -1,0 +1,55 @@
+# Port of lib/pubid/astm/parser.rb — ASTM designations: standards
+# (A-G letter codes, dual-unit, 2-digit years with sub-year letters and
+# reapprovals), research reports, TRs, MNL/MONO/DS/WK/ADJ series.
+
+grammar PubidAstm version "0.1.0" {
+  upper = %x41-5A
+  lower = %x61-7A
+  digit = %x30-39
+  letters = 1*upper
+  digits = 1*digit
+  space = " "
+  dash = "-"
+  slash = "/"
+  colon = ":"
+  dot = "."
+  publisher = ["ASTM" as publisher [space]]
+  standard_letter = %x41-47 as letter
+  year_2digit = 2*digit as year
+  reapproval = "(" 4digit as reapproval ")"
+  comment = [[space] "#" *non_hash]
+  non_hash = %x01-22 / %x24-FF
+  edition = (("e" 1*digit as edition_number) / "9TH" / "8TH" / "7TH" / "6TH" / "5TH" / "4TH" / "3RD" / "2ND" / "1ST") as edition
+  sub_year = %x61-63 as sub_year
+  format_suffix = dash "EB" as format_suffix
+  format_suffix_no_dash = "EB" as format_suffix
+  supplement = dash "SUP" as supplement dash
+  research_report = [publisher] "RR" as type colon (upper 2*digit) as committee dash digits as number
+  manual = [publisher] "MNL" as type ["TP" as tp_designation] digits as number [(dash edition)] [(supplement [format_suffix_no_dash]) / [format_suffix]]
+  monograph = [publisher] "MONO" as type digits as number [(dash edition)] [format_suffix]
+  data_series_suffix = upper as suffix
+  data_series_subseries_with_dash = dash "S" digits as subseries
+  data_series_subseries_no_dash = digits as subseries
+  data_series_code = digits as number [("HOL" as hol_suffix) / (data_series_suffix [(data_series_subseries_no_dash / data_series_subseries_with_dash)]) / data_series_subseries_with_dash]
+  data_series = [publisher] "DS" as type data_series_code [format_suffix]
+  work_in_progress = [publisher] "WK" as type digits as number
+  adjunct = [publisher] "ADJ" as type ((upper digit) / letters / digits) as designation [dash "EA" as ea_suffix] ["DVD" as dvd_suffix]
+  technical_report_iso_astm = "ISO/ASTMTR" as type digits as number [format_suffix] [comment]
+  technical_report_simple = [publisher] "TR" as type digits as number [format_suffix] [comment]
+  technical_report = technical_report_iso_astm / technical_report_simple
+  dual_unit = slash standard_letter digits "M" as dual_m
+  standard_code_with_letter = standard_letter digits as number [dual_unit]
+  standard_code_digit_only = digits as number
+  standard = [publisher] (standard_code_with_letter / standard_code_digit_only) [(dash year_2digit [sub_year] [reapproval] [edition])] [comment]
+  identifier = research_report / technical_report / manual / monograph / data_series / work_in_progress / adjunct / standard
+
+  entry identifier: identifier
+
+  test {
+    accept "ASTM A370-03"
+    accept "ASTM E11-87(1996)"
+    accept "ASTM RR:D04-1001"
+    accept "ASTM DS63"
+    reject "nonsense"
+  }
+}
