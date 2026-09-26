@@ -38,7 +38,8 @@ grammar PgMeta version "1.0.0" {
   pred = ("!" / "&") postfixed
   postfixed = primary [pq "as" pq ident]
   table_alt = "alt" pq "from_table" pq dstring pq "column" pq dstring
-  primary = hex / "(" choice ")" / "[" choice "]" / table_alt / ident
+  dotted_ident = ident *("." ident)
+  primary = hex / "(" [pq] choice [pq] ")" / "[" [pq] choice [pq] "]" / table_alt / dotted_ident
 
   # ---- rules and sections ----
   rule = ident pq "=" pq choice
@@ -46,7 +47,7 @@ grammar PgMeta version "1.0.0" {
   path = ident *(("[" "]") / ("." ident))
   cardinality = 1*(digit / "." / "*")
   binding = ident pq "->" pq path [pq "(" ident ["," pq cardinality] ")"] [pq "preprocess" ":" pq ident]
-  bindings_section = "bindings" pq ident nlws "{" *nlws binding nlws "}"
+  bindings_section = "bindings" pq ident nlws "{" [nlws] [binding *(nlws binding)] [nlws] "}"
   step = "table_lookup" pq ident pq ident pq "->" pq ident
   preprocess_section = "preprocess" pq ident nlws "{" *nlws step nlws "}"
   test_line = ("accept" / "reject" / "example") pq dstring [pq "{" *nlws test_pair *nlws "}"]
