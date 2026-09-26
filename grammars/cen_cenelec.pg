@@ -20,7 +20,7 @@ grammar PubidCenCenelec version "0.1.0" {
   year_with_month = colon (4digit) as year dash month_digits
   date = year_with_month / year
   amendment = (plus as amd_sep_plus / slash as amd_sep_slash) "A" (1*digit) as amd_number [(colon (4digit) as amd_year)]
-  corrigendum = (plus as amd_sep_plus / slash as amd_sep_slash) "AC" [(*digit) as cor_number] [(year_with_month / (colon (4digit) as year))]
+  corrigendum = (plus as amd_sep_plus / slash as amd_sep_slash) "AC" [(digit (*digit)) as cor_number] [(year_with_month / (colon (4digit) as year))]
   supplement = (amendment / corrigendum) as supplement
   supplements = (*supplement) as supplements
   edition = space "ED" (1*digit) as edition
