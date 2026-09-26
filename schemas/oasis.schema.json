@@ -1,12 +1,1 @@
-{
-  "flavor": "oasis",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"oasis","artifact_checksum":"sha256:123e4b23f9f9852e2825b73b5c0cceaed498082215ed7d1345322d09e8f52fa0","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

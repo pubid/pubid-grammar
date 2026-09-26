@@ -1,12 +1,1 @@
-{
-  "flavor": "jis",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"jis","artifact_checksum":"sha256:86ae33c068d13659d7c20f09e027c033f6b20fac1ad601506cdb8a59cdfe60cd","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

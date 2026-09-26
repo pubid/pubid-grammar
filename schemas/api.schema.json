@@ -1,12 +1,1 @@
-{
-  "flavor": "api",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"api","artifact_checksum":"sha256:b93b4566cf957f42b3c651a50af72ec3247cbdfd7efb0b36a0f213b3ceaf83f2","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"API RP 1632-1987","captures":{}},{"input":"API MPMS CH 11.1","captures":{}},{"input":"API SPEC 5DP/STD 5DP, 1st edition","captures":{}},{"input":"nonsense","captures":{}}]}}}

@@ -1,12 +1,1 @@
-{
-  "flavor": "isbn",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"isbn","artifact_checksum":"sha256:e273bf7e70b00c74856169a31684ac8623d9ab763f19956170db6c46cdd1d11f","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

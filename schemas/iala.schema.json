@@ -1,12 +1,1 @@
-{
-  "flavor": "iala",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"iala","artifact_checksum":"sha256:53ac23a96f4b52397ba2347c046d93bbfd8b3878ec082245859f9524771fa545","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

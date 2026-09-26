@@ -1,12 +1,1 @@
-{
-  "flavor": "iana",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"iana","artifact_checksum":"sha256:0d8ec3a6a99852c2bed75c6d6765bd7dcb3c01857cc4c75cca51c32e9866c9d4","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

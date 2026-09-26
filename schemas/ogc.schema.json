@@ -1,12 +1,1 @@
-{
-  "flavor": "ogc",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"ogc","artifact_checksum":"sha256:e162c1674dd2aaae5f26abb6da9742ce3f3b4d7056d5430307f4272104756d5c","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

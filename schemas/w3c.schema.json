@@ -1,12 +1,1 @@
-{
-  "flavor": "w3c",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"w3c","artifact_checksum":"sha256:1b1d8f81afbba5cfe9cee67c74cecd521708a85e0d75260a5e2a18ae0c40ddf3","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

@@ -1,12 +1,1 @@
-{
-  "flavor": "amca",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"amca","artifact_checksum":"sha256:d74041ab0ef7257c048e555cd7ea3ae6cb584561a3691b80d4f0f8c3a9a7c76f","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"AMCA 500-D","captures":{}},{"input":"AMCA Standard 210","captures":{}},{"input":"ANSI/AMCA 210","captures":{}},{"input":"nonsense","captures":{}}]}}}

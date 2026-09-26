@@ -1,12 +1,1 @@
-{
-  "flavor": "easc",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"easc","artifact_checksum":"sha256:0c5827863a309843cb53d602cb645afabd8f8f5f8e5448e3e70fc53771515abe","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

@@ -1,12 +1,1 @@
-{
-  "flavor": "calconnect",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"calconnect","artifact_checksum":"sha256:9038186af6d840bb9e932e400165f42c327065bec1e36bfb06b341d3f935c33e","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

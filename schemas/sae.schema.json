@@ -1,12 +1,1 @@
-{
-  "flavor": "sae",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"sae","artifact_checksum":"sha256:523fdd339aee61f0f756c392b7418f2bae2ce234e35743bac3dde050067cae7e","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

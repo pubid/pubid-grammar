@@ -1,12 +1,1 @@
-{
-  "flavor": "etsi",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"etsi","artifact_checksum":"sha256:251459a925e838c12fdec34689c0ad53ca542f0858530d71e2e7a09ba33613da","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

@@ -1,12 +1,1 @@
-{
-  "flavor": "ecma",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"ecma","artifact_checksum":"sha256:6e99196890644e353c9cff5b317eaa9576976d39ba7e9a2167d6fd32165e343f","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

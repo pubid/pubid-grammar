@@ -1,0 +1,1 @@
+{"grammar":"astm","artifact_checksum":"sha256:6ca08a83b00935686f40e0831a9569a7b5995072a67879b5b46cb2c9af09962e","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"ASTM A370-03","captures":{}},{"input":"ASTM E11-87(1996)","captures":{}},{"input":"ASTM RR:D04-1001","captures":{}},{"input":"ASTM DS63","captures":{}},{"input":"nonsense","captures":{}}]}}}

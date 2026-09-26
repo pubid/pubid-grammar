@@ -1,12 +1,1 @@
-{
-  "flavor": "tgpp",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"tgpp","artifact_checksum":"sha256:471e9737a161bd21f63ef6a17c7919630883a6eea4b4f90988af22c8c8108fdf","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

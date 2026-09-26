@@ -1,12 +1,1 @@
-{
-  "flavor": "omg",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"omg","artifact_checksum":"sha256:bc671210eb27b87fcd3add73d8bec46e1134e0ce60a00ea990d60c331b0a24fc","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

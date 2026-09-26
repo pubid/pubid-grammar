@@ -1,12 +1,1 @@
-{
-  "flavor": "ansi",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"ansi","artifact_checksum":"sha256:bfb822685ba075c8a910af3ede9979df6d4a9c55bf61700db68424ff93381abe","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

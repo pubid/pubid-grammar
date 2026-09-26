@@ -1,12 +1,1 @@
-{
-  "flavor": "idf",
-  "artifact_version": "0.1.0",
-  "binding_version": 1,
-  "entries": {
-    "identifier": {
-      "root": "identifier",
-      "fields": {},
-      "examples": []
-    }
-  }
-}
+{"grammar":"idf","artifact_checksum":"sha256:4ac58e45028764102785524499c89a56862cb08f3c42aaebcb46a46b4380cc57","schema":{"identifier":{"root":"identifier","fields":{},"examples":[]}}}

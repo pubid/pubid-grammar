@@ -1,0 +1,1 @@
+{"grammar":"asme","artifact_checksum":"sha256:36ddaecdba614a6e91ea5661f6a63e1a065d442fe77c24585f4ce44506e5b5d4","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"ASME BPVC.VIII","captures":{}},{"input":"ASME PTC 19.3","captures":{}},{"input":"ASME Y14.5-2018","captures":{}},{"input":"nonsense","captures":{}}]}}}
