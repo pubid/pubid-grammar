@@ -157,6 +157,13 @@ test {
 # Model-side bindings (PN 4). The pilot binds the flat identity fields;
 # the full builder-parity mapping lands with the conformance corpora
 # milestone.
+preprocess publisher_names {
+  table_lookup iso_publishers abbrev -> name
+}
+
 bindings identifier {
   publisher -> publisher (string)
+  year -> year (integer)
+  number -> number (integer)
+  publisher -> publisher_name (string) preprocess: publisher_names
 }
