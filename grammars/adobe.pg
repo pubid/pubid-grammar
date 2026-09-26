@@ -12,7 +12,7 @@ grammar PubidAdobe version "0.1.0" {
   # slug is captured exactly once (the bare form) or as a sibling of
   # version inside the publication_version capture.
   tech_note = (tech_note_prefix (1*digit) as number [(dot (1*slug_char) as slug)]) as tech_note
-  bare_number = (1*digit) as tech_note_bare
+  bare_number = ((1*digit) as number) as tech_note_bare
   slug_segment = 1*lower1 *lowerd
   slug_text = slug_segment *(dash slug_segment)
   slug_inner = (slug_text) as slug
