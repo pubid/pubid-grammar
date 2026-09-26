@@ -53,7 +53,10 @@ grammar PgMeta version "1.0.0" {
   test_section = "test" [pq ident] nlws "{" *nlws [test_line *(nlws test_line)] nlws "}"
   rule_line = rule / entry_section / bindings_section / preprocess_section / test_section / doc_marker / comment
   grammar_block = "grammar" pq ident pq "version" pq dstring pq "{" *(nlws rule_line) *nlws "}"
-  top = grammar_block / entry_section / bindings_section / preprocess_section / test_section
+  render_section = "render" pq ident nlws "{" *(nlws render_seg) nlws "}"
+  render_seg = ("field" pq ident) / ("literal" pq dstring) / ("cond" pq ident nlws "{" *(nlws render_seg) nlws "}")
+  derive_section = "derive" pq ident pq dstring
+  top = grammar_block / entry_section / bindings_section / preprocess_section / test_section / render_section / derive_section
   use_line = "use" pq ident
   top_item = use_line / doc_marker / comment / top
 

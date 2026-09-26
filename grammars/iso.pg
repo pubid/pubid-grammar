@@ -163,6 +163,8 @@ preprocess publisher_names {
   table_lookup iso_publishers abbrev -> name
 }
 
+derive urn "urn:iso:std:{number_with_part}:{date}"
+
 render default {
   field publisher
   literal "-"
