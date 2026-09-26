@@ -1,0 +1,114 @@
+# Port of lib/pubid/itu/parser.rb — ITU-T/R/D designations: series codes
+# (BT/G/V, SGnn), Imp implementation codes, OB Operational Bulletins,
+# Reports, Study Group questions (numeric and bracketed series form),
+# supplements (Suppl./Amd./Add./Err./Cor. with Technical marker), Annex
+# and App. wraps, combined "/XX.N" designations, and the "| twin"
+# common-text form. Internal rule `itu_identifier` corresponds to the
+# source's `identifier` (renamed: PG forbids self-reference from the
+# common-text wrapper).
+
+grammar PubidItu version "0.1.0" {
+  digit = %x30-39
+  upper = %x41-5A
+  lower = %x61-7A
+  letter = upper
+  digits = 1*digit
+  space = " "
+  dash = "-"
+  dot = "."
+  non_pipe = %x01-7B / %x7D-FF
+
+  itu_prefix = ("Recommendation " "ITU" (dash / space)) / ("ITU" (dash / space))
+  sector = ("R" / "T" / "D") as sector
+  series = (("SG" digits) / (1*3letter)) as series
+  series_group = (letter [digits] dash digits) as series
+  series_word = space "series" as series_word
+  number = digits as number
+  subseries = dot digits as subseries
+  series_suffix_word = "bis" / "ter" / "quater" / "quarter"
+  series_suffix = (series_suffix_word) as series_suffix
+  series_suffix_spaced = (space as series_suffix_spaced) ((series_suffix_word) as series_suffix)
+  qualifier_letter = ((%x41-52 / %x61-72) as qualifier) !(upper / lower / digit)
+  qualifier_glued = qualifier_letter
+  qualifier_spaced = (space as qualifier_spaced) qualifier_letter
+  code_suffixes = [series_suffix_spaced] [qualifier_spaced]
+  attachment = space "attachment" as attachment
+  range_end = dash ((1*3letter dot digits) as range_end)
+  part = dash digits as part
+  parts = (*part) as parts
+  code = imp_code / standard_code
+  standard_code = number [series_suffix] [subseries] parts [qualifier_glued]
+  imp_code = "Imp" as imp_marker ((digits / (1*3letter)) as number) [subseries] parts
+  date_part = space "(" [(digits as month "/")] (4digit as year) ")"
+  version_part = space ((("(V" digits as version ")") / (("V" / "v") [dot] digits as version)))
+  language = dash (("E" / "F" / "A" / "S" / "C" / "R") as language)
+
+  combined_designation = "/" ((series dot digits as number [subseries] parts [qualifier_glued] [series_suffix_spaced] [qualifier_spaced]) as designation)
+  combined_suffixes = (1*combined_designation) as combined
+
+  technical_marker = "Technical" as technical space
+  supplement_type = (("Suppl." / "Suppl" / "Amd." / "Amd" / "Add." / "Add" / "Err." / "Err") as supplement_type) / (([technical_marker] ("Cor." / "Cor") as supplement_type))
+  supplement_number = ([space as supplement_space]) ((digits *(dot digits)) as supplement_number)
+  supplement_date = space "(" [(digits as supplement_month "/")] (4digit as supplement_year) ")"
+
+  base_with_series = itu_prefix sector space series dot code [range_end] code_suffixes [combined_suffixes] [series_word] [attachment] [version_part] [date_part]
+  base_without_series = itu_prefix sector space code code_suffixes [attachment] [version_part] [date_part]
+  series_code_body = !("OB" dash) (2*letter as series) (dash as series_dash) ((digits / letter) as number) parts
+  contribution = itu_prefix sector space series ("-C" as contribution_marker) number parts [language]
+  base_series_code = itu_prefix sector space series_code_body [version_part] [date_part]
+  series_code_identifier = base_series_code [language]
+  report_word = "Report" as report_marker
+  report_body = !("OB" dot) [(series dot)] code [range_end] code_suffixes [series_word] [attachment] [version_part] [date_part]
+  base_report = (report_word space itu_prefix sector space report_body) / (itu_prefix sector space report_word space report_body)
+  report_identifier = base_report [language]
+  base = base_report / base_with_series / base_without_series / base_series_code
+
+  annex_label = letter [digits] ["+"]
+  annex_body = (base as base) space "Annex" space annex_label as annex_number [date_part]
+  annex_identifier = annex_body [language]
+  roman = 1*(%x49 / %x56 / %x58)
+  appendix_material = space (("test vectors" / "Software") as appendix_material)
+  appendix_body = (base as base) space "App." [space] roman as appendix_number [appendix_material] [date_part]
+  appendix_identifier = appendix_body [language]
+
+  supplement_with_base = ((annex_body as base) / (appendix_body as base) / (base as base)) space supplement_type supplement_number [supplement_date] [language]
+  chained_supplement = ((supplement_with_base / supplement_series_only) as base) space supplement_type supplement_number [supplement_date] [language]
+  supplement_series_only = itu_prefix sector space (series_group / series) [series_word] space supplement_type supplement_number [supplement_date] [language]
+  slash_chained_supplement = ((supplement_with_base) as base) ("/" as supplement_slash) supplement_type supplement_number [supplement_date] [language]
+  supplement_identifier = chained_supplement / slash_chained_supplement / supplement_with_base / supplement_series_only
+
+  with_series = itu_prefix sector space series dot code [range_end] code_suffixes [combined_suffixes] [series_word] [attachment] [version_part] [date_part] [language]
+  without_series = itu_prefix sector space code code_suffixes [attachment] [version_part] [date_part] [language]
+
+  ob_series = "OB" as series
+  ob_dot_body = dot number
+  ob_no_body = space "No." space number
+  ob_with_sector = itu_prefix [(sector space)] ob_series (ob_dot_body / ob_no_body) [date_part] [language]
+  ob_long_form = itu_prefix [(sector space)] "Operational Bulletin" as op_bull space "No." space number [date_part] [language]
+  special_publication = ob_with_sector / ob_long_form
+  annex_to_identifier = "Annex to" space (special_publication as annex_to)
+  handbook = itu_prefix sector space number dot "HDB" as handbook_marker [date_part]
+  numeric_question = itu_prefix sector space number parts ("/" digits as study_group) [":" as question_colon]
+  question_tail = number [("/BL" as has_bl)] "/" digits as study_group
+  letter_question = itu_prefix sector space series dot ((("(" as bracketed) question_tail ")") / question_tail) [":" as question_colon]
+  common_text_twin = (space "|" space (1*non_pipe)) as common_text_twin
+
+  identifier = common_text_identifier / itu_identifier
+  itu_identifier = annex_to_identifier / special_publication / supplement_identifier / annex_identifier / appendix_identifier / report_identifier / handbook / numeric_question / letter_question / with_series / contribution / series_code_identifier / without_series
+  common_text_identifier = itu_identifier common_text_twin
+
+  entry identifier: identifier
+
+  test {
+    accept "ITU-R BT.500"
+    accept "Recommendation ITU-T G.650.1 (09/2020)"
+    accept "ITU-R SA.3631 Annex A"
+    accept "ITU-T OB.101 (2016)"
+    accept "Annex to ITU-T OB.101"
+    accept "ITU-T E.164/2"
+    accept "ITU-T 55/13:"
+    accept "ITU-T G.984.2 Amd. 1 (2010)"
+    accept "ITU-T G.650.1B"
+    reject "nonsense"
+  }
+}
