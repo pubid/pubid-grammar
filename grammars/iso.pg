@@ -161,9 +161,21 @@ preprocess publisher_names {
   table_lookup iso_publishers abbrev -> name
 }
 
+render default {
+  field publisher
+  literal "-"
+  field number_with_part
+  cond date {
+    literal ":"
+    field date
+  }
+}
+
 bindings identifier {
   publisher -> publisher (string)
   year -> year (integer)
   number -> number (integer)
+  number_with_part -> number_with_part (string)
+  date -> date (integer)
   publisher -> publisher_name (string) preprocess: publisher_names
 }
