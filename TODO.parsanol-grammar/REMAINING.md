@@ -7,19 +7,27 @@ dependency chain: engine correctness → language features → consumers
 
 ## Engine (parsanol-ruby / parsanol-rs)
 
+CONTAINMENT RULE: every cargo test run goes through docker-test.sh
+(4GB container cap). 2026-09-26 incident: an unbounded VM loop on bsi
+reached 24GB on the host. Root causes fixed: invalid grammars
+(unbounded repetition over an empty-matchable body) are now rejected
+by a compile-time lint; the Rust VM breaks on non-progressing
+repetition iterations as defense in depth.
+
 - [ ] **C4 — error recovery**: ranked multi-error reporting.
 - [ ] **C5 — CLI hardening**: `--json` machine output, `--trace`.
-- [ ] **C10 — shape validation at load** (F8): `shape` checked against
-      the engine's supported contract in Rust (`PgArtifact::from_json`);
-      Ruby already validates SUPPORTED_SHAPE.
+- [x] **C10 — shape validation at load** (F8): `shape` checked against
+      the engine's supported contract in Rust (`PgArtifact::from_json`,
+      SUPPORTED_SHAPE = "parsanol-tree/v2"); Ruby already validated.
 - [ ] **C11 / F7 — structured parse error wire**: `{offset, expected[],
       message}` flat wire on walker/VM/wasm/C ABI; Ruby cause trees stay
       the deep diagnostic. (PgError variants exist; the portable
       ParseError still stringifies.)
-- [ ] **C13 — artifact grammars on the VM gate**: every baked artifact
-      in `artifacts/` runs its tests on the Rust VM in CI (the sweep is
-      a pending parsanol-rs test; the runner itself exists —
-      `PgArtifact::run_tests`).
+- [x] **C13 — artifact grammars on the VM gate**: all 47 baked
+      artifacts run their embedded suites green on the Rust VM
+      (`every_baked_artifact_runs_green_on_the_rust_vm`), executed
+      inside the 4GB docker container (docker-test.sh). Wire into CI
+      with the rest of the pipeline.
 - [ ] **C12 (optional) — constrained-decoding export.**
 
 ## Language (pubid-grammar)
