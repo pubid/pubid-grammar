@@ -50,16 +50,29 @@ open for extension.
 
 ### Artifact runtime (Rust + wasm — consumers)
 
-- [ ] **C7 — bindings application in Rust.** Port Bindings
+- [x] **C7 — bindings application in Rust.** Port Bindings
       (capture collection → preprocess ops → casts → paths) onto
       `parsanol::pg`; preprocess ops are a Rust trait registry mirroring
       C3. Unblocks pubid-rs end to end.
-- [ ] **C8 — schema + suite parity in Rust.** `Schema::from_artifact`
+      DONE 2026-09-26 (parsanol-rs 7fb2262, branch pg-artifact-wasm):
+      `pg::bindings` with Ruby-parity fixture replay; envelopes now
+      embed table rows (checksum-covered, filesystem-free engines).
+- [x] **C8 — schema + suite parity in Rust.** `Schema::from_artifact`
       and suite running against the Rust runtime; CI runs every
       `*.pgtest` on rs AND ruby (the G5 equality gate).
-- [ ] **C9 — wasm full runtime.** fromArtifact gains bindings +
+      DONE 2026-09-26 (8dd13b2): `pg::schema` (from_artifact +
+      TypeScript emission, camelCase and namespaced-entry semantics
+      mirrored in Ruby 7830e69) and `pg::suite` (parse_shape emits the
+      parsanol-tree/v2 leaf contract; run_tests/run_test_list). The
+      Rust engine replays the Ruby-generated fixture inputs and must
+      reproduce both shape and bound hash. Per-flavor *.pgtest CI sweep
+      remains open (the G5 runner wiring).
+- [x] **C9 — wasm full runtime.** fromArtifact gains bindings +
       schema + suite (browser-side testing without any server); the
       TS binding (12) builds on exactly this surface.
+      DONE 2026-09-26 (8dd13b2): `PgArtifactJs` — checksum-verified
+      load, entryNames, parseShape, applyBindings, parseAndBind,
+      runTests, schema, schemaTypescript.
 - [ ] **C10 — shape validation at load** (F8): `shape` checked against
       the engine's supported contract; mismatch = loud failure.
 - [ ] **C11 — error wire format** (F7): the flat error struct exposed
