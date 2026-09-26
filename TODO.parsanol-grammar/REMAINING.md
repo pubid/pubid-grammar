@@ -119,15 +119,17 @@ repetition iterations as defense in depth.
       Remaining flavors repeat the proven per-flavor workflow (artifact
       widening → swap → spec gate); the workflow is now TOOLEd —
       scripts/parity-probe.rb (6100981) classifies all flavors in one
-      sweep. Full-sweep classification (41 flavors): 9 swapped (iso adobe
-      doi ogc w3c xsf easc iana isbn), 2 tree-clean but held
-      (ashrae gost — see below), ~10 DELTA (capture structures need per-flavor
+      sweep. Full-sweep classification (41 flavors): 10 swapped (iso adobe
+      doi ogc w3c xsf easc iana isbn amca), 4 tree-clean but held
+      (ashrae gost cie omg — see below), ~8 DELTA (capture structures need per-flavor
       work — un/jis confirmed), 13 NO_DATA (spec scrape found no
       monorepo-parseable inputs; fixtures-based input sourcing needed),
       plus owner-held releases. Two tree-CLEAN flavors are held back
       by builder-internal semantics: ashrae (combined-addenda prose
       sub-port) and gost (adoption-fragment capture routes bare
-      numbers to foreign flavors).
+      numbers to foreign flavors). cie and omg's capture fixes probe
+      CLEAN (commit above) but their spec suites gate on identifier
+      forms still uncovered (joint/paren + x-proceedings; tails).
 - [x] **R2 — ingestion hooks (iso)**: the ISO Normalizer's
       parse_with_builder routes through the same PG backend as
       Identifier.parse — Tier-3 normalizations and direct parses feed
