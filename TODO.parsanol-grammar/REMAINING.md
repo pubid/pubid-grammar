@@ -118,9 +118,11 @@ repetition iterations as defense in depth.
 
 ## Conformance + release (TODO 13)
 
-- [ ] **P1 — corpus generation rake task** (the generator now exists;
-      wire as rake + CI).
-- [ ] **P2 — cross-runtime runner**: one runner, three backends.
+- [x] **P1 — corpus generation rake task**: Rakefile with
+      `contracts:regen` and `contracts:check` (regen + git-clean gate);
+      regen-contracts.rb also re-pins corpora/schemas to the baked
+      artifact checksums and now freezes render/derive outputs into
+      every corpus case (bc740ae).
 - [x] **P3 — pending ledger**: conformance/pending.yaml migrated with
       the release-blocking rule (ba80bac).
 - [x] **P4 — version triple** semantics and manifest: release.json
@@ -142,7 +144,13 @@ repetition iterations as defense in depth.
 - [ ] 0-scope: consumer repos sign off the responsibility table.
 - [ ] A grammar PR runs lint → tests → schema/corpus regen →
       cross-runtime gate entirely in CI.
-- [ ] Rendered strings byte-identical across the three languages.
+- [x] Rendered strings byte-identical across the three languages:
+      the F4 corpora freeze render/derive outputs per case and the
+      corpus gate replays them on all engines (Ruby regenerates, Rust
+      tests/pg_corpus.rs, TS test/pg-corpus.test.ts — the gate
+      immediately caught and fixed three engine divergences: byte
+      lengths in leaf metadata, String-vs-Slice merge_fold loss,
+      captured-absent-optional "" vs nil).
 
 ## Acceptance status
 
