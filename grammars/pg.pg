@@ -37,7 +37,8 @@ grammar PgMeta version "1.0.0" {
   num = 1*digit
   pred = ("!" / "&") postfixed
   postfixed = primary [pq "as" pq ident]
-  primary = hex / "(" choice ")" / "[" choice "]" / ident
+  table_alt = "alt" pq "from_table" pq dstring pq "column" pq dstring
+  primary = hex / "(" choice ")" / "[" choice "]" / table_alt / ident
 
   # ---- rules and sections ----
   rule = ident pq "=" pq choice

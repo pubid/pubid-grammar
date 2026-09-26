@@ -59,8 +59,12 @@ repetition iterations as defense in depth.
 - [ ] **F9 — preprocessing vocabulary policy** (rs#147): OWNER DECISION
       — freeze vs grow-with-minor. Recommendation: grow-with-minor
       (binding_version bump on new ops); the flavor set is now stable.
-- [ ] **F10 phase 2 — full self-hosting**: the Ruby compiler consumes
-      the pg artifact as its own front end.
+- [ ] **F10 phase 2 — full self-hosting**: the artifact-as-validator
+      gate shipped (Parsanol::PG::SelfHost, ruby a90db08; pg gained
+      table_alt and self-parses). Remaining: model the other 43
+      grammars' constructs in pg.pg (enumerable by running SelfHost
+      across artifacts/), then the shape->IR builder replacing the
+      hand-written front end.
 - [x] **F11 v1 — PG LSP**: stdio JSON-RPC server (`parsanol pg lsp`)
       with publishDiagnostics (parse + lint + inline-test failures) and
       ## doc-comment hover; zero framework deps (c55ef38). Rule-granular
