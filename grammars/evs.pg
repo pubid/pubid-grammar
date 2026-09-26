@@ -1,36 +1,16 @@
 # Port of lib/pubid/evs/parser.rb: the EVS national-adoption wrapper
 # around the CEN/CENELEC grammar — "EVS" ("-" | " ") <CEN identifier>.
-# The CEN spine is inlined (PG has no cross-file imports yet, G7); it
-# mirrors grammars/cen_cenelec.pg and must move with it.
+# The CEN spine is IMPORTED via `use` (TODO 11/C6 imports): rules are
+# namespaced cen_cenelec.* while captures keep their contract names.
 
-grammar PubidEvs version "0.1.0" {
-  digit = %x30-39
-  space = " "
-  dash = "-"
-  slash = "/"
-  plus = "+"
-  colon = ":"
+use cen_cenelec
+
+grammar PubidEvs version "0.2.0" {
   evs_separator = (dash / space) as evs_separator
-  publisher = (("CWA" / "HD" / "ES" / "CR" / "ENV") as publisher) / (("EN" / "CEN") as publisher [slash "CLC" as copublisher]) / ("CLC" as publisher [slash "CEN" as copublisher])
-  stage_prefix = ("FprEN" / "prEN") as type_with_stage
-  type = ("Guide" / "GUIDE" / "TR" / "TS") as type
-  number = 1*digit as number
-  part = dash 1*(digit / dash) as part
-  parts = *part as parts
-  month_digits = ("01" / "02" / "03" / "04" / "05" / "06" / "07" / "08" / "09" / "10" / "11" / "12") as month
-  year = colon 4digit as year
-  year_with_month = colon 4digit as year dash month_digits
-  date = year_with_month / year
-  amendment = (plus as amd_sep_plus / slash as amd_sep_slash) "A" 1*digit as amd_number [(colon 4digit as amd_year)]
-  corrigendum = (plus as amd_sep_plus / slash as amd_sep_slash) "AC" [*digit as cor_number] [(year_with_month / (colon 4digit as year))]
-  supplement = (amendment / corrigendum) as supplement
-  supplements = *supplement as supplements
-  edition = space "ED" 1*digit as edition
-  adopted_org_prefix = "ISO" / "IEC" / "CISPR"
-  adopted_string = (adopted_org_prefix *(!supplement !edition any_noln_char)) as adopted_string
-  any_noln_char = %x01-09 / %x0B-FF
-  cen_identifier = ((stage_prefix / publisher) [(space adopted_string)] [(space type / slash type)] [(space number parts [year])] supplements [edition])
-  identifier = "EVS" evs_separator cen_identifier
+  identifier = "EVS" evs_separator cen_cenelec.identifier
+
+  dash = "-"
+  space = " "
 
   entry identifier: identifier
 
