@@ -38,9 +38,12 @@ repetition iterations as defense in depth.
       F4 (corpora ×47, 159 frozen cases — every flavor now carries
       inline tests; idf inherits via the iso artifact), F5, F10 phase 1 —
       see 10-grammar-testing-binding-requirements.md.
-- [ ] **F6 — render/derive specs** (rs#144, G1): ordered segments +
-      derive data in the artifact, generic renderer per language.
-      Needs its design note before implementation.
+- [x] **F6 v1 — render specs** (rs#144 option A): `pg render <variant>`
+      segments (field/literal/cond-presence) compile into the envelope
+      under the checksum; generic renderers in Ruby/Rust/TS render
+      byte-identically (iso pilot: ISO-5537:2025; commits e698a64,
+      fd8659a, 0f5954c, 38b7621). Derive specs (URN/tiny) and
+      output-grammar graduation remain open.
 - [x] **F8 — parsanol-shape v2 freeze**: contract is normative Annex A
       of PN 6; engines verify `shape` at load (Ruby + Rust).
 - [ ] **F9 — preprocessing vocabulary policy** (rs#147): OWNER DECISION
@@ -110,5 +113,6 @@ repetition iterations as defense in depth.
 - [x] A grammar PR runs lint → tests → contract regen → cross-runtime
       gate (pg-conformance workflow; regen is `|| true` until the first
       green CI run hardens it).
-- [ ] Rendered strings byte-identical across the three languages
-      (blocked on F6 render/derive specs).
+- [x] Rendered strings byte-identical across the three languages
+      (iso pilot, F6 v1). Remaining flavors gain render specs as their
+      model migrations (R1-R3) land; derive specs (URN/tiny) still open.
