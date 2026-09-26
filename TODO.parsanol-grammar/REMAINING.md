@@ -117,9 +117,17 @@ repetition iterations as defense in depth.
       Parsanol::Slice scalarization (the VM yields live Slices whose
       as_json is the wire leaf; a normalizer must accept both shapes).
       Remaining flavors repeat the proven per-flavor workflow (artifact
-      widening → swap → spec gate); un and jis still carry tree deltas
-      (their capture structures need restructuring, not just wrapping);
-      plateau probe inputs were inconclusive and need a real pass.
+      widening → swap → spec gate); the workflow is now TOOLEd —
+      scripts/parity-probe.rb (6100981) classifies all flavors in one
+      sweep. Full-sweep classification (41 flavors): 9 CLEAN &
+      swapped (iso adobe doi ogc w3c xsf easc iana isbn), 9 CLEAN &
+      awaiting wiring, ~20 DELTA (capture structures need per-flavor
+      work — un/jis confirmed), 13 NO_DATA (spec scrape found no
+      monorepo-parseable inputs; fixtures-based input sourcing needed),
+      plus owner-held releases. Two tree-CLEAN flavors are held back
+      by builder-internal semantics: ashrae (combined-addenda prose
+      sub-port) and gost (adoption-fragment capture routes bare
+      numbers to foreign flavors).
 - [x] **R2 — ingestion hooks (iso)**: the ISO Normalizer's
       parse_with_builder routes through the same PG backend as
       Identifier.parse — Tier-3 normalizations and direct parses feed
