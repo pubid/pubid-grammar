@@ -47,10 +47,10 @@ grammar PubidCie version "0.1.0" {
   conf_proceedings = "CIE" space "x" digits as conf_number dash paper_code digits as paper_number
   standalone_proceedings = "CIE" space paper_code digits as paper_number space (digits dash digits) as page_range
   d_series_identifier = "CIE" space "D" as d_prefix digits as number date
-  standard_with_slash_year = "CIE" space [stage_code as stage] [s_prefix as s_prefix] (digits as number [(dot digits as iteration)]) slash year_digits as slash_year
+  standard_with_slash_year = "CIE" space ([stage_code]) as stage ([s_prefix]) as s_prefix (digits as number [(dot digits as iteration)]) slash year_digits as slash_year
   dis_with_supplement = "CIE" space stage_code as stage [s_prefix as s_prefix] digits as base_number dash "SP" digits as supplement_number [(dot digits as supplement_part)] slash upper as lang_code colon as lang_colon year_digits as year
-  standard_identifier = "CIE" space [stage_code as stage] [s_prefix as s_prefix] code (((language date) as lang_before / (date [language]) as date_then_lang / date))
-  standard_with_language_year = "CIE" space [stage_code as stage] [s_prefix as s_prefix] code slash upper as lang_code colon as lang_colon year_digits as year
+  standard_identifier = "CIE" space ([stage_code]) as stage ([s_prefix]) as s_prefix code (((language date) as lang_before / (date [language]) as date_then_lang / date))
+  standard_with_language_year = "CIE" space ([stage_code]) as stage ([s_prefix]) as s_prefix code slash upper as lang_code colon as lang_colon year_digits as year
   conference_identifier = "CIE" space x_prefix as conference digits as conf_number date [(space "Amendment" space digits as amd_number)] [variant_slug]
   joint_with_iso = ("CIE" space "ISO" as copublisher !slash space [(doc_type space) as doc_type] [stage_code as stage] digits as number [(dash digits as part)] [((colon year_digits as year) / (dash year_digits as year))] [language])
   joint_with_iso_cie = ("CIE" space "ISO/CIE" as copublisher space [(doc_type space) as doc_type] digits as number [(colon year_digits as year)] [language])

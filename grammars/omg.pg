@@ -10,7 +10,7 @@
   beta = " beta" !alnum_char ([space 1*digit !alnum_char])
   version = (1*digit *(dot 1*digit) [beta]) as version
   part_separator = space / slash
-  part = 1*alnum_char as part
+  part = (1*alnum_char) as part
   identifier = "OMG" space acronym [((space version [part_separator part]) / (space part))]
   alnum_char = %x41-5A / %x61-7A / %x30-39
   letter = %x41-5A / %x61-7A
