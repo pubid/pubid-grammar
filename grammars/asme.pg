@@ -1,0 +1,74 @@
+# Port of lib/pubid/asme/parser.rb — ASME identifiers: the BPVC
+# subdivision family, multi-char codes, PTC/TR space-separated numbers,
+# CSA/API/ISO/ASME-ANS joint publishers, draft years (20XX/202X/2ddX),
+# reaffirmations, parenthetical revisions, and bracketed notes.
+
+grammar PubidAsme version "0.1.0" {
+  upper = %x41-5A
+  lower = %x61-7A
+  digit = %x30-39
+  letter = upper
+  letters = 1*letter
+  digits = 1*digit
+  num_letter = digit / upper
+  space = " "
+  dash = "-" / "–" / "—"
+  dot = "."
+  slash = "/"
+  underscore = "_"
+
+  asme_publisher = "ASME"
+  publisher = asme_publisher space
+
+  roman_numeral = "XIII" / "XII" / "XI" / "VIII" / "VII" / "VI" / "IV" / "IX" / "X" / "III" / "II" / "V" / "I"
+  bpvc_letter_code = "NCA" / "NCD" / "SSC" / "BPV" / "NUC" / "NB" / "NC" / "ND" / "NE" / "NF" / "NG" / letter
+  ssc_sections = (roman_numeral *(dot roman_numeral)) as ssc_sections
+  ssc_code = ("SSC" [dot ssc_sections] [dot]) as ssc_code
+  cc_case = ("CC" dot bpvc_letter_code as case_code [("." [dot] (roman_numeral / bpvc_letter_code) as case_sub)])
+  subdivision_code = (roman_numeral as section [("." (digits / bpvc_letter_code) as subsection)] [("." bpvc_letter_code as sub_subsection)] [(underscore letters as lang_suffix)])
+  bpvc_subdivision = ("BPVC" (((space "COMPLETE CODE BIND") as special / (dash "CC" dash bpvc_letter_code as case_code) / (dot (ssc_code / cc_case / subdivision_code) as subdivision))) as bpvc_code)
+  multi_char_code = "PVHO" / "PASE" / "PTC" / "PTB" / "PDS" / "PCC" / "V&V" / "V V" / "VVUQ" / "TDP" / "RTP" / "RT" / "RA-S" / "RA" / "QME" / "QAI" / "QEI" / "NUM" / "NQA" / "NML" / "OM" / "HST" / "HRT" / "FFS" / "TES" / "TR" / "STS" / "CSD" / "CA" / "BTH" / "BPE" / "ANDE" / "AED" / "AG" / "NM" / "EA"
+  designator = (bpvc_subdivision / multi_char_code / "ISO" / "CSA" / "API" / "ANS" / letters) as designator
+
+  trailing_year = dash ("20XX" / "202X" / ("20" digit "X") / 4digit) !num_letter_dot
+  num_letter_dot = %x30-39 / %x41-5A / %x2E
+  number_part = ((dot 1*num_letter *(dot 1*num_letter)) / ((!trailing_year dash 1*num_letter *(dot 1*num_letter)) / (1*num_letter *(dot 1*num_letter)))) as number
+  ptc_number = [space] (1*digit *(dot 1*digit)) as number [(space letters as ptc_suffix)]
+  tr_number = [space] (1*num_letter *(dot 1*num_letter) [(dash 1*digit *(dot 1*digit))]) as number
+  spaced_number_part = [space] number_part
+  year_4digit = 4digit as year
+  draft_year = ("20XX" / "202X" / ("20" digit "X")) as draft_year
+  reaffirmation = space "(R" year_4digit as reaffirmation ")"
+  csa_portion = slash "CSA" space (letter 1*(digit / dot)) as csa_number
+  parenthetical_revision = space "(" ("Proposed revision of" / "Revision of") space 1*non_rparen as ref_standard ")"
+  revision_note = space "[" 1*non_rbracket as revision_note "]"
+  language = space "(" letters as language ")"
+  handbook_keyword = (space "Handbook") as handbook
+  non_rparen = %x01-28 / %x29-FF
+  non_rbracket = %x01-5A / %x5C-FF
+
+  standard_components = publisher designator [number_part] [(csa_portion / handbook_keyword)] [language] [(dash (draft_year / year_4digit))] [language] [reaffirmation] [revision_note]
+  csa_asme_identifier = ("CSA" as first_publisher space 1*csa_first_char [space] slash "ASME" as second_publisher space designator [number_part] [(dash (draft_year / year_4digit))] [language] [reaffirmation])
+  csa_first_char = %x41-5A / %x30-39 / %x2E
+  api_asme_identifier = ("API" as first_publisher space 1*numdash [space] slash "ASME" as second_publisher space designator [number_part] [(dash (draft_year / year_4digit))] [language] [reaffirmation])
+  numdash = digit / "-"
+  iso_asme_publisher = ("ISO/ASME" as joint_publisher [space])
+  asme_ans_publisher = ("ASME/ANS" as joint_publisher space)
+  iso_asme_identifier = (iso_asme_publisher [number_part] [(dash (draft_year / year_4digit))] [language] [reaffirmation])
+  asme_ans_identifier = (asme_ans_publisher designator [number_part] [(dash (draft_year / year_4digit))] [language] [reaffirmation])
+  ptc_form = ("PTC" as designator ptc_number [(dash (draft_year / year_4digit))])
+  tr_form = ("TR" as designator tr_number [(dash (draft_year / year_4digit))])
+  standard_body = ((designator [spaced_number_part] [((csa_portion [handbook_keyword]) / handbook_keyword)] [language] [(dash (draft_year / year_4digit))] [language])) / ptc_form / tr_form
+  standard = publisher (ptc_form / tr_form / standard_body) [parenthetical_revision] [reaffirmation] [revision_note]
+
+  identifier = csa_asme_identifier / api_asme_identifier / iso_asme_identifier / asme_ans_identifier / standard
+
+  entry identifier: identifier
+
+  test {
+    accept "ASME BPVC.VIII"
+    accept "ASME PTC 19.3"
+    accept "ASME Y14.5-2018"
+    reject "nonsense"
+  }
+}
