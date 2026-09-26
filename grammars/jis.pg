@@ -12,8 +12,8 @@ grammar PubidJis version "0.1.0" {
   number = (1*digit) as number
   part = dash (1*digit) as part
   parts = (*part) as parts
-  reaffirmed = [*"R"] as reaffirmed
-  year = colon (1*digit) as year reaffirmed
+  reaffirmed = "R" (*"R")
+  year = colon (1*digit) as year ([reaffirmed]) as reaffirmed
   language = ("(" / "（") ("E" / "J") as language (")" / "）")
   all_parts = (("（" "規格群" "）") / ("(" "規格群" ")")) as all_parts
   amendment = slash ("AMENDMENT" / "AMD") as amd_type space (1*digit) as amd_number colon (1*digit) as amd_year [*"R"] as amd_reaffirmed
