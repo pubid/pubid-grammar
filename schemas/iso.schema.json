@@ -1,0 +1,31 @@
+{
+  "flavor": "iso",
+  "artifact_version": "0.2.0",
+  "binding_version": 1,
+  "entries": {
+    "identifier": {
+      "root": "identifier",
+      "fields": {
+        "publisher": {
+          "capture": "publisher",
+          "type": "string",
+          "card": "1"
+        }
+      },
+      "examples": [
+        {
+          "input": "ISO/IEC WD TS 25025",
+          "captures": {
+            "publisher": "ISO"
+          }
+        },
+        {
+          "input": "JCGM 200:2008(F)",
+          "captures": {
+            "publisher": "JCGM"
+          }
+        }
+      ]
+    }
+  }
+}

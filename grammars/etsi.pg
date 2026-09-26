@@ -1,0 +1,28 @@
+# Port of lib/pubid/etsi/parser.rb: ETSI <one of 15 types> <number>
+# [minor][-parts][/A..|/C..][ V<version> | ed.N] [(YYYY-MM)].
+
+grammar PubidEtsi version "0.1.0" {
+  type = ("I-ETS" / "TCRTR" / "GTS" / "ETR" / "ETS" / "TBR" / "NET" / "EN" / "ES" / "EG" / "TS" / "GR" / "GS" / "SR" / "TR") as type
+  gsm_with_space_number = ("GSM" as gsm_prefix space 1*digit as main dot 1*digit as sub)
+  dotted_number = (1*digit as main dot 1*digit as sub)
+  complex_number = (1*alnum_char as prefix1 [(dash 1*alnum_char as prefix2)] space 1*digit as num)
+  simple_number = 1*digit as num
+  number = (gsm_with_space_number / dotted_number / complex_number / simple_number) as number
+  minor = space 1*digit as minor
+  part = dash 1*alnum_char as part
+  parts = *part as parts
+  version = "V" 1*version_char as version
+  edition = "ed." 1*digit as edition
+  version_or_edition = version / edition
+  date_part = "(" 4digit as year dash 2digit as month ")"
+  single_supplement = (("/A" 1*digit) as amendment / ("/C" 1*digit) as corrigendum)
+  supplements = 1*single_supplement as supplements
+  identifier = "ETSI " type space number [minor] [parts] [supplements] [(space version_or_edition)] [(space date_part)]
+  alnum_char = %x41-5A / %x61-7A / %x30-39
+  version_char = %x30-39 / %x2E
+  digit = %x30-39
+  dash = "-"
+  dot = "."
+  space = " "
+  entry identifier: identifier
+}

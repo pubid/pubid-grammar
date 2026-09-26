@@ -1,0 +1,17 @@
+# External corpus for the ISO flavor — iterates the grammar against its
+# binding requirements without recompiling the artifact.
+
+suite smoke for entry identifier {
+  accept "ISO 8601-1:2019"
+  accept "ISO/IEC WD TS 25025"
+  accept "ISO/R 947:1969"
+  accept "ISO 12345:2020/Amd 1:2021/Cor 1:2022/Amd 2:2023"
+  accept "ISO/IEC DIR 1:2022 + IEC SUP:2022"
+  accept "FprISO 105-A03"
+  accept "WD/ISO 10360-5:2000"
+  accept "ISO/JTC 1 N 456"
+  reject "nonsense"
+  reject "ISO/"
+  example "ISO/IEC WD TS 25025" { publisher: "ISO" }
+  example "JCGM 200:2008(F)" { publisher: "JCGM" }
+}

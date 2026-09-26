@@ -1,0 +1,29 @@
+# Port of lib/pubid/ansi/parser.rb: ANSI [copublishers] [Std] number
+# [:year][(languages)]. The number alternatives cover letter-prefixed
+# forms (C37.06.1, N323A) and plain dotted forms (802.1b-1995).
+
+grammar PubidAnsi version "0.1.0" {
+  organization = "ISO" / "IEC" / "IEEE" / "SAE" / "ASME" / "ASTM"
+  copublisher_item = slash [space] organization as copublisher
+  copublishers = 1*copublisher_item as copublishers
+  std_keyword = ["Std "]
+  letter_head_part = 1*upper 1*digit *3(dot 1*digit) [*1upper] [(dash 1*digit)]
+  plain_part = 1*digit *2(dot 1*digit [*1lower]) [(dash 1*digit)]
+  number_with_part = (letter_head_part / plain_part) as number_with_part
+  date = colon year_digits as date
+  year_digits = ("19" / "20") 2*digit !digit
+  languages = *(2*lower [","]) as languages
+  language = "(" languages ")"
+  identifier_with_copublishers = "ANSI" as publisher copublishers space std_keyword number_with_part [date] [language]
+  identifier_sole = "ANSI" as publisher space std_keyword number_with_part [date] [language]
+  identifier = identifier_with_copublishers / identifier_sole
+  upper = %x41-5A
+  lower = %x61-7A
+  digit = %x30-39
+  dot = "."
+  dash = "-"
+  colon = ":"
+  slash = "/"
+  space = " "
+  entry identifier: identifier
+}

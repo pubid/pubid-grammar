@@ -1,0 +1,41 @@
+# Port of lib/pubid/jcgm/parser.rb: JCGM base, meeting, amendment and
+# corrigendum identifiers, and the named GUM/VIM guides.
+
+grammar PubidJcgm version "0.1.0" {
+  century = "19" / "20"
+  year_digits = century 2*digit !digit
+  month_digits = 2*digit
+  day_digits = 2*digit
+  digits = 1*digit
+  publisher = "JCGM" as publisher
+  ordinal_suffix = "st" / "nd" / "rd" / "th"
+  gum_number = "GUM-" 1*digit as gum_number
+  standard_number = digits as number
+  number_portion = gum_number / standard_number
+  full_date = (year_digits dash month_digits dash day_digits) as date
+  year_only = year_digits as date
+  date_portion = colon (full_date / year_only)
+  language_portion = "(" (("E/F" / "F/E") / upper) as languages ")"
+  base = publisher space number_portion [date_portion] [language_portion]
+  meeting_identifier = publisher space digits as number ordinal_suffix space "Meeting" as type_with_stage [(space "(" year_digits as date ")")]
+  amendment_identifier = (base as base) slash "Amd" as type_with_stage space digits as number [(colon (full_date / year_only))]
+  corrigendum_identifier = (base as base) space "Corrigendum" as type_with_stage
+  numbered_corrigendum_identifier = (base as base) slash "Cor" as type_with_stage space digits as number [(colon (full_date / year_only))]
+  named_number = ("GUM" / ("VIM" [(dash digits)])) as number
+  named_guide_identifier = publisher space named_number
+  identifier = meeting_identifier / amendment_identifier / corrigendum_identifier / numbered_corrigendum_identifier / base / named_guide_identifier
+  upper = %x41-5A
+  digit = %x30-39
+  slash = "/"
+  dash = "-"
+  colon = ":"
+  space = " "
+  entry identifier: identifier
+
+  test {
+    accept "JCGM 200:2008(F)"
+    accept "JCGM 100:2008"
+    accept "JCGM 1st Meeting (2004)"
+    reject "nonsense"
+  }
+}

@@ -1,0 +1,16 @@
+# Port of lib/pubid/isbn/parser.rb: [ISBN[ |:]] digits/hyphens with an
+# optional final X (ISBN-10 check digit), per ISO 2108.
+
+grammar PubidIsbn version "0.1.0" {
+  digit = %x30-39
+  x_digit = digit / "X"
+  isbn_prefix = ["ISBN" (space / ([space] colon [space]))]
+  digit_group = 1*digit
+  hyphen_body = (digit_group *(hyphen digit_group) [hyphen x_digit]) as body
+  plain_body = (9*12digit [x_digit]) as body
+  identifier = [isbn_prefix] (hyphen_body / plain_body)
+  space = " "
+  colon = ":"
+  hyphen = "-"
+  entry identifier: identifier
+}

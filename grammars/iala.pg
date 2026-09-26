@@ -1,0 +1,27 @@
+# Port of lib/pubid/iala/parser.rb: [IALA ]<type><number>[.dots][-subs]
+# [ Ed X.Y | :edX.Y] [(L)], plus the Annex-to-base form. The annex
+# letter guard (!lower) keeps "Ed 1" from mis-capturing.
+
+grammar PubidIala version "0.1.0" {
+  type_letter = ("GA" / "S" / "R" / "G" / "M" / "C" / "A" / "L" / "X" / "P") as type_letter
+  doc_number = 1*digit as doc_number
+  dotted_number = "." 1*digit
+  number_with_dots = doc_number *dotted_number as doc_number_dots
+  subpart = 1*(dash 1*digit as subpart_number) as subpart
+  code = type_letter number_with_dots [subpart]
+  edition_value = (1*digit *(dot 1*digit)) as edition_value
+  edition_human = (space "Ed" space edition_value) as edition
+  edition_compact = (colon "ed" edition_value) as edition
+  language_group = ([space] "(" ("E" / "F" / "S" / "C" / "A" / "R") as language ")") as language_group
+  annex_identifier = ((publisher type_letter number_with_dots [subpart]) as base) space ("Annex" / "ANNEX") as annex_marker [(space upper as annex_letter !lower)] [edition_human / edition_compact] [language_group]
+  identifier = annex_identifier / (publisher code [edition_human / edition_compact] [language_group])
+  publisher = ["IALA "]
+  upper = %x41-5A
+  lower = %x61-7A
+  digit = %x30-39
+  dash = "-"
+  colon = ":"
+  dot = "."
+  space = " "
+  entry identifier: identifier
+}
