@@ -1,0 +1,63 @@
+name: pg-conformance
+on:
+  push:
+    branches: [main, ocp-and-schemas]
+  pull_request:
+  workflow_dispatch: {}
+
+env:
+  RUBY_REF: pg-authoring
+  RS_REF: pg-artifact-wasm
+  TS_REF: fix/artifact-c1-corpus
+
+jobs:
+  grammar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+      - name: Compile every grammar (lint + validity + tests)
+        run: |
+          git clone --depth 1 --branch "$RUBY_REF" \
+            https://github.com/parsanol/parsanol-ruby ../parsanol-ruby
+          cd ../parsanol-ruby
+          bundle install --path vendor/bundle
+          bundle exec ruby -Ilib -e '
+            require "parsanol"
+            Dir.glob(File.expand_path(ARGV[0])).sort.each do |f|
+              name = File.basename(f, ".pg")
+              document = Parsanol::PG::Parser.new(File.read(f)).parse
+              Parsanol::PG::Imports.merge!(document, [File.dirname(f)])
+              Parsanol::PG::Compiler.compile(document, tables_dir: File.join(File.dirname(f), "../tables"))
+              puts name
+            end' "$GITHUB_WORKSPACE/grammars/*.pg"
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust VM gate (docker, 4GB cap)
+        run: |
+          git clone --depth 1 --branch "$RS_REF" \
+            https://github.com/parsanol/parsanol-rs ../parsanol-rs
+          cd ../parsanol-rs
+          PG_ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts" \
+            ./docker-test.sh test -p parsanol --test pg_bindings
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: TS/wasm gate
+        run: |
+          git clone --depth 1 --branch "$TS_REF" \
+            https://github.com/pubid/pubid-ts ../pubid-ts
+          cd ../pubid-ts
+          npm install
+          npm run build
+          npx tsc -p tsconfig.test.json
+          PG_ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts" \
+            node --test dist-test/test/pg-runtime.test.js
