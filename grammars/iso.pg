@@ -130,9 +130,23 @@ grammar PubidIso version "0.2.0" {
   directives_bundled_identifier = directives_base_document 1*bundled_supplement as supplements
   directives_identifiers = directives_bundled_identifier / directives_supplement_identifier / directives_identifier
 
-  # ---- root (identifier), source ordering; joint_identifier lands
-  # before identifier_copublishers once the Idf flavor is ported ----
-  identifier = nsb_iso_identifier / tc_document / directives_identifiers / jcgm_identifier / iso_r_supplement_identifier / iso_r_identifier / supplement_supplement_supplement_identifier / supplement_supplement_identifier / supplement_identifier / identifier_copublishers
+  # ---- joint: "ISO 5537|IDF 26" — the IDF identifier inlined
+  # (prefixed idf_*), faithful to lib/pubid/idf/parser.rb ----
+  idf_word_char = %x30-39 / %x41-5A / %x61-7A / %x5F
+  idf_publisher = "IDF" as publisher
+  idf_number = 1*5idf_word_char
+  idf_number_with_part = (idf_number [idf_part_and_subpart]) as idf_number_with_part
+  idf_part_and_subpart = dash [space] 1*idf_word_char *1(dash 1*idf_word_char)
+  idf_date = (year_digits [(dash month_digits)] [(dash day_digits)]) as idf_date
+  idf_second_part = idf_number_with_part [stage_iteration] [space] [(colon idf_date)]
+  idf_type_with_stage = alt from_table "idf_typed_stages" column "abbr" as idf_type_with_stage [digit as stage_iteration space]
+  idf_supplement_type_with_stage = alt from_table "idf_typed_stages_supplements" column "abbr" as idf_supplement_type_with_stage
+  idf_identifier_publisher_no_third = idf_publisher [space] [slash] [idf_type_with_stage] [space] idf_second_part
+  idf_supplement_identifier = ((idf_identifier_publisher_no_third as idf_base) [space] slash [space] idf_supplement_type_with_stage [space] idf_second_part) third_part
+  idf_identifier = idf_supplement_identifier / idf_identifier_publisher_no_third
+  joint_identifier = (identifier_copublishers_no_third as base) [space] "|" [space] (idf_identifier as joint_identifier)
+
+  identifier = nsb_iso_identifier / tc_document / directives_identifiers / jcgm_identifier / iso_r_supplement_identifier / iso_r_identifier / supplement_supplement_supplement_identifier / supplement_supplement_identifier / supplement_identifier / joint_identifier / identifier_copublishers
 }
 
 entry identifier: identifier
