@@ -119,7 +119,9 @@ repetition iterations as defense in depth.
       Remaining flavors repeat the proven per-flavor workflow (artifact
       widening → swap → spec gate); the workflow is now TOOLEd —
       scripts/parity-probe.rb (6100981) classifies all flavors in one
-      sweep. Full-sweep classification (41 flavors): 19 swapped (iso adobe
+      sweep. Full-sweep classification (41 flavors): 21 swapped (iso adobe
+      gb un; additions through b4bb6789 and the un merge opt-out),
+      originally 19 (iso adobe
       doi ogc w3c xsf easc iana isbn amca calconnect ccsds ecma iala
       ietf oasis tgpp bipm sae), 4 tree-clean but held
       (ashrae gost cie omg — see below), ~8 DELTA (capture structures need per-flavor
