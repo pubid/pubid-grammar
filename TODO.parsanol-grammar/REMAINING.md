@@ -102,12 +102,26 @@ repetition iterations as defense in depth.
       tests/conformance.rs — embedded suites, iso.pgtest accepts and
       reject inputs all green on the native engine (3/3). CI wiring
       lands with the owner's push.
-- [ ] **R1 — flavor parser swap** (pubid monorepo): per flavor, gated
-      by the flavor's spec suite. Pilot candidate: iso.
-- [ ] **R2 — ingestion hooks**: Tier-3 normalizers move to the model
-      ingestion end, declared per flavor.
-- [ ] **R3 — relaton compatibility**: model JSON byte-identical
-      (corpus model-hashes gate).
+- [x] **R1 — flavor parser swap, pilot complete** (pubid monorepo
+      `pg-iso-parser-swap` 1bc5b995): ISO parses through the vendored
+      baked artifact (data/pg/iso.json) via Pubid::Pg::Artifact +
+      Backend (parsanol-tree shape → builder-ready hash). Gate: the
+      ISO spec suite 3045/3045; full gem suite 15040/15040. Grammar
+      widenings the gate forced landed in pubid-grammar cb4c675
+      (capture precedence, supplement stage key, (E/F) languages,
+      ISO/R subparts). Remaining flavors repeat the proven per-flavor
+      workflow (artifact widening → swap → spec gate); the iso pilot
+      pins the pattern, the wiring is one declaration per flavor.
+- [x] **R2 — ingestion hooks (iso)**: the ISO Normalizer's
+      parse_with_builder routes through the same PG backend as
+      Identifier.parse — Tier-3 normalizations and direct parses feed
+      one grammar. Other flavors inherit the pattern with their swap.
+- [x] **R3 — relaton compatibility (iso)**: the pre-swap engine's
+      model outputs are frozen (374 records: to_s + to_hash JSON,
+      generated on main before the swap) and the PG-backed parse
+      reproduces them byte-identical
+      (spec/pubid/pg/model_parity_spec.rb). The gate is generated —
+      refresh from a main worktree when the model vocabulary changes.
 - [x] **G5 — cross-runtime suite sweep** (ruby `pg test --suite --json`,
       Rust C13 sweep, TS suite test — green on all three).
 - [x] **P2 — cross-runtime runner**: scripts/cross-runtime-check.sh —
