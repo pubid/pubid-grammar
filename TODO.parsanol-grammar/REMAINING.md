@@ -66,6 +66,11 @@ repetition iterations as defense in depth.
       closing brackets, multi-binding repetition. Remaining: the
       shape->IR builder that retires the hand-written front end —
       a focused follow-on whose input contract is now fully proven.
+      Front-end semantics decision filed: parsanol-rs#150 (A structuring
+      grammar / B dual artifact / C actions; recommendation B). A first
+      line-routing builder draft hit the docs/tests-metadata
+      reconstruction limit and was withdrawn; the #150 decision (B
+      adds the missing capture schema) unblocks it.
       Front-end semantics filed as a decision point: parsanol-rs#150
       (structuring grammar vs dual artifact vs actions; recommendation
       B) - implementation follows the owner's call.
