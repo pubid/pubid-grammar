@@ -136,8 +136,9 @@ repetition iterations as defense in depth.
       (4digit) as year — 44 no-star count captures across 12
       flavors) turned bipm cen_cenelec sae itu CLEAN — bipm and
       sae swapped (49fc9e0f), cen_cenelec and itu held on form
-      coverage; remaining DELTA: adobe(1) bsi etsi gb(1) ieee(2)
-      jis un (sequence-fold and multi-capture restructuring). cie and omg's capture fixes probe
+      coverage; remaining DELTA: bsi etsi jis un (sequence-fold and
+      multi-capture restructuring); adobe gb ieee resolved (aiee
+      paren-leak, always-present copublishers). cie and omg's capture fixes probe
       CLEAN (commit above) but their spec suites gate on identifier
       forms still uncovered (joint/paren + x-proceedings; tails).
 - [x] **R2 — ingestion hooks (iso)**: the ISO Normalizer's
