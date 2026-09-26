@@ -59,36 +59,20 @@ repetition iterations as defense in depth.
 - [ ] **F9 — preprocessing vocabulary policy** (rs#147): OWNER DECISION
       — freeze vs grow-with-minor. Recommendation: grow-with-minor
       (binding_version bump on new ops); the flavor set is now stable.
-- [x] **F10 phase 2 — self-hosting validity complete**: ALL 47
-      grammars parse under the pg artifact with the native engine
-      (enumerated via SelfHost). pg.pg gained the missing constructs:
-      alt from_table primaries, dotted use-import references, pq before
-      closing brackets, multi-binding repetition. Remaining: the
-      shape->IR builder that retires the hand-written front end —
-      a focused follow-on whose input contract is now fully proven.
+- [x] **F10 phase 2 — complete**: self-hosting validity (ALL 47
+      grammars parse under the pg artifact via SelfHost) AND the
+      artifact-driven front end. Frontend (parsanol-ruby pg-authoring
+      8086fb3) builds the Document from the pg artifact's parse:
+      line-classified top-level routing (PG's document grammar is
+      line-oriented, PN 1), deferred test/bindings sections parsed
+      against a preamble of the file's own rules/entries/preprocess,
+      render/derive/preprocess/use closed immediately, ## doc comments
+      captured. Acceptance gate: envelope checksum equality with the
+      reference compiler for all 47 flavors (frontend_spec.rb; 20/20
+      pg suite green). rs#150 (A structuring grammar / B dual artifact
+      / C actions) stays open for the shape->IR graduation path; the
+      shipped line-routing front end no longer depends on its outcome.
 
-      Builder implementation status (this session): a line-routing
-      artifact-driven front end was built and reached checksum-equality
-      with the reference for 46/47 grammars, including full rule,
-      entry, bindings-deferral, render, derive, preprocess and
-      doc-comment reconstruction. The last flavor (iso, whose deferred
-      bindings preamble must also embed the top-level preprocess
-      sections) plus the docs/tests capture-schema choice (rs#150,
-      recommendation B) remain the precise, enumerated remaining work:
-      with B, the structuring artifact's captures make the deferred
-      preamble unnecessary entirely.
-      Builder status: a line-routing front end reached checksum-equality
-      for 46/47 grammars (rs#150 decision governs the last mile: the
-      docs/tests capture schema and iso's top-level preprocess in the
-      deferred-bindings preamble).
-      Front-end semantics decision filed: parsanol-rs#150 (A structuring
-      grammar / B dual artifact / C actions; recommendation B). A first
-      line-routing builder draft hit the docs/tests-metadata
-      reconstruction limit and was withdrawn; the #150 decision (B
-      adds the missing capture schema) unblocks it.
-      Front-end semantics filed as a decision point: parsanol-rs#150
-      (structuring grammar vs dual artifact vs actions; recommendation
-      B) - implementation follows the owner's call.
 - [x] **F11 v1 — PG LSP**: stdio JSON-RPC server (`parsanol pg lsp`)
       with publishDiagnostics (parse + lint + inline-test failures) and
       ## doc-comment hover; zero framework deps (c55ef38). Rule-granular

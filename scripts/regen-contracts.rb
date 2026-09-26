@@ -1,4 +1,5 @@
-ruby_repo = ENV["PARSANOL_RUBY"] || File.expand_path("../../parsanol/parsanol-ruby", __dir__)
+ruby_repo = ENV["PARSANOL_RUBY"] ||
+            File.expand_path("../../../parsanol/parsanol-ruby", __dir__)
 $LOAD_PATH.unshift File.join(ruby_repo, "lib")
 require "parsanol"
 require "parsanol/pg"
@@ -18,6 +19,8 @@ Dir.glob("#{base}/grammars/*.pg").sort.each do |f|
     envelope = Parsanol::PG::Compiler.compile(document, tables_dir: "#{base}/tables").envelope
     artifact = Parsanol::PG::Artifact.new(envelope, nil, "#{base}/tables")
     entry = envelope["default_entry"] || artifact.entries.first
+    render_variants = (envelope["render"] || {}).keys
+    derive_names = (envelope["derive"] || {}).keys
 
     # F3: binding-requirements schema, pinned to the artifact checksum
     schema = Parsanol::PG::Schema.from_artifact(artifact)
@@ -36,13 +39,26 @@ Dir.glob("#{base}/grammars/*.pg").sort.each do |f|
       input = test["input"]
       shape = artifact.parse(entry, input)
       bound = artifact.apply_bindings(entry, shape)
-      rows << {
+      row = {
         "input" => input,
         "kind" => test["kind"],
         "parsanol_tree" => JSON.parse(JSON.generate(shape)),
         "bound" => JSON.parse(JSON.generate(bound)),
         "bound_hash" => "sha256:#{Digest::SHA256.hexdigest(JSON.generate(bound))}",
       }
+      # F6: render/derive outputs are frozen alongside the bound maps so
+      # all three engines replay them as a standing parity gate.
+      unless render_variants.empty?
+        row["rendered"] = render_variants.to_h do |v|
+          [v, artifact.render_string(entry, input, variant: v)]
+        end
+      end
+      unless derive_names.empty?
+        row["derived"] = derive_names.to_h do |n|
+          [n, artifact.derive_string(entry, input, n)]
+        end
+      end
+      rows << row
     rescue Parsanol::ParseFailed
       next # reject inputs: parse failure IS the expected outcome
     end
