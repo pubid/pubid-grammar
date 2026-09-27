@@ -5,7 +5,7 @@
   digit = %x30-39
   acronym_char = %x41-5A / %x61-7A / %x30-39 / %x2B
   acronym_join = %x2D / %x2F
-  acronym = (letter 1*acronym_char *1(acronym_join 1*acronym_char)) as acronym
+  acronym = (letter 1*acronym_char *(acronym_join 1*acronym_char)) as acronym
   word_boundary = !alnum_char
   beta = " beta" !alnum_char ([space 1*digit !alnum_char])
   version = (1*digit *(dot 1*digit) [beta]) as version
