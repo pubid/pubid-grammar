@@ -27,13 +27,13 @@ grammar PubidCie version "0.1.0" {
   code_with_iteration = digits as number dot digits as iteration
   code_with_part_and_iteration_slash = digits as number slash digits as part dot digits as iteration
   code_with_part_and_iteration_dash = (digits as number dash digits as part dot digits as iteration) !dash
-  code_with_part_dash = (digits as number dash 1*3digit as part) (!(century)) (!(dot / dash))
-  code_with_part_slash = (digits as number slash digits as part) !dot
+  code_with_part_dash = (digits as number dash ("" as dash_sep) (1*3digit) as part) (!(century)) (!(dot / dash))
+  code_with_part_slash = (digits as number slash ("" as slash_sep) digits as part) !dot
   code_simple = digits as number
   code = code_with_part_and_iteration_slash / code_with_part_and_iteration_dash / code_with_iteration / code_with_part_slash / code_with_part_dash / code_simple
 
   language_slash = (slash upper as lang_code) as language_slash
-  language_paren = (lparen 1*3letter as lang_code rparen) as language_paren
+  language_paren = (lparen (1*3letter) as lang_code rparen) as language_paren
   language_paren_year = ([space] lparen (2*upper) as lang_code dash year_digits as trans_year rparen) as language_paren_year
   language = language_paren_year / language_paren / language_slash
 
@@ -59,12 +59,11 @@ grammar PubidCie version "0.1.0" {
   dual_with_iec = ("CIE" space [s_prefix as s_prefix] digits as number colon year_digits as year slash "IEC" space (1*nonrparen_nl) as iec_identifier)
   supplement_identifier = ("CIE" space digits as base_number dash "SP" digits as supplement_number [(dot digits as supplement_part)] [(colon year_digits as year)] [language_portion])
   corrigendum_identifier = ("CIE" space digits as base_number [(dash "SP" digits as base_supplement [(dot digits as base_supplement_part)])] colon year_digits as base_year slash "Cor" digits as cor_number colon year_digits as cor_year)
-  bundle_identifier = ("CIE" space digits as first_number dash "SP" digits dot digits colon year_digits 1*("," digits as next_number dash "SP" digits dot digits colon year_digits) as bundle_items)
+  bundle_identifier = ("CIE" space digits as first_number dash "SP" digits dot digits colon year_digits (1*("," digits as next_number dash "SP" digits dot digits colon year_digits)) as bundle_items)
   tutorial_bundle = "CIE Tutorials Bundle" space digits as bundle_number
 
   identifier = tutorial_bundle / bundle_identifier / joint_with_iso_cie / joint_with_iso / joint_with_iec / identical_with_iso / dis_with_supplement / dual_with_iec / corrigendum_identifier / supplement_identifier / standard_with_language_year / standard_with_slash_year / d_series_identifier / conf_proceedings / standalone_proceedings / legacy_code_with_year / conference_identifier / annex_letter_identifier / annex_identifier / standard_identifier
-  legacy_code_with_year = "CIE" space digits as number dash year_digits as year [trailing_lang]
-  trailing_lang = [space] lparen (2*upper) as lang_code dash year_digits as trans_year rparen
+  legacy_code_with_year = "CIE" space digits as number dash year_digits as year [(language_paren_year)] as trailing_lang
 
   # Annex forms (rule bodies per source)
   annex_identifier = (base_without_language as base) space "Annexes" as annex_marker [((space edition_text space year_digits as year) as edition_format / (colon year_digits as year))] [language_portion]
@@ -72,7 +71,7 @@ grammar PubidCie version "0.1.0" {
   base_without_language = "CIE" space upper as type space full_number_cie [date] [draft_stage_cie]
   draft_stage_cie = space [stage_iteration_cie] ("WD" / "CD") as stage
   stage_iteration_cie = ((digits dot digits) / digits) as iteration
-  full_number_cie = (digits as number [(dash 1*3digit as part)]) as full_number
+  full_number_cie = (digits as number [(dash (1*3digit) as part)]) as full_number
   language_portion = language_paren / language_slash
   edition_text = "Edition" / "edition"
 
