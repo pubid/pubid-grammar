@@ -71,8 +71,8 @@ grammar PubidBsi version "0.1.0" {
   part_with_subpart = dash digits as part dash digits as subpart
   part = dash (1*(digit / letter / "." / "&" / space)) as part
   parts = (*(part_with_subpart / part)) as parts
-  part_with_letter_edition = ((dash (1*(digit / ".")) as part letter_edition)) / (dash (1*(digit / ".")) as part)
-  number_with_letter_edition = ((digits as number letter_edition)) / (digits as number)
+  part_with_letter_edition = ((dash (1*(digit / ".")) as part (letter_edition) as letter_edition)) / (dash (1*(digit / ".")) as part)
+  number_with_letter_edition = ((digits as number (letter_edition) as letter_edition)) / (digits as number)
   space_separated_part = space ((1*upper 1*digit)) as part
   iteration = (*bracket_iteration) as iteration
   year = colon (3*4digit) as year
