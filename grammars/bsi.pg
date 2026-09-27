@@ -74,7 +74,7 @@ grammar PubidBsi version "0.1.0" {
   part_with_letter_edition = ((dash (1*(digit / ".")) as part letter_edition)) / (dash (1*(digit / ".")) as part)
   number_with_letter_edition = ((digits as number letter_edition)) / (digits as number)
   space_separated_part = space ((1*upper 1*digit)) as part
-  iteration = ((*bracket_iteration) as iteration) as iteration
+  iteration = (*bracket_iteration) as iteration
   year = colon (3*4digit) as year
   base_year = colon (4digit) as base_year
   month = dash (2digit) as month
