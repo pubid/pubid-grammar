@@ -74,13 +74,30 @@ results = flavors.map do |flavor|
     puts format("%-14s COMPILE-FAIL %s", flavor, e.message[0, 60])
     next [flavor, :compile_fail, 0, 0, 0]
   end
+  # Flavor parsers expose different class-level entries (nist's
+  # class_parse_with_preprocessing, etc.); resolve the one that exists.
+  parse_entry = if parser.respond_to?(:parse)
+                  ->(i) { parser.parse(i) }
+                elsif (m = parser.singleton_methods.map(&:to_s).grep(/^class_parse/).first)
+                  ->(i) { parser.public_send(m, i) }
+                else
+                  instance = parser.new
+                  if instance.respond_to?(:parse)
+                    ->(i) { instance.parse(i) }
+                  end
+                end
+  if parse_entry.nil?
+    puts format("%-14s NO-ENTRY", flavor)
+    next [flavor, :no_entry, 0, 0, 0]
+  end
+
   ok = 0
   diff = 0
   skip = 0
   shown = 0
   scrape_inputs(flavor).each do |input|
     expected = begin
-      parser.parse(input)
+      parse_entry.call(input)
     rescue StandardError
       skip += 1
       next
