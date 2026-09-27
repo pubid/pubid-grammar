@@ -2,7 +2,9 @@
 # drafts, amendments (full/short/+/trailing), annexes, bulletins.
 
 grammar PubidOiml version "0.1.0" {
-  letter_bdegrsvx = %x42 / %x44 / %x45 / %x47 / %x52 / %x53 / %x56 / %x58
+  # The monorepo's doc_type is [BDEGRSV] — X is deliberately absent
+  # ("OIML X 99" must be rejected).
+  letter_bdegrsvx = %x42 / %x44 / %x45 / %x47 / %x52 / %x53 / %x56
   digit = %x30-39
   letter = %x41-5A / %x61-7A
   digits = 1*digit
@@ -32,7 +34,7 @@ grammar PubidOiml version "0.1.0" {
   part_number = dash (digits *(slash dash digits)) as part
   subpart_number = dash digits as subpart
   named_suffix_gum = dash ("GUM" space digits / (1*letter *((["_"] digits)))) as code_suffix
-  named_suffix_brochure = space "Brochure" as code_suffix
+  named_suffix_brochure = space "Brochure" as code_suffix ("" as space_suffix)
   named_suffix = named_suffix_gum / named_suffix_brochure
   full_number = (number_only part_number subpart_number [named_suffix]) / (number_only part_number [named_suffix]) / (number_only [named_suffix])
 
@@ -48,14 +50,14 @@ grammar PubidOiml version "0.1.0" {
   lang_multi_oiml = "PO" / "PT" / "PE" / "SR"
   lang_multi = 2*2lower
   lower = %x61-7A
-  language_code = ((lang_single slash lang_single) / lang_multi_oiml / lang_single / lang_multi) as language
+  language_code = ((lang_single slash lang_single) / lang_multi_oiml / (upper 2*2lower) / lang_single / lang_multi) as language
   language_with_space = space lparen language_code rparen ("" as space_before_lang)
   language_without_space = lparen language_code rparen
   language_portion = language_with_space / language_without_space
 
   amendment_identifier = "Amendment" space lparen year_digits as year rparen space "to" space (base_without_language as base) [language_portion as language]
   amendment_short = publisher doc_type (full_number as base_code) space "Amendment" as amd_marker ((space edition_text [space] year_digits as year) as edition_format / (colon [space] year_digits as year)) [language_portion as language]
-  trailing_supplement_identifier = (base_without_language as base) space ("Amendment" / "Errata") as trailing_marker [language_portion as language]
+  trailing_supplement_identifier = (base_without_language as base) space ("Amendment" / "Errata") as trailing_marker [space ((1*digit)) as number] [language_portion as language]
   plus_supplement_identifier = (base_without_language as base) plus ("Amendment" / "Errata") as plus_marker [(colon year_digits as year)] [language_portion as language]
   annex_identifier = (base_without_language as base) space "Annexes" as annex_marker [((space edition_text space year_digits as year) as edition_format / (colon year_digits as year))] [language_portion as language]
   annex_letter_value = (upper [(dash upper)]) as annex_letter
@@ -63,7 +65,8 @@ grammar PubidOiml version "0.1.0" {
   base_without_language = publisher doc_type full_number [date] [draft_stage]
   base = publisher doc_type full_number [date] [draft_stage] [language_portion]
 
-  identifier = amendment_identifier / amendment_short / annex_letter_identifier / annex_identifier / plus_supplement_identifier / trailing_supplement_identifier / bulletin_identifier / base
+  cs_identifier = ("OIML" as publisher (dash / space) "CS" as cs_series space ("PD" / "OD" / "CID") as cs_family (dash / space) as cs_separator (1*digit) as number space "Edition" space (1*digit) as edition [(space lparen "Amendment" space (1*digit) as cs_amendment rparen)])
+  identifier = cs_identifier / amendment_identifier / amendment_short / annex_letter_identifier / annex_identifier / plus_supplement_identifier / trailing_supplement_identifier / bulletin_identifier / base
 
   upper = %x41-5A
   entry identifier: identifier
