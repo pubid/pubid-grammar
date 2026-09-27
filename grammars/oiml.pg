@@ -49,7 +49,7 @@ grammar PubidOiml version "0.1.0" {
   lang_multi = 2*2lower
   lower = %x61-7A
   language_code = ((lang_single slash lang_single) / lang_multi_oiml / lang_single / lang_multi) as language
-  language_with_space = space lparen language_code rparen
+  language_with_space = space lparen language_code rparen ("" as space_before_lang)
   language_without_space = lparen language_code rparen
   language_portion = language_with_space / language_without_space
 
