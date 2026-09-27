@@ -119,7 +119,9 @@ repetition iterations as defense in depth.
       Remaining flavors repeat the proven per-flavor workflow (artifact
       widening → swap → spec gate); the workflow is now TOOLEd —
       scripts/parity-probe.rb (6100981) classifies all flavors in one
-      sweep. Full-sweep classification (41 flavors): 27 swapped (iso adobe
+      sweep. Full-sweep classification (41 flavors): 28 swapped (iso adobe
+      astm api asme ansi jcgm plateau cen_cenelec gb un; astm via the
+      adjunct designation/EA-suffix shape fix), originally 25 (iso adobe
       api asme ansi jcgm plateau cen_cenelec gb un; api via the R2
       MPMP normalize_input hook), originally 25 (iso adobe
       ansi jcgm plateau cen_cenelec gb un; probe entry resolution
