@@ -119,7 +119,10 @@ repetition iterations as defense in depth.
       Remaining flavors repeat the proven per-flavor workflow (artifact
       widening → swap → spec gate); the workflow is now TOOLEd —
       scripts/parity-probe.rb (6100981) classifies all flavors in one
-      sweep. Full-sweep classification (41 flavors): 22 swapped (iso adobe
+      sweep. Full-sweep classification (41 flavors): 25 swapped (iso adobe
+      ansi jcgm plateau cen_cenelec gb un; probe entry resolution
+      collapsed NO_DATA — api asme astm oiml iec evs nist are now
+      DELTA-classified with sampled diffs), originally 22 (iso adobe
       cen_cenelec gb un — cen_cenelec via the R2 normalize_input
       ingestion hook and longest-canonical-name resolution),
       originally 19 (iso adobe
@@ -128,8 +131,8 @@ repetition iterations as defense in depth.
       doi ogc w3c xsf easc iana isbn amca calconnect ccsds ecma iala
       ietf oasis tgpp bipm sae), 4 tree-clean but held
       (ashrae gost cie omg — see below), ~8 DELTA (capture structures need per-flavor
-      work — un/jis confirmed), 13 NO_DATA (spec scrape found no
-      monorepo-parseable inputs; fixtures-based input sourcing needed),
+      work — un/jis confirmed), NO_DATA reduced to csa only (probe entry
+      resolution collapsed the class),
       plus owner-held releases. Two tree-CLEAN flavors are held back
       by builder-internal semantics: ashrae (combined-addenda prose
       sub-port) and gost (adoption-fragment capture routes bare
