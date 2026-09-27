@@ -4,6 +4,7 @@
 
 grammar PubidAstm version "0.1.0" {
   upper = %x41-5A
+  letter = upper / lower
   lower = %x61-7A
   digit = %x30-39
   letters = 1*upper
@@ -33,7 +34,7 @@ grammar PubidAstm version "0.1.0" {
   data_series_code = digits as number [("HOL" as hol_suffix) / (data_series_suffix [(data_series_subseries_no_dash / data_series_subseries_with_dash)]) / data_series_subseries_with_dash]
   data_series = [publisher] "DS" as type data_series_code [format_suffix]
   work_in_progress = [publisher] "WK" as type digits as number
-  adjunct = [publisher] "ADJ" as type ((upper digit) / letters / digits) as designation [dash "EA" as ea_suffix] ["DVD" as dvd_suffix]
+  adjunct = [publisher] "ADJ" as type ((letter (1*digit)) / letters / digits) as designation ([dash "EA"]) as ea_suffix ["DVD" as dvd_suffix]
   technical_report_iso_astm = "ISO/ASTMTR" as type digits as number [format_suffix] [comment]
   technical_report_simple = [publisher] "TR" as type digits as number [format_suffix] [comment]
   technical_report = technical_report_iso_astm / technical_report_simple
