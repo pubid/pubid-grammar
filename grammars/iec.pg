@@ -71,7 +71,7 @@ grammar PubidIec version "0.1.0" {
   lower_char = lower
   languages = (*(1*lower_char [","] / (one_of_efards [slash]))) as languages
   language = "(" languages ")"
-  all_parts = "(all parts)" as all_parts
+  all_parts = "(all parts)"
   fragment_notation = slash ("FRAGC" / "FRAG") as fragment_type (1*digit) as fragment_number
   third_part_edition = [space] [edition]
   third_part = third_part_edition [language] [fragment_notation] [all_parts]
@@ -80,7 +80,7 @@ grammar PubidIec version "0.1.0" {
   supplement_type_with_stage = (alt from_table "iec_typed_stages" column "abbr" / "FRAGC" / "FRAG") as type_with_stage
 
   guide_prefix = "Guide" / "GUIDE"
-  identifier_copublishers_no_third = [guide_prefix as type_with_stage_fr space] [prefix_with_copublishers] [space] [slash] [type_with_stage] [space] second_part third_part_edition
+  identifier_copublishers_no_third = [guide_prefix as type_with_stage_fr space] [prefix_with_copublishers] [space] [slash] (type_with_stage / "" as type_with_stage) [space] second_part third_part_edition
   identifier_copublishers = identifier_copublishers_no_third third_part
 
   sheet_notation = slash (1*digit) as sheet_number colon year_digits as sheet_year
