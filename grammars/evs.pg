@@ -7,7 +7,7 @@ use cen_cenelec
 
 grammar PubidEvs version "0.2.0" {
   evs_separator = (dash / space) as evs_separator
-  identifier = "EVS" evs_separator cen_cenelec.identifier
+  identifier = "EVS" evs_separator (cen_cenelec.identifier) as adopted
 
   dash = "-"
   space = " "
