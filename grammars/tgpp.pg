@@ -4,8 +4,8 @@
 # mistyped-version guard (!version…!any) is ported literally.
 
 grammar PubidTgpp version "0.1.0" {
-  release_char = %x01-2E / %x30-39 / %x3B-FF
-  any_char = %x01-FF
+  release_char = %x01-2E / %x30-39 / %x3B-10FFFF
+  any_char = %x01-10FFFF
   type = ("TR" / "TS") as type
   number = (1*digit "." 1*digit) as number
   suffix = (1*letter) as suffix

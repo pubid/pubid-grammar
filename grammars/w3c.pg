@@ -3,7 +3,7 @@
 # shared prefixes (CRD before CR, PER before PR, DNOTE before NOTE).
 
 grammar PubidW3c version "0.1.0" {
-  any_char = %x01-FF
+  any_char = %x01-10FFFF
   type_token = "DNOTE" / "NOTE" / "WD" / "CRD" / "CR" / "REC" / "PER" / "PR" / "SPSD" / "OBSL"
   type_part = type_token as type "-"
   rest = (1*any_char) as rest

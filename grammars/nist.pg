@@ -18,7 +18,7 @@ grammar PubidNist version "0.1.0" {
   lower_letter = %x61-7A
   letter = upper_letter / lower_letter
   word_char = letter / digit / "_"
-  any_char = %x01-FF
+  any_char = %x01-10FFFF
   digits = 1*digit
   space = " "
   dot = "."

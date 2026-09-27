@@ -76,8 +76,8 @@ grammar PubidCie version "0.1.0" {
   language_portion = language_paren / language_slash
   edition_text = "Edition" / "edition"
 
-  nonrparen = %x01-28 / %x29-FF
-  nonrparen_nl = %x01-09 / %x0B-28 / %x29-FF
+  nonrparen = %x01-28 / %x29-10FFFF
+  nonrparen_nl = %x01-09 / %x0B-28 / %x29-10FFFF
   upper2 = upper
 
   entry identifier: identifier

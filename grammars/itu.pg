@@ -16,7 +16,7 @@ grammar PubidItu version "0.1.0" {
   space = " "
   dash = "-"
   dot = "."
-  non_pipe = %x01-7B / %x7D-FF
+  non_pipe = %x01-7B / %x7D-10FFFF
 
   itu_prefix = ("Recommendation " "ITU" (dash / space)) / ("ITU" (dash / space))
   sector = ("R" / "T" / "D") as sector

@@ -26,7 +26,7 @@ grammar PubidCenCenelec version "0.1.0" {
   edition = space "ED" (1*digit) as edition
   adopted_org_prefix = "ISO" / "IEC" / "CISPR"
   adopted_string = (adopted_org_prefix *(!supplement !edition any_noln_char)) as adopted_string
-  any_noln_char = %x01-09 / %x0B-FF
+  any_noln_char = %x01-09 / %x0B-10FFFF
   fragment_identifier = ((stage_prefix / publisher) space number parts space "AMD" (1*digit) as amendment_number space "FRAG" (1*digit) as fragment_number) / ((stage_prefix / publisher) space number parts [year] (plus / slash) "A" (1*digit) as amendment_number [(colon (4digit) as amendment_year)] space "FRAG" (1*digit) as fragment_number)
   identifier = fragment_identifier / ((stage_prefix / publisher) [(space adopted_string)] [(space type / slash type)] [(space number parts [year])] supplements [edition])
 

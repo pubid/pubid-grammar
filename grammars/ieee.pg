@@ -30,11 +30,11 @@ grammar PubidIeee version "0.1.0" {
   dot = "."
   slash = "/"
   comma = ", "
-  non_nl = %x01-09 / %x0B-FF
-  non_rparen = %x01-28 / %x29-FF
-  non_rbracket = %x01-5C / %x5E-FF
-  non_comma_rparen = %x01-28 / %x2A-2B / %x2D-FF
-  non_digit_nl = %x01-09 / %x0B-2F / %x3A-FF
+  non_nl = %x01-09 / %x0B-10FFFF
+  non_rparen = %x01-28 / %x29-10FFFF
+  non_rbracket = %x01-5C / %x5E-10FFFF
+  non_comma_rparen = %x01-28 / %x2A-2B / %x2D-10FFFF
+  non_digit_nl = %x01-09 / %x0B-2F / %x3A-10FFFF
   alnum_char = digit / upper / lower
 
   year_digits = (("19" / "20") 2digit 0*2lower !digits)

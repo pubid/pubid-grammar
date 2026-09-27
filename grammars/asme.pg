@@ -44,8 +44,8 @@ grammar PubidAsme version "0.1.0" {
   revision_note = space "[" (1*non_rbracket) as revision_note "]"
   language = space "(" letters as language ")"
   handbook_keyword = (space "Handbook") as handbook
-  non_rparen = %x01-28 / %x29-FF
-  non_rbracket = %x01-5A / %x5C-FF
+  non_rparen = %x01-28 / %x2A-10FFFF
+  non_rbracket = %x01-5C / %x5E-10FFFF
 
   standard_components = publisher designator [number_part] [(csa_portion / handbook_keyword)] [language] [(dash (draft_year / year_4digit))] [language] [parenthetical_revision] [reaffirmation] [revision_note]
   csa_asme_identifier = ("CSA" as first_publisher space (1*csa_first_char) as first_code [space] slash "ASME" as second_publisher space designator [number_part] [(dash (draft_year / year_4digit))] [language] [reaffirmation])

@@ -20,7 +20,7 @@ grammar PubidJis version "0.1.0" {
   explanation = slash ("EXPLANATION" / "EXPL") as expl_type ([space (1*digit) as expl_number])
   corrigendum = slash ("CORRIGENDUM" / "CORR") as corr_type space (1*digit) as corr_number colon (1*digit) as corr_year [*"R"] as corr_reaffirmed
   supplement = (amendment as amendment) / (explanation as explanation) / (corrigendum as corrigendum)
-  symbol_value_char = %x01-09 / %x0B-FF
+  symbol_value_char = %x01-09 / %x0B-10FFFF
   symbol_clause = space "SYMBOL" as symbol_present ([space (1*symbol_value_char) as symbol_value])
   identifier = ["JIS" (space / slash)] [type_prefix] [space] series [space] number parts [year] [language] [all_parts] [supplement] [symbol_clause]
   upper = %x41-5A
