@@ -8,13 +8,13 @@ echo "== Ruby =="
   for a in "$BASE"/artifacts/*.json; do
     name="$(basename "$a" .json)"
     if [ -f "$BASE/suites/$name.pgtest" ]; then
-      bundle exec ruby -Ilib exe/parsanol pg test --json "$a" --suite "$BASE/suites" >/dev/null
+      bundle exec ruby -Ilib exe/parsanol parg test --json "$a" --suite "$BASE/suites" >/dev/null
     else
-      bundle exec ruby -Ilib exe/parsanol pg test --json "$a" >/dev/null
+      bundle exec ruby -Ilib exe/parsanol parg test --json "$a" >/dev/null
     fi
   done && echo "ruby: all artifacts green")
 echo "== Rust (docker, 4GB cap) =="
-(cd "${PARSANOL_RS:-$BASE/../../parsanol/parsanol-rs}" && PG_ARTIFACT_DIR="$BASE/artifacts" ./docker-test.sh test -p parsanol --test pg_bindings)
+(cd "${PARSANOL_RS:-$BASE/../../parsanol/parsanol-rs}" && PARG_ARTIFACT_DIR="$BASE/artifacts" ./docker-test.sh test -p parsanol --test pg_bindings)
 echo "== TypeScript (wasm freshness) =="
 (cd "${PUBID_TS:-$BASE/../pubid-ts}" && ./scripts/check-wasm-freshness.sh)
 echo "== TypeScript (wasm) =="

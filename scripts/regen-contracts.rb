@@ -11,19 +11,19 @@ schemas = "#{base}/schemas"
 corpora = "#{base}/corpora"
 Dir.mkdir(corpora) unless Dir.exist?(corpora)
 
-Dir.glob("#{base}/grammars/*.pg").sort.each do |f|
-  name = File.basename(f, ".pg")
+Dir.glob("#{base}/grammars/*.parg").sort.each do |f|
+  name = File.basename(f, ".parg")
   begin
-    document = Parsanol::PG::Parser.new(File.read(f)).parse
-    Parsanol::PG::Imports.merge!(document, ["#{base}/grammars"])
-    envelope = Parsanol::PG::Compiler.compile(document, tables_dir: "#{base}/tables").envelope
-    artifact = Parsanol::PG::Artifact.new(envelope, nil, "#{base}/tables")
+    document = Parsanol::PARG::Parser.new(File.read(f)).parse
+    Parsanol::PARG::Imports.merge!(document, ["#{base}/grammars"])
+    envelope = Parsanol::PARG::Compiler.compile(document, tables_dir: "#{base}/tables").envelope
+    artifact = Parsanol::PARG::Artifact.new(envelope, nil, "#{base}/tables")
     entry = envelope["default_entry"] || artifact.entries.first
     render_variants = (envelope["render"] || {}).keys
     derive_names = (envelope["derive"] || {}).keys
 
     # F3: binding-requirements schema, pinned to the artifact checksum
-    schema = Parsanol::PG::Schema.from_artifact(artifact)
+    schema = Parsanol::PARG::Schema.from_artifact(artifact)
     file = {
       "grammar" => name,
       "artifact_checksum" => envelope["checksum"],
@@ -69,7 +69,7 @@ Dir.glob("#{base}/grammars/*.pg").sort.each do |f|
       "cases" => rows,
     }))
     puts "#{name}: schema + #{rows.size} corpus cases"
-  rescue Parsanol::PG::Error => e
+  rescue Parsanol::PARG::Error => e
     puts "FAIL #{name}: #{e.message[0, 100]}"
   end
 end

@@ -18,7 +18,7 @@ repetition iterations as defense in depth.
       portable VM retains up to 8 distinct failure positions with their
       expected-sets (deepest first); `failure_ranks()` feeds
       `ParseWire.ranked` (b822c67).
-- [x] **C5 — CLI hardening**: `pg test --json` ({ok, failures}) and
+- [x] **C5 — CLI hardening**: `parg test --json` ({ok, failures}) and
       `pg parse --json` ({entry, shape, bound}, shape as
       parsanol-tree/v2 JSON). (--trace remains open.)
 - [x] **C10 — shape validation at load** (F8): `shape` checked against
@@ -50,7 +50,7 @@ repetition iterations as defense in depth.
       fd8659a, 0f5954c, 38b7621). Derive specs landed too (dd31cd2,
       5cc07b5, db6fc56, a608fc9): `derive urn "urn:..."` templates
       interpolate bound fields; iso derives urn:iso:std:5537:2025
-      identically in all three engines, and pg.pg self-parses a
+      identically in all three engines, and pg.parg self-parses a
       grammar carrying render/derive sections. Only output-grammar
       graduation (engine-owned parse-in-reverse) remains — deferred
       until 2+ flavors stabilize render specs per the rs#144 plan.
@@ -90,7 +90,7 @@ repetition iterations as defense in depth.
 - [x] TypeScript: T1/T3 (pubid-ts 798c9cc).
 - [x] **T2 — schema→TS emission** into pubid-ts
       (scripts/emit-schema-types.mjs through the wasm runtime;
-      src/pg/generated/*.d.ts, 60619c6). Full `pg schema --ts` CLI
+      src/pg/generated/*.d.ts, 60619c6). Full `parg schema --ts` CLI
       parity remains open.
 - [x] **RS1 — pubid-rs models**: LOCAL crate created at
       ~/src/pubid/pubid-rs (git initialized, NOT pushed — the
@@ -163,7 +163,7 @@ repetition iterations as defense in depth.
       reproduces them byte-identical
       (spec/pubid/pg/model_parity_spec.rb). The gate is generated —
       refresh from a main worktree when the model vocabulary changes.
-- [x] **G5 — cross-runtime suite sweep** (ruby `pg test --suite --json`,
+- [x] **G5 — cross-runtime suite sweep** (ruby `parg test --suite --json`,
       Rust C13 sweep, TS suite test — green on all three).
 - [x] **P2 — cross-runtime runner**: scripts/cross-runtime-check.sh —
       one gate, three backends, verified end-to-end (EXIT 0).

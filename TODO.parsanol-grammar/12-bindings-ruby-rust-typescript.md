@@ -19,7 +19,7 @@ residue.
   polymorphic ingestion methods, not conditionals scattered in parsers.
 - **SOTA**: definition-driven runtimes (schema → objects) instead of
   generated code files where possible; codegen only as an optional
-  accelerator (`pg schema --ts`).
+  accelerator (`parg schema --ts`).
 
 ## The pipeline (identical shape in all languages)
 
@@ -62,10 +62,10 @@ residue.
       schema-driven materialization (card `*` arrays, `0..1` nullable);
       artifacts read from the sibling pubid-grammar checkout
       (baked artifacts committed 98fe51a-1).
-- [ ] **T2 — schema→TS types.** `parsanol pg schema --ts` codegen as the
+- [ ] **T2 — schema→TS types.** `parsanol parg schema --ts` codegen as the
       optional accelerator (types for IDEs; runtime stays
       schema-driven). The engine side exists (Rust schema_typescript +
-      Ruby `pg schema --ts`); the CLI plumbing into pubid-ts tooling is
+      Ruby `parg schema --ts`); the CLI plumbing into pubid-ts tooling is
       open.
 - [x] **T3 — suite/corpus runner.** The `*.pgtest` + corpora run under
       vitest through wasm; green = TS conformance.

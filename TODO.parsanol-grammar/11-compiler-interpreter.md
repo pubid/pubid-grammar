@@ -5,9 +5,9 @@ open for extension.
 
 ## Architecture principles
 
-- **SSOT — one compiler.** Ruby (`Parsanol::PG`) is the ONLY `.pg`
+- **SSOT — one compiler.** Ruby (`Parsanol::PARG`) is the ONLY `.parg`
   compiler. Rust/wasm consume the checksummed artifact
-  (`parsanol::pg`, `WasmParser.fromArtifact`) and never parse `.pg`.
+  (`parsanol::pg`, `WasmParser.fromArtifact`) and never parse `.parg`.
   A second compiler would be a second language; don't.
 - **OCP — registries, not switches.** Lints, preprocessing ops, and
   importers are registered strategies. Adding behavior = registering a
@@ -44,9 +44,9 @@ open for extension.
       (2025 PEG recovery work): parse failures report all errors with
       labels, not just the deepest. Feeds F7's wire format.
 - [ ] **C5 — CLI hardening.** `--json` machine output, `--trace`
-      (cause tree on failure), batch mode (`pg test grammars/`) used by
+      (cause tree on failure), batch mode (`parg test grammars/`) used by
       CI as the drift alarm for all flavors.
-- [x] **C6 — self-hosting (engine side).** DONE 2026-09-26 (a92a1fb): the pg artifact parses pg.pg; see F10 for the open phase-2 slice.
+- [x] **C6 — self-hosting (engine side).** DONE 2026-09-26 (a92a1fb): the pg artifact parses pg.parg; see F10 for the open phase-2 slice.
 
 ### Artifact runtime (Rust + wasm — consumers)
 
@@ -90,18 +90,18 @@ open for extension.
 
 ## Live gate: found by the self-description corpus (2026-09-26)
 
-- [x] **C-BUG1 — RESOLVED 2026-09-26 (grammar-level).** pg.pg's
+- [x] **C-BUG1 — RESOLVED 2026-09-26 (grammar-level).** pg.parg's
       `element` could match empty (`[rep_prefix pq] [pred / postfixed]`
       with everything skippable) — a zero-width bomb the Ruby
       interpreter absorbed but the native engine chased into unbounded
       memory. Fix: `element = pq (rep_prefix pq [...] / pred /
-      postfixed)` — requires consumption; all pg.pg tests pass
+      postfixed)` — requires consumption; all pg.parg tests pass
       NATIVELY. Root rs zero-width hardening remains an optional
       follow-up; the C8 gate caught the divergence exactly as designed.
 
 - [ ] Adding a lint, a preprocess op, or an importer touches ZERO
       existing pipeline code (registration only).
-- [ ] `pg test grammars/` green on ruby, rs, and wasm from one artifact
+- [ ] `parg test grammars/` green on ruby, rs, and wasm from one artifact
       set; schemas byte-identical where generated on both runtimes.
-- [ ] No `.pg` parser exists outside parsanol-ruby (verified by grep
+- [ ] No `.parg` parser exists outside parsanol-ruby (verified by grep
       gate in CI).
