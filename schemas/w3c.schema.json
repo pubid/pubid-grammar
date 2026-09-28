@@ -1,0 +1,1 @@
+{"grammar":"w3c","artifact_checksum":"sha256:1bd04533a9817c662357acb14e9aad070df46535c537ee95b67b0aa752016164","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"W3C REC-html40-19981224","captures":{}},{"input":"W3C NOTE-datetime-19980827","captures":{}},{"input":"nonsense","captures":{}}]}}}

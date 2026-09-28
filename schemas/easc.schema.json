@@ -1,0 +1,1 @@
+{"grammar":"easc","artifact_checksum":"sha256:888595b69944396be0f456386f3e93bc76dfc5c6f71a74abed50362401621375","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"ПМГ 4-96","captures":{}},{"input":"RMG 76","captures":{}},{"input":"РМГ 29-2013","captures":{}},{"input":"nonsense","captures":{}}]}}}

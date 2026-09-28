@@ -1,0 +1,1 @@
+{"grammar":"un","artifact_checksum":"sha256:1ca1befe71541f581fe67befd3499e399c3a8463c17dcc641e00dba1858a4bbf","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"UN/CEFACT/TBG14","captures":{}},{"input":"CEFACT/TBG14","captures":{}},{"input":"nonsense","captures":{}}]}}}

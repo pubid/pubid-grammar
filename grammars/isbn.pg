@@ -13,4 +13,11 @@ grammar PubidIsbn version "0.1.0" {
   colon = ":"
   hyphen = "-"
   entry identifier: identifier
+
+  test {
+    accept "ISBN 978-0-306-40615-7"
+    accept "978-0-306-40615-7"
+    accept "0-306-40615-2"
+    reject "nonsense"
+  }
 }

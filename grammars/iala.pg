@@ -4,10 +4,10 @@
 
 grammar PubidIala version "0.1.0" {
   type_letter = ("GA" / "S" / "R" / "G" / "M" / "C" / "A" / "L" / "X" / "P") as type_letter
-  doc_number = 1*digit as doc_number
+  doc_number = (1*digit) as doc_number
   dotted_number = "." 1*digit
-  number_with_dots = doc_number *dotted_number as doc_number_dots
-  subpart = 1*(dash 1*digit as subpart_number) as subpart
+  number_with_dots = doc_number (*dotted_number) as doc_number_dots
+  subpart = (1*(dash (1*digit) as subpart_number)) as subpart
   code = type_letter number_with_dots [subpart]
   edition_value = (1*digit *(dot 1*digit)) as edition_value
   edition_human = (space "Ed" space edition_value) as edition
@@ -24,4 +24,10 @@ grammar PubidIala version "0.1.0" {
   dot = "."
   space = " "
   entry identifier: identifier
+
+  test {
+    accept "G1040"
+    accept "GA1040"
+    reject "nonsense"
+  }
 }

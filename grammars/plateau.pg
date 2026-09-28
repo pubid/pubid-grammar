@@ -4,8 +4,8 @@
 
 grammar PubidPlateau version "0.1.0" {
   doc_type = ("Handbook" / "Technical Report") as type
-  number = "#" 1*digit as number
-  annex = (dash / "_") 1*digit as annex
+  number = "#" (1*digit) as number
+  annex = (dash / "_") (1*digit) as annex
   edition_part = "第" (1*digit "." 1*digit) as edition "版"
   edition_latin = (1*digit "." 1*digit) as edition
   edition = space (edition_part / edition_latin)
@@ -20,4 +20,10 @@ grammar PubidPlateau version "0.1.0" {
   space = " "
   dash = "-"
   entry identifier: identifier
+
+  test {
+    accept "PLATEAU Handbook #3"
+    accept "PLATEAU Technical Report #1"
+    reject "nonsense"
+  }
 }

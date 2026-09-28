@@ -7,4 +7,10 @@ grammar PubidIana version "0.1.0" {
   identifier = ["IANA "] slug as registry [slash slug as sub_registry]
   slash = "/"
   entry identifier: identifier
+
+  test {
+    accept "IANA media-types"
+    accept "media-types/application"
+    reject "no sense"
+  }
 }

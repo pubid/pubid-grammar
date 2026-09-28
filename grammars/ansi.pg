@@ -5,14 +5,14 @@
 grammar PubidAnsi version "0.1.0" {
   organization = "ISO" / "IEC" / "IEEE" / "SAE" / "ASME" / "ASTM"
   copublisher_item = slash [space] organization as copublisher
-  copublishers = 1*copublisher_item as copublishers
+  copublishers = (1*copublisher_item) as copublishers
   std_keyword = ["Std "]
   letter_head_part = 1*upper 1*digit *3(dot 1*digit) [*1upper] [(dash 1*digit)]
   plain_part = 1*digit *2(dot 1*digit [*1lower]) [(dash 1*digit)]
   number_with_part = (letter_head_part / plain_part) as number_with_part
   date = colon year_digits as date
   year_digits = ("19" / "20") 2*digit !digit
-  languages = *(2*lower [","]) as languages
+  languages = (*(2*lower [","])) as languages
   language = "(" languages ")"
   identifier_with_copublishers = "ANSI" as publisher copublishers space std_keyword number_with_part [date] [language]
   identifier_sole = "ANSI" as publisher space std_keyword number_with_part [date] [language]
@@ -26,4 +26,11 @@ grammar PubidAnsi version "0.1.0" {
   slash = "/"
   space = " "
   entry identifier: identifier
+
+  test {
+    accept "ANSI C63.4"
+    accept "ANSI/IEEE C63.4"
+    accept "ANSI Std A119.1"
+    reject "nonsense"
+  }
 }

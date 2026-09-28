@@ -1,0 +1,20 @@
+{
+  "version_triple": {
+    "grammar": "PG source header version (per flavor)",
+    "artifact_set": "baked artifacts/ checksums (per flavor)",
+    "binding_version": 1
+  },
+  "semver": {
+    "major": "capture renames or removals",
+    "minor": "new alternatives or bound fields",
+    "patch": "corpus growth, doc fixes"
+  },
+  "release_order": {
+    "position": "before the pubid monorepo, after parsanol engines",
+    "status": "OWNER-FROZEN (TODO 13/P5) until the PG program completes"
+  },
+  "downstream_gates": {
+    "expressir": { "baseline": "1829/0", "wired": false },
+    "pubid-testsuite": { "corpus": "corpora/", "wired": true }
+  }
+}

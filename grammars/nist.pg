@@ -1,0 +1,92 @@
+# Port of lib/pubid/nist/parser.rb — NIST/NBS identifiers: compound and
+# simple series, report numbers (first/second number families), editions
+# (e/r/rev/dash-year), dates (ISO, dash, month-year), revisions,
+# versions, volumes, parts, updates, addenda, supplements, errata,
+# drafts, stages (old "(1pd)" and new ".1pd"), circ supplements,
+# dated NBS bulletins and the Research Library series. The gem's
+# parse()-side preprocessing (Preprocessor + ALL_PARTS suffix +
+# parsed_format tagging) is Tier-3 and outside the grammar. Source
+# deviations, all lint-forced longest-first reorderings that preserve
+# the accept-set under PEG backtracking: esp before es in language_code,
+# romans ordered longest-first, CSM before CS in simple_series; the
+# empty-alternative captures (:supplement_empty, addendum's str(""))
+# become bracketed optionals.
+
+grammar PubidNist version "0.1.0" {
+  digit = %x30-39
+  upper_letter = %x41-5A
+  lower_letter = %x61-7A
+  letter = upper_letter / lower_letter
+  word_char = letter / digit / "_"
+  any_char = %x01-10FFFF
+  digits = 1*digit
+  space = " "
+  dot = "."
+  dash = "-"
+  slash = "/"
+  hash_prefix = "#"
+
+  month_abbrev = "January" / "February" / "September" / "November" / "December" / "October" / "August" / "June" / "March" / "April" / "July" / "May" / "Jan" / "Feb" / "Mar" / "Apr" / "Jun" / "Jul" / "Aug" / "Sep" / "Oct" / "Nov" / "Dec"
+  language_code = ([(space / dot)] (("esp" / "es" / "pt" / "chi" / "viet" / "port" / (2*4lower_letter)) as translation))
+  stage_id = "i" / "I" / "f" / "F" / "1" / "2" / "3" / "4" / "5" / "6" / "7" / "8" / "9"
+  stage_type = "pd" / "PD" / "wd" / "WD" / "prd" / "PRD"
+  old_stage = ("(" (((stage_id) as stage_id (stage_type) as stage_type)) as stage ")")
+  new_stage = ((space / dot) (((stage_id) as stage_id (stage_type) as stage_type)) as stage)
+  publisher = ("NBS" / "NIST") as publisher
+  compound_series = ("NBS BRPD-CRPL-D" / "NBS CRPL-F-A" / "NBS CRPL-F-B" / "NBS CS-E" / "CSRC Building Block" / "CSRC Use Case" / "CSRC Book" / "ITL Bulletin" / "NSRDS-NBS" / "NIST LCIRC" / "NBS LCIRC" / "NIST.LCIRC" / "NBS.LCIRC" / "NBS RPT" / "NIST PS" / "NIST DCI" / "NIST Other" / "NISTPUB" / "NBS CSM" / "NBS CIRC" / "NBS.CRPL" / "NBS CRPL" / "NBS CS" / "NBS CIS" / "NBS HR" / "NBS IRPL" / "NBS IP" / "NBS PS" / "NBS BH") as series
+  simple_series = ("NCSTAR" / "CHIPS" / "NWIRP" / "CSWP" / "JPCRD" / "JRES" / "OWMWP" / "SIBS" / "TIBM" / "FIPS" / "MONO" / "AMS" / "VTS" / "BSS" / "BMS" / "GCR" / "CSM" / "CRPL" / "CIRC" / "TTB" / "EAB" / "HB" / "MP" / "NSRDS" / "RPT" / "LCIRC" / "AI" / "CS" / "IR" / "SP" / "TN" / "PC" / "BH" / "RB") as series
+  roman = "VIII" / "VII" / "VI" / "III" / "II" / "IX" / "IV" / "X" / "V" / "I"
+
+  number_suffix = (("U" lower_letter)) / ((letter !("ec" / "ndex" / "nsert" / "rrata" / "raft" / "pp" / "s" / "t" / "hi" / "iet" / "ort" / "r" / "p") [digits]))
+  digits_with_suffix = (digits [(number_suffix !digit)])
+
+  first_number = (((((2digit) as owmwp_month dash (2digit) as owmwp_day dash (4digit) as owmwp_year)) as owmwp_date_number) / ("ADHOC") / (("div" digits)) / ((month_abbrev dash month_abbrev digits)) / (((digits) as number ("v" digits as volume_suffix))) as number_with_volume / ((digits dash roman dash digits [(dot digits)])) / ((digits "GB" dash digits [upper_letter])) / ((digits upper_letter dash digits)) / (((("v" digits as volume_number) ("n" digits as issue_number)))) / ((digits "supprev")) / ((digits "e" digits "rev" digits)) / ((((digits) as number ("rv" digits as revision_year)))) as number_with_rev_year / ((digits "e" digits "rev" month_abbrev digits)) / ((digits "e" digits "supp" [digits])) / (((("e" digits "rev" month_abbrev digits)))) / (((("e" digits "supp" [digits])))) / ((digits "e" digits)) / (((("e" digits) !(dash digits)))) / ((lower_letter digits)) / ((digits "supp" month_abbrev digits)) / ((digits "supp" [digits])) / ((digits "sup" month_abbrev digits)) / ((digits "sup")) / ((((digits) as number (("sp" / "pt" / "es" / "SP" / "PT" / "ES") as language_code)) (!(upper_letter) !digit !letter !dash !dot))) / ((((digits) as number ("pt" digits as part_number) ("e" digits as edition_year)))) / ((((digits) as number ("(" (("SP" / "PT" / "ES") as language_code) ")")))) / (((((digits) as number (upper_letter) as letter_suffix ("r" digits as revision_id)))) as number_with_letter_revision) / (digits_with_suffix)) as first_number
+
+  second_number = (!month_abbrev !("draft") ((digits as number_only "r" (letter) as letter) as revision_letter) / ((digits (("supp" / "sup")) (!digit !letter))) / ((digits ("r") digits ("U" lower_letter))) / ((digits ("r") digits letter)) / (((digits) as number_only ("r" digits as edition_id))) / ((digits ("_") digits dash digits [upper_letter])) / ((lower_letter dash digits)) / ((digits ("pt") digits !dash)) / ((digits upper_letter)) / ((((digits) as number_only ("r") letter))) as revision_letter / (((("r") letter))) as revision_letter_suffix / (((("r" digits as edition_id)))) as revision_simple / ("NCNR") / ("PERMIS") / ("BFRL") / ((1*3upper_letter)) / (((digits_with_suffix (!(dash month_abbrev digits slash)))) / ((lower_letter !digit)))) as second_number
+
+  edition = (([[space]] ("e" digits as edition_id))) as edition_e / ((space ("r" digits as edition_id) (letter) as edition_letter)) as edition_r_with_space_letter / ((space ("r" digits as edition_id))) as edition_r_with_space / (((("r" digits as edition_id) (letter) as edition_letter))) as edition_r_no_space_letter / (((("r" digits as edition_id)))) as edition_r_no_space / (([space] "rev" [space] digits as edition_id)) as edition_rev / (((dash (%x31-39) as edition_id) !digit)) as edition_historical / (((dash 4digit) as dash_year)) as edition_dash_year
+
+  date = (((((dash 4digit) as date_year (2digit) as date_month (2digit) as date_day)) / (((dash 4digit) as date_year (2digit) as date_month)) / (((dash 4digit) as date_year)) / (((dash (month_abbrev) as date_month digits) as date_year)))) as date
+  iso_date = ((4digit) as date_year dash (2digit) as date_month dash (2digit) as date_day)
+  dated_identifier = ([hash_prefix] publisher (space / dot) (iso_date) as dated_date (space / dot) (1*digit) as dated_seq)
+  research_library_identifier = ((publisher) space ("Research Library") as series [(space "(" (4digit) as year ")")])
+  legacy_edition = (((("r" / " R")) ((1*2digit)) as edition (lower_letter) as edition_letter)) / (((("rev" [space] digits)) as edition_year)) / (((("e" / " E")) ((1*3digit)) as edition (("rev" ((3*9letter)) as edition_month (digits) as edition_year)))) / (((("e" 4digit) as edition_year [(2digit) as edition_month]))) / (((("rev" ((3*9letter)) as edition_month (digits) as edition_year))))
+  crpl_range = ((digits ("_") digits dash digits [upper_letter])) as crpl_range
+
+  report_number = (first_number [((("_" digits) as edition_year)) / ((dash (month_abbrev) as edition_month (digits) as edition_year)) / ((dash (digits) as fips_part dash (month_abbrev) as edition_month (digits) as edition_day (slash) (digits) as edition_year)) / (((dash (digits) as decimal_base (dot digits as decimal_suffix))) as decimal_number) / (((dash (digits) as letter_base (("U" (lower_letter) as letter_suffix_extra) / ((upper_letter) as letter_suffix)))) as letter_number) / (((dash (digits) as letter_base (dash) !month_abbrev (upper_letter) as letter_suffix (!(letter / digit)))) as letter_number) / (((dash (4digit) as dash_year (!(space) !dot !part !crpl_range !second_number !dash))) as edition_dash_year) / (((dash (second_number) (dash) (4digit) as dash_year (!(space) !dot !part !crpl_range !revision !draft))) as second_number_edition_year) / (((dash (second_number) (dash) (month_abbrev) as edition_month (digits) as edition_year (!(space) !dot !part !crpl_range !edition !revision !draft))) as fips_month_year_after_part) / (((dash (second_number) (dash) ((digits [upper_letter])) as part_number))) / (((dot (second_number)))) / (((dash ((crpl_range / second_number)) [edition]))) / (((dash (edition))))])
+  volume = ((([[space]] (("Vol. " / "Vol." / "v")))) ((digits ([(("a-l" / "m-z" / "A-L" / "M-Z"))] (0*2upper_letter)))) as volume)
+  part = (((" Part. " / " Part." / " Part ") / ([space] ("pt" / "p" / "P"))) ((digits [([space] ("r") digits)] [("add" [("e" digits)])] [dash digits]) as part))
+  revision = ([space] ("r" / "rev") [space] month_abbrev as revision_month digits as revision_year) / ([space] ("r" / "rev") digits as revision slash digits as revision_year) / ((" r" / "r") [space] (4digit) as revision_year) / ("rev" [space] digits as revision_year) / (((" rev " / "rev" / " r" / "r" / " Rev. " / " Rev." / " Revision (r)") as revision_prefix) [space] (((digits [letter]) / (1*letter)) as revision_id)) as revision / ((" r" !any_char) as revision_standalone)
+  version = (([(space / dot)] ("ver") [space] ((digits *(dot digits))) as version)) / (((" Ver. " / " Version ") ((digits (dot) digits [(dot digits)])) as version)) / (([(dash / space)] ("v") ((digits (dot) digits [(dot digits)])) as version))
+  update = (((("/Upd") / ([[space]] (("/upd" / "-upd")))) as update_prefix) ((([(digits) as update_number] [dash (((4digit) as update_year (2digit) as update_month) / ((4*digit) as update_year))]))) as update)
+  addendum = (((("-add" / ".add" / " Add.")) [(space / dash)] ([(digits)] as addendum_number))) as addendum
+  supplement = (([[space]] (("supp" / "sup")) [((("rev")) as supplement_with_rev) / ((((month_abbrev) as supp_month_start (digits) as supp_year_start (dash) (month_abbrev) as supp_month_end (digits) as supp_year_end))) as supplement_date_range / ((((month_abbrev) as supp_month (digits) as supp_year))) as supplement_date / ((((digits) as supp_number (slash) (digits) as supp_year))) as supplement_slash_year / (((digits) as supp_year)) / ((((1*(letter / digit / "_"))) as supplement_suffix))]))
+  errata = ((([dash] (("errata" / "err"))))) as errata
+  index = (("index" / "indx")) as index
+  insert = (("insert" / "ins")) as insert
+  appendix = (("app")) as appendix
+  section = (("sec") [digits] as section)
+  dot_word = dot 3*word_char
+  translation = (("(" (3*word_char) as translation ")")) / ((space (3*word_char) as translation)) / (([space] dot as translation (3*word_char) as translation))
+  pd_suffix = ((space digits ("pd"))) as public_draft
+  draft = (((space "(Draft)")) / ((([[space]] (dash ("draft")) [((space digits) / digits)]))) / ((pd_suffix))) as draft
+  fips_date = ((dash (digits) as fips_part (dash) (month_abbrev) as fips_month (digits) as fips_day (slash) (digits) as fips_year))
+
+  parts = (new_stage / (section) / (index) / (insert) / (appendix) / (pd_suffix) / (edition) / (date) / (legacy_edition) / revision / (version) / (volume) / (part) / (update) / (addendum) / (supplement) / (errata) / (language_code))
+
+  mr_identifier = ([hash_prefix] publisher (dot) (simple_series) [dot] [report_number] [("_" digits) as edition_year] [upper_letter] [edition] [update] (0*3(dot (digits / upper_letter))) (*parts) [draft])
+  identifier = (circ_supplement_identifier / dated_identifier / mr_identifier / research_library_identifier / (((compound_series) (space / dot)) [old_stage] [report_number] [fips_date] (*parts) [draft] [translation] [new_stage]) / (((publisher) (space / dot)) (simple_series) [old_stage] (space / dot) [report_number] [fips_date] (*parts) [draft] [translation] [new_stage]) / ((simple_series) [old_stage] (space / dot) [report_number] [fips_date] (*parts) [draft] [translation] [new_stage]))
+
+  circ_supplement_identifier = ((((("NBS CIRC" / "NBS LCIRC" / "NBS.CIRC" / "NBS.LCIRC") as series) (space / dot))) as circ_series) ((((("supp") ((month_abbrev) as supp_month_start (digits) as supp_year_start dash (month_abbrev) as supp_month_end (digits) as supp_year_end))) as supplement_date_range) / ((((("supp" / "sup") ((4digit) as supp_year_start dash (4digit) as supp_year_end))) as supplement_date_range)) / ((("supp" / "sup") [(((month_abbrev digits)) as supplement_month_year) / (((digits) as supp_number slash (digits) as supp_year) as supplement_slash_year) / ("" as supplement_empty)])) / ((((((digits) as base_number ("e" digits as edition_number))) / (((digits) as base_number (lower_letter) as revision_letter (digits) as revision_number)) / (((digits) as base_number (upper_letter) as letter_suffix)) / (((digits) as simple_number))) as base_portion) ((((("supp" / "sup") [((((month_abbrev digits))) as supplement_month_year / (((dash (digits) as supp_number slash (digits) as supp_year))) as supplement_dash_slash_year / (((dash digits))) as supplement_year / ((((digits) as supp_number slash (digits) as supp_year))) as supplement_slash_year)])) / ((((slash digits as implicit_supplement_year)))) as implicit_supplement))))
+
+  entry identifier: identifier
+
+  test {
+    accept "NIST SP 800-53"
+    accept "NBS FIPS 140-2"
+    accept "NIST HB 44"
+    accept "NIST TN 1297"
+    accept "NBS CIRC 25e"
+    reject "nonsense"
+  }
+}

@@ -1,0 +1,1 @@
+{"grammar":"iana","artifact_checksum":"sha256:1863aa5e86eaeb966a269d7794ae16144ced4edf2a6c6257e9b86608af7b60c0","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"IANA media-types","captures":{}},{"input":"media-types/application","captures":{}},{"input":"no sense","captures":{}}]}}}

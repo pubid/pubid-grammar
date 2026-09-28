@@ -29,39 +29,39 @@ grammar PubidIec version "0.1.0" {
   prefix_sole_publisher = ("IECQ OD" / "IECQ CS" / "IEC CAB" / "IEC CA" / "IECRE" / "CISPR" / "IECEE" / "IECEx" / "IECQ" / "IEC" / "ISO") as publisher
   organization = "IEC" / "ISO" / "IEEE" / "CIW" / "SAE" / "CIE" / "ASME" / "ASTM" / "OECD" / "HL7" / "CEI" / "UNDP"
   copublishers_item = slash [space] organization as copublisher
-  copublishers = *copublishers_item as copublishers
+  copublishers = (*copublishers_item) as copublishers
   prefix_with_copublishers = prefix_sole_publisher [space] [copublishers]
 
   tc_type = "JTC" / "JPC" / "TC" / "SC" / "PC"
   tc_body = "CISPR" / ("CIS" slash upper) / (tc_type space digits [*upper])
   sc_body = "SC" space digits [*upper]
-  technical_group_with_publisher = (prefix_sole_publisher [copublishers] space tc_body as technical_committee [(slash [space] sc_body as subcommittee)])
-  technical_group_bare = (tc_body as technical_committee [(slash [space] sc_body as subcommittee)])
+  technical_group_with_publisher = (prefix_sole_publisher [copublishers] space tc_body as technical_committee [((slash [space] sc_body) as subcommittee)])
+  technical_group_bare = (tc_body as technical_committee [((slash [space] sc_body) as subcommittee)])
   technical_group = technical_group_with_publisher / technical_group_bare
 
   wp_type = (("TR" / "TS" / "SRD") space) as wp_type
-  wp_number = ((1*letter *alnum_char [(dash 1*digit)]) / number_with_part) as number_with_part
+  wp_number = ((1*letter *alnum_char [(dash 1*digit)]) as number_with_part) / number_with_part
   working_programme = (("PWI" / "PNW") as wp_stage space [wp_type] wp_number [(space edition)])
 
-  working_document = ((("JTC1-SC" 1*digit) / (1*upper slash 1*upper) / 1*alnum_char) as technical_committee slash 1*alnum_char as wd_number [("(" upper as wd_language ")")] [(slash 1*upper as wd_stage)])
+  working_document = ((("JTC1-SC" 1*digit) / (1*upper slash 1*upper) / 1*alnum_char) as technical_committee slash (1*alnum_char) as wd_number [("(" upper as wd_language ")")] [(slash (1*upper) as wd_stage)])
 
-  number = (("DIR" *(space 1*upper_digit)) / "VIM" / "SYMBOL" / (1*6digit "v" 1*digit *letter [("_" 1*letter)]) / (2*4upper [(dash 1*digit)] 1*upper_digit) / (1*6digit [*1letter [("_" 1*letter)]]))
+  number = (("DIR" *(space 1*upper_digit)) / "VIM" / "SYMBOL" / (1*6digit "v" 1*digit *letter [("_" 1*letter)]) / (2*4upper [(dash 1*digit)] *upper_digit) / (1*6digit [*1letter [("_" 1*letter)]]))
   upper_digit = upper / digit
-  part_and_subpart = (dash / comma) [space] 1*word_ext_char *1((dash / comma) 1*word_ext_char)
+  part_and_subpart = (dash / comma) [space] 1*word_ext_char *((dash / comma) 1*word_ext_char)
   number_with_part = (number [part_and_subpart]) as number_with_part
   trf_org_number = ("CISPR" space) as trf_org number_with_part
   stage_iteration = dot digit as stage_iteration
 
   undated = "--" / "—"
-  full_date = year_digits [(dash month_digits)] [(dash day_digits)] as date
+  full_date = (year_digits [(dash month_digits)] [(dash day_digits)]) as date
   date_body = undated as undated_marker / full_date
   date = (colon / dash) date_body
 
   vap_code = "CSV" / "CMV" / "RLV" / "SER" / "EXV" / "PAC" / "PRV"
   vap_suffix = space (vap_code *(dash vap_code)) as vap_suffix
   database_suffix = space "DB" as database
-  consolidated_supplement = "+" ("AMD" / "COR") as supplement_type 1*digit as supplement_number [(colon year_digits as supplement_year)]
-  consolidated_supplements = 1*consolidated_supplement as consolidated_supplements
+  consolidated_supplement = "+" ("AMD" / "COR") as supplement_type (1*digit) as supplement_number [(colon year_digits as supplement_year)]
+  consolidated_supplements = (1*consolidated_supplement) as consolidated_supplements
   second_part = (trf_org_number / number_with_part) [stage_iteration] [[space] date] [consolidated_supplements] [vap_suffix / database_suffix]
 
   edition_str = "Edition" / "Ed." / "ED" / "Ed"
@@ -69,10 +69,10 @@ grammar PubidIec version "0.1.0" {
 
   one_of_efards = %x45 / %x46 / %x41 / %x52 / %x44 / %x53
   lower_char = lower
-  languages = *(1*lower_char [","] / (one_of_efards [slash])) as languages
+  languages = (*(1*lower_char [","] / (one_of_efards [slash]))) as languages
   language = "(" languages ")"
-  all_parts = "(all parts)" as all_parts
-  fragment_notation = slash ("FRAGC" / "FRAG") as fragment_type 1*digit as fragment_number
+  all_parts = "(all parts)"
+  fragment_notation = slash ("FRAGC" / "FRAG") as fragment_type (1*digit) as fragment_number
   third_part_edition = [space] [edition]
   third_part = third_part_edition [language] [fragment_notation] [all_parts]
 
@@ -80,11 +80,11 @@ grammar PubidIec version "0.1.0" {
   supplement_type_with_stage = (alt from_table "iec_typed_stages" column "abbr" / "FRAGC" / "FRAG") as type_with_stage
 
   guide_prefix = "Guide" / "GUIDE"
-  identifier_copublishers_no_third = [guide_prefix as type_with_stage_fr space] [prefix_with_copublishers] [space] [slash] [type_with_stage] [space] second_part third_part_edition
+  identifier_copublishers_no_third = [guide_prefix as type_with_stage_fr space] [prefix_with_copublishers] [space] [slash] (type_with_stage / "" as type_with_stage) [space] second_part third_part_edition
   identifier_copublishers = identifier_copublishers_no_third third_part
 
-  sheet_notation = slash 1*digit as sheet_number colon year_digits as sheet_year
-  sheet_notation_no_year = slash 1*digit as sheet_number
+  sheet_notation = slash (1*digit) as sheet_number colon year_digits as sheet_year
+  sheet_notation_no_year = slash (1*digit) as sheet_number
   sheet_identifier = (identifier_copublishers_no_third as base) (sheet_notation / sheet_notation_no_year)
   sheet_supplement_identifier = (identifier_copublishers_no_third as base) sheet_notation slash supplement_type_with_stage [space] second_part third_part
   standalone_supplement = prefix_with_copublishers slash supplement_type_with_stage space second_part third_part

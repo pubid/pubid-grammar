@@ -1,0 +1,1 @@
+{"grammar":"oiml","artifact_checksum":"sha256:21203eacd3f58b1d8730c6f8924da6c10f067669a7dd14da6052f0fa26ea8dc6","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"OIML V 2 Edition 2007","captures":{}},{"input":"OIML R 137-1:2012","captures":{}},{"input":"OIML D 11","captures":{}},{"input":"nonsense","captures":{}}]}}}

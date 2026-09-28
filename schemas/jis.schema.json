@@ -1,0 +1,1 @@
+{"grammar":"jis","artifact_checksum":"sha256:a73234c3ea886d74506db2ffb1ba0e5c06a2eacaf9df3f8dcf69f40eab1df21a","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"JIS B 0001","captures":{}},{"input":"JIS X 0208:1997","captures":{}},{"input":"nonsense","captures":{}}]}}}

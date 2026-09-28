@@ -1,0 +1,1 @@
+{"grammar":"ansi","artifact_checksum":"sha256:37eb799cc56347d7fa176c3aeae7298c644cf20af84a80d5471b4cc10882ea17","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"ANSI C63.4","captures":{}},{"input":"ANSI/IEEE C63.4","captures":{}},{"input":"ANSI Std A119.1","captures":{}},{"input":"nonsense","captures":{}}]}}}

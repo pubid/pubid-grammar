@@ -1,0 +1,1 @@
+{"grammar":"calconnect","artifact_checksum":"sha256:df57f87c60773c6abbede9a42c34781732b8bca4fdfecf642cab263608b33766","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"CC 9101","captures":{}},{"input":"CC/CD 9101","captures":{}},{"input":"CC 9101:2024","captures":{}},{"input":"nonsense","captures":{}}]}}}

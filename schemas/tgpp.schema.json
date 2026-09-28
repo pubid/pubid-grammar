@@ -1,0 +1,1 @@
+{"grammar":"tgpp","artifact_checksum":"sha256:6446a79c9b880d0cc0565fdd9bdb13a665b8d6b5bf5b91c055404ddab778c0c9","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"3GPP TS 21.101","captures":{}},{"input":"TS 25.999","captures":{}},{"input":"nonsense","captures":{}}]}}}

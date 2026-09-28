@@ -7,7 +7,7 @@ grammar PubidAmca version "0.1.0" {
   additional_copublisher = slash 2*10letter space 1*digit [(dash 1*digit)]
   code = (1*digit [(dash letter)] [(dot 1*digit)]) as code
   type = "Standard" / "Publication"
-  reaffirmation = "(" "R" 1*digit as reaffirmed ")"
+  reaffirmation = "(" "R" (1*digit) as reaffirmed ")"
   suffix = "R" / "P"
   revision = "(" "Rev" [dot] space (1*digit dash 1*digit) as revision ")"
   interpretation_code = (2*letter / 1*digit) as interpretation_code

@@ -4,12 +4,20 @@
 # leading-token keyed).
 
 grammar PubidIetf version "0.1.0" {
-  rfc = "RFC" [space] 1*digit as number
-  subseries = ("BCP" / "STD" / "FYI") as series [space] 1*digit as number
+  rfc = "RFC" [space] (1*digit) as number
+  subseries = ("BCP" / "STD" / "FYI") as series [space] (1*digit) as number
   draft_rest_char = %x30-39 / %x41-5A / %x61-7A / %x2B / %x5F / %x2E / %x2D
-  draft = "draft-" 1*draft_rest_char as draft_rest
+  draft = "draft-" (1*draft_rest_char) as draft_rest
   identifier = rfc / subseries / draft
   digit = %x30-39
   space = " "
   entry identifier: identifier
+
+  test {
+    accept "RFC 2616"
+    accept "RFC2616"
+    accept "BCP 14"
+    accept "draft-ietf-httpbis-messaging-19"
+    reject "nonsense"
+  }
 }

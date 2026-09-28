@@ -1,0 +1,128 @@
+# Port of lib/pubid/bsi/parser.rb — BSI designations: BS/BSI published
+# standards, adopted EN/ISO/IEC/CEN strings, DD/PD/PAS/TS/PP/NA/Flex
+# types, aerospace prefixes, sections, indexes, methods, detailed
+# specs, committee documents, standalone AMDs, supplement documents
+# (forward/reverse), addenda, sets ("+"), bundles ("and"/"&"/","),
+# expert commentary, translations, editions and vap suffixes. The gem's
+# parse() input normalization ("BSI " → "BS ", case-folding stri) is
+# Tier-3 preprocessing outside the grammar; stri("...") literals are
+# expressed with %i"..." case-insensitive strings. Dead source rule
+# `adopted_string_no_expert` is not ported. Internal rule rename:
+# `vapSuffix` → `vap_suffix`.
+
+grammar PubidBsi version "0.1.0" {
+  digit = %x30-39
+  upper = %x41-5A
+  lower = %x61-7A
+  letter = upper / lower
+  digits = 1*digit
+  uppers = 1*upper
+  space = " "
+  dash = "-"
+  slash = "/"
+  plus = "+"
+  colon = ":"
+  non_nl = %x01-09 / %x0B-10FFFF
+
+  bs = "BSI" / "BS"
+  multi_letter_prefix = "E9111" / "CECC" / "CISPR" / "2HC" / "2HR" / "2SP" / "2TA" / "3HR" / "3TA" / "2A" / "2B" / "2C" / "2F" / "2G" / "2L" / "2M" / "2S" / "3B" / "3F" / "3G" / "3J" / "3L" / "3S" / "4F" / "4L" / "4S" / "5S" / "7S" / "SP"
+  single_letter_prefix = "AU" / "HC" / "MA" / "PL" / "QC" / "TA" / "A" / "B" / "C" / "F" / "G" / "L" / "M" / "S" / "X"
+  specialized_prefix = (multi_letter_prefix / single_letter_prefix) as prefix
+  flex = "BSI Flex" / "BS Flex" / "Flex"
+  dd = "DD"
+  pd = "PD"
+  pas = "PAS"
+  na = "NA"
+  ts = "TS"
+  handbook = "Handbook" / "HB"
+  pp = "PP"
+  bip = "BIP"
+  ep_type = "EP" / "ep"
+  index_suffix = (space "Index" space "Issue" space digits as issue_number) / ((colon as colon_sep) "Index") / (space "Index")
+  supplementary_index_suffix = space "Supplementary Index"
+  explanatory_supplement_suffix = colon "Explanatory Supplement"
+  method_suffix = (colon "Methods" space method_code as method_code space "to" space method_code as method_to) / (colon "Methods" space method_code as method_code space "and" space method_code as method_and) / (colon "Method" space method_code as method_code)
+  method_code = 1*(digit / upper)
+  test_method_suffix = colon (1*(digit / upper)) as test_series colon (1*(digit / upper)) as test_id
+  set_separator = [space] plus [space]
+  set_item = ((bs as publisher) space [(adopted_org_prefix as adopted_org) space] number [parts] [year]) as set_item
+  set_items = set_item 1*(set_separator set_item)
+  set_identifier = ((set_items) as set) as set
+  section_suffix = ((colon as colon_sep) "Section" space (section_id) as section_id) / (space "Section" space (section_id) as section_id)
+  section_id = 1*(digit / upper / lower)
+  detailed_spec_suffix = space ((("C" 1*3digit dash 1*3digit) as spec_code) / (("N" 1*4digit [dash 1*digit]) as spec_code))
+  committee_document = (((2digit) as year) slash ((8digit) as document_number) space "DC") as committee_document
+  standalone_amendment = (((("(" "AMD" space "Corrigendum" as corrigendum space digits as amendment_number ")")) as parenthesized_amd) / ((("(" "AMD" space digits as amendment_number ")")) as parenthesized_amd) / (("AMD" space "Corrigendum" as corrigendum space digits as amendment_number) as standalone_amendment) / (("AMD" space digits as amendment_number) as standalone_amendment))
+  disc_prefix = "DISC PD "
+  draft = "Draft BS" / "DBS"
+  en = "EN"
+  iso = "ISO"
+  iec = "IEC"
+  cispr = "CISPR"
+  cen = "CEN"
+  clc = "CLC"
+  na_with_supplements = "NA" (1*supplement) as na_supplements space "to "
+  na_simple = "NA to "
+  na_prefix = ((na_with_supplements / na_simple)) as na_prefix
+  publisher_or_type = ((na_prefix (draft as stage / dd as type / pd as type / bs as publisher)) / (flex as flex_type) / (handbook as type) / (bip as type) / (ts as type) / (ep_type as type) / (draft as stage) / (dd as type) / (pd as type) / (pas as type) / (pp as type) / (na as type) / ((bs as publisher) space specialized_prefix) / (bs as publisher))
+
+  number = (1*(digit / upper)) as number
+  bracket_iteration = "[" digits as iteration "]"
+  part_with_subpart = dash digits as part dash digits as subpart
+  part = dash (1*(digit / letter / "." / "&" / space)) as part
+  parts = (*(part_with_subpart / part)) as parts
+  part_with_letter_edition = ((dash (1*(digit / ".")) as part (letter_edition) as letter_edition)) / (dash (1*(digit / ".")) as part)
+  number_with_letter_edition = ((digits as number (letter_edition) as letter_edition)) / (digits as number)
+  space_separated_part = space ((1*upper 1*digit)) as part
+  iteration = (*bracket_iteration) as iteration
+  year = colon (3*4digit) as year
+  base_year = colon (4digit) as base_year
+  month = dash (2digit) as month
+  flex_edition = space "v" (1*(digit / ".")) as edition
+  edition = space "ED" digits as edition
+  letter_edition = letter as letter_edition
+  amendment = (((plus as amd_sep_plus / slash as amd_sep_slash) "A" digits as amd_number [colon (2*4digit) as amd_year])) / (((plus as amd_sep_plus / slash as amd_sep_slash) "Amd" space digits as amd_number [colon (4digit) as amd_year]))
+  corrigendum = (((plus as amd_sep_plus / slash as amd_sep_slash) "AC" [digits] as cor_number [colon (2*4digit) as cor_year])) / (((plus as amd_sep_plus / slash as amd_sep_slash) "C" digits as cor_number [colon (2*4digit) as cor_year]))
+  amd_suffix = space "AMD" [space] ((1*digit) as amd_number / (1*upper) as amd_letter)
+  amd_verbose = space (("Amd" / "Amendment") as amd_verbose_type) space (1*digit) as amd_number [(space "(" (1*(digit / "/")) as amd_date ")")] [(colon (1*letter) as amd_month space (4digit) as amd_year)]
+
+  supplement_document_forward = (((bs as publisher) space (multi_letter_prefix) as flex_prefix space (number) as number (iteration) as iteration (parts) as parts ((colon / space) as supp_sep) "Supplement" space "No." as supp_no_prefix space digits as supplement_number colon (4digit) as supplement_year) as supplement_document) / (((bs as publisher) space (multi_letter_prefix) as flex_prefix space (number) as number (iteration) as iteration (parts) as parts ((colon / space) as supp_sep) "Supplement" space digits as supplement_number colon (4digit) as supplement_year) as supplement_document) / (((bs as publisher) space (single_letter_prefix) as flex_prefix space (number) as number (iteration) as iteration (parts) as parts ((colon / space) as supp_sep) "Supplement" space "No." as supp_no_prefix space digits as supplement_number colon (4digit) as supplement_year) as supplement_document) / (((bs as publisher) space (single_letter_prefix) as flex_prefix space (number) as number (iteration) as iteration (parts) as parts ((colon / space) as supp_sep) "Supplement" space digits as supplement_number colon (4digit) as supplement_year) as supplement_document) / (((bs as publisher) space (number) as number (iteration) as iteration (parts) as parts ((colon / space) as supp_sep) "Supplement" space "No." as supp_no_prefix space digits as supplement_number colon (4digit) as supplement_year) as supplement_document) / (((bs as publisher) space (number) as number (iteration) as iteration (parts) as parts ((colon / space) as supp_sep) "Supplement" space digits as supplement_number colon (4digit) as supplement_year) as supplement_document)
+  supplement_document_reverse = ((("Supplement" space "No." as supp_no_prefix space digits as supplement_number space "(" (4digit) as supplement_year ")" space "to " bs as publisher space (number) as number (iteration) as iteration (parts) as parts colon (4digit) as base_year)) as supplement_document) / ((("Supplement" space digits as supplement_number space "(" (4digit) as supplement_year ")" space "to " bs as publisher space (number) as number (iteration) as iteration (parts) as parts colon (4digit) as base_year)) as supplement_document)
+  addendum_document = (((bs as publisher) space (multi_letter_prefix) as flex_prefix space (number) as number (iteration) as iteration (parts) as parts ((colon / space) as add_sep) "Addendum" 1*space "No." as add_no_prefix 1*space digits as addendum_number colon (4digit) as addendum_year) as addendum_document) / (((bs as publisher) space (multi_letter_prefix) as flex_prefix space (number) as number (iteration) as iteration (parts) as parts ((colon / space) as add_sep) "Addendum" 1*space digits as addendum_number colon (4digit) as addendum_year) as addendum_document) / (((bs as publisher) space (single_letter_prefix) as flex_prefix space (number) as number (iteration) as iteration (parts) as parts ((colon / space) as add_sep) "Addendum" 1*space "No." as add_no_prefix 1*space digits as addendum_number colon (4digit) as addendum_year) as addendum_document) / (((bs as publisher) space (single_letter_prefix) as flex_prefix space (number) as number (iteration) as iteration (parts) as parts ((colon / space) as add_sep) "Addendum" 1*space digits as addendum_number colon (4digit) as addendum_year) as addendum_document) / (((bs as publisher) space (number) as number (iteration) as iteration (parts) as parts colon (4digit) as base_year space as add_sep "Addendum" 1*space "No." as add_no_prefix 1*space digits as addendum_number colon (4digit) as addendum_year) as addendum_document) / (((bs as publisher) space (number) as number (iteration) as iteration (parts) as parts colon (4digit) as base_year colon as add_sep "Addendum" 1*space "No." as add_no_prefix 1*space digits as addendum_number colon (4digit) as addendum_year) as addendum_document) / (((bs as publisher) space (number) as number (iteration) as iteration (parts) as parts ((colon / space) as add_sep) "Addendum" 1*space "No." as add_no_prefix 1*space digits as addendum_number colon (4digit) as addendum_year) as addendum_document) / (((bs as publisher) space (number) as number (iteration) as iteration (parts) as parts ((colon / space) as add_sep) "Addendum" 1*space digits as addendum_number colon (4digit) as addendum_year) as addendum_document)
+
+  bundle_sep_and = space "and" space
+  bundle_sep_to = space (("TO" / "to") as to_case) space
+  bundle_sep_ampersand = space "&" space
+  bundle_sep_semicolon = ";" space
+  bundle_sep_comma = ","
+  bundle_separator = (bundle_sep_and as sep_and) / (bundle_sep_to as sep_to) / (bundle_sep_ampersand as sep_ampersand) / (bundle_sep_semicolon as sep_semicolon) / (bundle_sep_comma as sep_comma)
+  parts_bundle = (("Parts" / "Sections") as bundle_type) space (1*digit) as part1 bundle_sep_and (1*(digit / ".")) as part2
+  bundle_item = (((bs as publisher) space (multi_letter_prefix) as prefix space number parts) as bundle_item) / (((bs as publisher) space (single_letter_prefix) as prefix space number parts) as bundle_item) / (((bs as publisher) space number space_separated_part) as bundle_item) / (((bs as publisher) space number parts) as bundle_item) / (((multi_letter_prefix) as prefix space number parts) as bundle_item) / (((single_letter_prefix) as prefix space number parts) as bundle_item) / ((number space_separated_part) as bundle_item) / ((1*upper 1*digit) as bundle_item) / ((number parts) as bundle_item)
+  bundled_identifier = ((publisher_or_type space number colon parts_bundle year) as bundled_parts) / ((publisher_or_type space bundle_item 1*(bundle_separator bundle_item) [year]) as bundled_list)
+
+  supplement = ((amendment / corrigendum / amd_suffix / amd_verbose)) as supplement
+  supplements = (*supplement) as supplements
+  expert_commentary = space ((%i"Expert Commentary" as expert_commentary_full) / ((%i"ExComm" [(space "(" (1*letter) as expert_commentary_topic ")")]) as expert_commentary))
+  tracked_changes = space dash space "TC" as tracked_changes
+  pdf_suffix = space "PDF" as pdf
+  translation = (space "(" ((1*letter) as translation_lang [(space ("Translation" / "version"))]) ")") / (space (("SPANISH" / "FRENCH" / "GERMAN" / "ITALIAN") as translation_upper) space "TRANSLATION")
+  collection_number = slash digits as second_number
+  adopted_org_prefix = "CISPR" / "ENV" / "IEC" / "ISO" / "CEN" / "CLC" / "CWA" / "CR" / "ES" / "HD" / "EN"
+  adopted_string_content = !supplement !amd_suffix !amd_verbose !expert_commentary !tracked_changes !pdf_suffix !translation 1*non_nl
+  adopted_string = (adopted_org_prefix adopted_string_content) as adopted_string
+  bare_adopted = (!bs adopted_org_prefix *((!supplement !amd_suffix !amd_verbose !tracked_changes !pdf_suffix !translation non_nl))) as adopted_string
+  vap_suffix = (space "PDF" as pdf_format) / (space "BOOK" as book_format) / ((space dash space "TC") as tc_format)
+
+  identifier = standalone_amendment / committee_document / ((bs as publisher) space number (index_suffix) as index_suffix year) as index_identifier / ((bs as publisher) space number (supplementary_index_suffix) as supplementary_index_suffix year) as supplementary_index_identifier / ((bs as publisher) space number parts (explanatory_supplement_suffix) as explanatory_supplement_suffix year) as explanatory_supplement_identifier / ((bs as publisher) space number parts (method_suffix) as method_suffix year) as method_identifier / ((bs as publisher) space number (test_method_suffix) as test_method_suffix year) as test_method_identifier / ((publisher_or_type space number (section_suffix) as section_suffix year) as section_identifier) / ((bs as publisher) space number (detailed_spec_suffix) as detailed_spec_suffix year) as detailed_specification / (((bs as publisher) space (single_letter_prefix / multi_letter_prefix) as prefix space number_with_letter_edition [part_with_letter_edition] [(iteration)] as iteration year supplements) as aerospace_identifier) / ((disc_prefix number [parts] year) as disc_identifier) / supplement_document_reverse / supplement_document_forward / addendum_document / set_identifier / bundled_identifier / bare_adopted / ((flex as flex_type) space number parts [flex_edition] [(year [month])] [supplements]) / (publisher_or_type [(space adopted_string)] [(space number parts [collection_number] [(year [month])] [flex_edition])] [supplements] [edition] [expert_commentary] [translation] [vap_suffix])
+
+  entry identifier: identifier
+
+  test {
+    accept "BS 5950-1:2000"
+    accept "PD 5500:2018"
+    accept "DD 240-1:2010"
+    accept "BS 5950-1:2000+A1:2010"
+    accept "AMD 1"
+    reject "nonsense"
+  }
+}

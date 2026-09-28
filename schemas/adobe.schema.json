@@ -1,0 +1,1 @@
+{"grammar":"adobe","artifact_checksum":"sha256:f0bbc82bbe015ac4ad5ce7fc95dfc22c02e2c1bdf6c8f4fa58f09710b9e21720","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"Adobe TN 15","captures":{}},{"input":"ATN 30","captures":{}},{"input":"Adobe Technical Note #12","captures":{}},{"input":"###","captures":{}}]}}}

@@ -1,0 +1,1 @@
+{"grammar":"cie","artifact_checksum":"sha256:01e1ca2b6035870fe9d87fb834a139af8544bfd23b3297a63bb08e39e2b5e056","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"CIE S 008/E:2001","captures":{}},{"input":"CIE 15:2018","captures":{}},{"input":"CIE x045-2019","captures":{}},{"input":"nonsense","captures":{}}]}}}
