@@ -7,8 +7,8 @@ on:
 
 env:
   RUBY_REF: pg-authoring
-  RS_REF: pg-artifact-wasm
-  TS_REF: fix/artifact-c1-corpus
+  RS_REF: main
+  TS_REF: fix/urn-parity-iec-nist
 
 jobs:
   grammar:
