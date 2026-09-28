@@ -1,0 +1,17 @@
+# Port of lib/pubid/ecma/parser.rb: ECMA-NNN[-part], ECMA TR/NNN,
+# ECMA MEM/NNN, each with optional " edX[.Y]" and " volN". The TR/MEM
+# vs standard alternation relies on the disjoint first character after
+# the prefix (T/M are not digits), as in the source.
+
+grammar PubidEcma version "0.1.0" {
+  tr = " TR/" 1*digit as tr_number
+  mem = " MEM/" 1*digit as mem_number
+  standard = ("-" / " ") 1*digit as number [("-" 1*digit as part)]
+  edition_number = 1*digit *(dot 1*digit)
+  edition = " ed" edition_number as edition
+  volume = " vol" 1*digit as volume
+  identifier = "ECMA" (tr / mem / standard) [edition] [volume]
+  digit = %x30-39
+  dot = "."
+  entry identifier: identifier
+}

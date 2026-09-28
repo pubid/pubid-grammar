@@ -1,0 +1,15 @@
+# Port of lib/pubid/ietf/parser.rb: three families keyed on the leading
+# token — RFC, sub-series (BCP/STD/FYI, padded forms allowed), and
+# Internet-Drafts (the wide draft tail is safe: the alternation is
+# leading-token keyed).
+
+grammar PubidIetf version "0.1.0" {
+  rfc = "RFC" [space] 1*digit as number
+  subseries = ("BCP" / "STD" / "FYI") as series [space] 1*digit as number
+  draft_rest_char = %x30-39 / %x41-5A / %x61-7A / %x2B / %x5F / %x2E / %x2D
+  draft = "draft-" 1*draft_rest_char as draft_rest
+  identifier = rfc / subseries / draft
+  digit = %x30-39
+  space = " "
+  entry identifier: identifier
+}

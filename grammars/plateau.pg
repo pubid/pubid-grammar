@@ -1,0 +1,23 @@
+# Port of lib/pubid/plateau/parser.rb: PLATEAU Handbook/Technical Report
+# #NN[-annex][ edition], plus Annex supplements. Japanese canonical
+# edition (第X.Y版) and legacy Latin X.Y both capture the same atom.
+
+grammar PubidPlateau version "0.1.0" {
+  doc_type = ("Handbook" / "Technical Report") as type
+  number = "#" 1*digit as number
+  annex = (dash / "_") 1*digit as annex
+  edition_part = "第" (1*digit "." 1*digit) as edition "版"
+  edition_latin = (1*digit "." 1*digit) as edition
+  edition = space (edition_part / edition_latin)
+  annex_letter = upper as annex_letter
+  annex_supplement = space "Annex" space annex_letter
+  handbook = "PLATEAU" space doc_type space number [annex] [edition]
+  technical_report = "PLATEAU" space doc_type space number [annex]
+  annex_identifier = (handbook / technical_report) as base annex_supplement
+  identifier = annex_identifier / handbook / technical_report
+  upper = %x41-5A
+  digit = %x30-39
+  space = " "
+  dash = "-"
+  entry identifier: identifier
+}

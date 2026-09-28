@@ -1,0 +1,38 @@
+# Port of lib/pubid/api/parser.rb: API MPMS/typed/typeless identifiers
+# with slash-combined second identifiers. The API MPMP normalization
+# stays binder-side.
+
+grammar PubidApi version "0.1.0" {
+  number_with_part = 1*num_letter_char as number [(dash 1*num_letter_char as part)]
+  num_letter_char = %x30-39 / %x41-5A
+  doc_type = ("MPMS" / "BULL" / "SPEC" / "STD" / "RP" / "TR" / "COS" / "PUBL") as type
+  chapter_notation = space "CH" space 1*digit as chapter
+  digits_with_letter = (1*digit [*upper])
+  year = 4digit as year
+  date_dash = dash year
+  date_colon = colon year
+  reaffirmation = space "(R" year ")"
+  part_notation = ", Part " 1*digit as part_number
+  mpms_identifier = "API " "MPMS" as type chapter_notation [(dot digits_with_letter as section)] [(dot digits_with_letter as subsection)] [(date_dash / date_colon)]
+  typed_identifier = "API " doc_type space number_with_part [part_notation] [(date_dash / date_colon)] [reaffirmation]
+  typeless_identifier = "API " number_with_part [part_notation] [(date_dash / date_colon)] [reaffirmation]
+  second_identifier = doc_type space number_with_part [part_notation] [(date_dash / date_colon)]
+  combined_identifier = ((mpms_identifier / typed_identifier / typeless_identifier) as first) slash (second_identifier as second) [edition_notation]
+  edition_notation = ", " 1*digit as edition_number ("st" / "nd" / "rd" / "th") " edition"
+  identifier = combined_identifier / mpms_identifier / typed_identifier / typeless_identifier
+  upper = %x41-5A
+  digit = %x30-39
+  dash = "-"
+  slash = "/"
+  colon = ":"
+  dot = "."
+  space = " "
+  entry identifier: identifier
+
+  test {
+    accept "API RP 1632-1987"
+    accept "API MPMS CH 11.1"
+    accept "API SPEC 5DP/STD 5DP, 1st edition"
+    reject "nonsense"
+  }
+}

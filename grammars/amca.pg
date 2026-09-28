@@ -1,0 +1,34 @@
+# Port of lib/pubid/amca/parser.rb. Pre-parse whitespace collapsing,
+# en-dash normalization and trailing punctuation stripping stay
+# binder-side.
+
+grammar PubidAmca version "0.1.0" {
+  copublisher = (("ANSI" slash "AMCA") / "AMCA") as copublisher
+  additional_copublisher = slash 2*10letter space 1*digit [(dash 1*digit)]
+  code = (1*digit [(dash letter)] [(dot 1*digit)]) as code
+  type = "Standard" / "Publication"
+  reaffirmation = "(" "R" 1*digit as reaffirmed ")"
+  suffix = "R" / "P"
+  revision = "(" "Rev" [dot] space (1*digit dash 1*digit) as revision ")"
+  interpretation_code = (2*letter / 1*digit) as interpretation_code
+  interp_keyword = space "Interp"
+  interpretation_identifier = (([copublisher] space code space ((interpretation_code interp_keyword) / (("–" / dash) 1*digit as interpretation_year [interp_keyword]))) as interpretation) / (([copublisher] space code interp_keyword) as interpretation)
+  publication_identifier = (([copublisher] space "Publication" as publication_keyword space code [(dash year_digits as year)] [(space revision)] [(space reaffirmation)]) as publication)
+  standard_identifier = (([copublisher] space [type as type] [space] code [(dash year_digits as year)] [(space additional_copublisher)] [suffix] [(space reaffirmation)]) as standard)
+  identifier = interpretation_identifier / publication_identifier / standard_identifier
+  year_digits = (("19" / "20") 2*digit / 2*digit)
+  letter = %x41-5A / %x61-7A
+  digit = %x30-39
+  dash = "-"
+  dot = "."
+  slash = "/"
+  space = " "
+  entry identifier: identifier
+
+  test {
+    accept "AMCA 500-D"
+    accept "AMCA Standard 210"
+    accept "ANSI/AMCA 210"
+    reject "nonsense"
+  }
+}

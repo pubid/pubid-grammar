@@ -1,0 +1,16 @@
+# Port of lib/pubid/easc/parser.rb — EASC identifiers in Cyrillic and
+# Latin forms: ПМГ/РМГ (PMG/RMG) [В|V] NNN[.N]-YYYY with dash, em-dash
+# or en-dash year separators.
+
+grammar PubidEasc version "0.1.0" {
+  series_word = ("ПМГ" / "РМГ" / "PMG" / "RMG") as series space
+  variant_word = ("В" / "V") as variant space
+  number = (1*digit *(dot 1*digit)) as number
+  year = (4digit / 2digit) as year
+  year_sep = [space] ("-" / "—" / "–") [space]
+  identifier = series_word [variant_word] number [(year_sep year)]
+  digit = %x30-39
+  dot = "."
+  space = " "
+  entry identifier: identifier
+}

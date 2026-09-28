@@ -1,0 +1,30 @@
+# Port of lib/pubid/jis/parser.rb — JIS identifiers with the Japanese
+# full-width separator tolerance (ｰ 　 ： （）), TR/TS prefixes, parts,
+# reaffirmed years, (E)/(J) language codes, 規格群 all-parts, AMD/EXPL/
+# CORR supplements, and the SYMBOL clause.
+
+grammar PubidJis version "0.1.0" {
+  dash = ("-" / "ｰ") as dash
+  space = (" " / "　")
+  colon = (":" / "：")
+  type_prefix = ("TR" / "TS") as type (space / slash)
+  series = upper as series
+  number = 1*digit as number
+  part = dash 1*digit as part
+  parts = *part as parts
+  reaffirmed = [*"R"] as reaffirmed
+  year = colon 1*digit as year reaffirmed
+  language = ("(" / "（") ("E" / "J") as language (")" / "）")
+  all_parts = (("（" "規格群" "）") / ("(" "規格群" ")")) as all_parts
+  amendment = slash ("AMENDMENT" / "AMD") as amd_type space 1*digit as amd_number colon 1*digit as amd_year [*"R"] as amd_reaffirmed
+  explanation = slash ("EXPLANATION" / "EXPL") as expl_type ([space 1*digit as expl_number])
+  corrigendum = slash ("CORRIGENDUM" / "CORR") as corr_type space 1*digit as corr_number colon 1*digit as corr_year [*"R"] as corr_reaffirmed
+  supplement = (amendment as amendment) / (explanation as explanation) / (corrigendum as corrigendum)
+  symbol_value_char = %x01-09 / %x0B-FF
+  symbol_clause = space "SYMBOL" as symbol_present ([space 1*symbol_value_char as symbol_value])
+  identifier = ["JIS" (space / slash)] [type_prefix] [space] series [space] number parts [year] [language] [all_parts] [supplement] [symbol_clause]
+  upper = %x41-5A
+  digit = %x30-39
+  slash = "/"
+  entry identifier: identifier
+}

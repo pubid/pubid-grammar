@@ -1,0 +1,23 @@
+# Port of lib/pubid/ccsds/parser.rb:
+# CCSDS <number>[.part][-type][-edition][-suffix]{ Cor. n}[ - <language>]
+
+grammar PubidCcsds version "0.1.0" {
+  alnum_char = %x41-5A / %x61-7A / %x30-39
+  upper = %x41-5A
+  digit_dot_char = %x30-39 / %x2E
+  number = 1*alnum_char as number
+  part = "." 1*alnum_char as part
+  type = "-" upper as type
+  edition = "-" (1*digit_dot_char [*1letter]) as edition
+  suffix = "-" upper as suffix
+  corrigendum = space "Cor." space 1*digit as cor_number
+  corrigenda = *corrigendum as corrigenda
+  language_metadata = space dash space (language_word [*" Translated"])
+  language_word = ("French" / "Russian" / "English" / "German" / "Spanish" / "Italian" / "Portuguese" / "Chinese" / "Japanese") as language
+  identifier = "CCSDS " number [part] [type] [edition] [suffix] corrigenda [language_metadata]
+  dash = "-"
+  space = " "
+  digit = %x30-39
+  letter = %x41-5A / %x61-7A
+  entry identifier: identifier
+}

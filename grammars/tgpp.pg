@@ -1,0 +1,24 @@
+# Port of lib/pubid/tgpp/parser.rb:
+# [3GPP ]<TR|TS> <NN.NNN>[suffix][-part…][:<release>][/<version>]
+# The release excludes "/" and ":" (match["^/:"]), byte-wise here; the
+# mistyped-version guard (!version…!any) is ported literally.
+
+grammar PubidTgpp version "0.1.0" {
+  release_char = %x01-2E / %x30-39 / %x3B-FF
+  any_char = %x01-FF
+  type = ("TR" / "TS") as type
+  number = (1*digit "." 1*digit) as number
+  suffix = 1*letter as suffix
+  part = "-" 1*digit as part
+  parts = *part as parts
+  version_core = 1*digit "." 1*digit "." 1*digit
+  release = !(version_core !any_char) 1*release_char as release
+  version = version_core as version
+  identifier = ["3GPP "] type space number [suffix] parts [(colon release)] [(slash version)]
+  letter = %x41-5A / %x61-7A
+  digit = %x30-39
+  space = " "
+  colon = ":"
+  slash = "/"
+  entry identifier: identifier
+}

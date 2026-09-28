@@ -1,0 +1,15 @@
+# Port of lib/pubid/calconnect/parser.rb:
+# CC[/<series>] <number>[.<sub>|-$sub>][:<date>]
+
+grammar PubidCalconnect version "0.1.0" {
+  letter = %x41-5A / %x61-7A
+  series = 1*letter as series
+  number = (1*digit [("." / "-") 1*digit]) as number
+  date = 1*digit as year [("-" 1*digit as month "-" 1*digit as day)]
+  identifier = "CC" [slash series] space number [(colon date)]
+  digit = %x30-39
+  space = " "
+  slash = "/"
+  colon = ":"
+  entry identifier: identifier
+}

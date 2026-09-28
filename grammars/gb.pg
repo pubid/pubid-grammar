@@ -1,0 +1,17 @@
+# Port of lib/pubid/gb/parser.rb — Chinese standard identifiers.
+# publisher_code order is load-bearing: the social-group form, then the
+# confidential GBn series (lowercase n is part of the code), then the
+# general 1-3-letter code. The year separator is ASCII dash or the
+# Chinese typographic em-dash.
+
+grammar PubidGb version "0.1.0" {
+  publisher_code = (("T/" 1*upper_digit) / ("GBn" ["/T" / "/Z"]) / (1*3upper ["/T" / "/Z"])) as publisher_code
+  identifier = publisher_code space 1*digit as number [("." 1*digit as part)] [(dash 4digit as year)] [(" (" all_parts_text ")") as all_parts]
+  all_parts_text = "all parts"
+  upper = %x41-5A
+  upper_digit = %x41-5A / %x30-39
+  dash = "-" / "—"
+  space = " "
+  digit = %x30-39
+  entry identifier: identifier
+}

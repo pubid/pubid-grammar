@@ -1,0 +1,107 @@
+# Port of lib/pubid/iec/parser.rb. Deviations:
+# - joint_identifier (IEC x | ISO y) awaits PG cross-file imports; the
+#   ISO joint grammar cannot be inlined at reasonable size. Noted here;
+#   slots back into the root ahead of identifier_copublishers.
+# - the IEV → "IEC 60050" input shorthand is pre-parse normalization and
+#   stays binder-side.
+
+grammar PubidIec version "0.1.0" {
+  digit = %x30-39
+  upper = %x41-5A
+  lower = %x61-7A
+  letter = upper / lower
+  alnum_char = upper / lower / digit
+  word_ext_char = alnum_char / %x5F / %x26 / %x2C
+  space = " "
+  dash = "-" / "‑" / "‐"
+  dot = "."
+  slash = "/"
+  colon = ":"
+  comma = ","
+  century = "19" / "20"
+  year_digits = century 2*digit !digit
+  month_digits = 2*digit
+  day_digits = 2*digit
+  digits = 1*digit
+
+  ## IEC publishers, longest-first: the qualified forms must precede
+  ## the bare "IEC".
+  prefix_sole_publisher = ("IECQ OD" / "IECQ CS" / "IEC CAB" / "IEC CA" / "IECRE" / "CISPR" / "IECEE" / "IECEx" / "IECQ" / "IEC" / "ISO") as publisher
+  organization = "IEC" / "ISO" / "IEEE" / "CIW" / "SAE" / "CIE" / "ASME" / "ASTM" / "OECD" / "HL7" / "CEI" / "UNDP"
+  copublishers_item = slash [space] organization as copublisher
+  copublishers = *copublishers_item as copublishers
+  prefix_with_copublishers = prefix_sole_publisher [space] [copublishers]
+
+  tc_type = "JTC" / "JPC" / "TC" / "SC" / "PC"
+  tc_body = "CISPR" / ("CIS" slash upper) / (tc_type space digits [*upper])
+  sc_body = "SC" space digits [*upper]
+  technical_group_with_publisher = (prefix_sole_publisher [copublishers] space tc_body as technical_committee [(slash [space] sc_body as subcommittee)])
+  technical_group_bare = (tc_body as technical_committee [(slash [space] sc_body as subcommittee)])
+  technical_group = technical_group_with_publisher / technical_group_bare
+
+  wp_type = (("TR" / "TS" / "SRD") space) as wp_type
+  wp_number = ((1*letter *alnum_char [(dash 1*digit)]) / number_with_part) as number_with_part
+  working_programme = (("PWI" / "PNW") as wp_stage space [wp_type] wp_number [(space edition)])
+
+  working_document = ((("JTC1-SC" 1*digit) / (1*upper slash 1*upper) / 1*alnum_char) as technical_committee slash 1*alnum_char as wd_number [("(" upper as wd_language ")")] [(slash 1*upper as wd_stage)])
+
+  number = (("DIR" *(space 1*upper_digit)) / "VIM" / "SYMBOL" / (1*6digit "v" 1*digit *letter [("_" 1*letter)]) / (2*4upper [(dash 1*digit)] 1*upper_digit) / (1*6digit [*1letter [("_" 1*letter)]]))
+  upper_digit = upper / digit
+  part_and_subpart = (dash / comma) [space] 1*word_ext_char *1((dash / comma) 1*word_ext_char)
+  number_with_part = (number [part_and_subpart]) as number_with_part
+  trf_org_number = ("CISPR" space) as trf_org number_with_part
+  stage_iteration = dot digit as stage_iteration
+
+  undated = "--" / "—"
+  full_date = year_digits [(dash month_digits)] [(dash day_digits)] as date
+  date_body = undated as undated_marker / full_date
+  date = (colon / dash) date_body
+
+  vap_code = "CSV" / "CMV" / "RLV" / "SER" / "EXV" / "PAC" / "PRV"
+  vap_suffix = space (vap_code *(dash vap_code)) as vap_suffix
+  database_suffix = space "DB" as database
+  consolidated_supplement = "+" ("AMD" / "COR") as supplement_type 1*digit as supplement_number [(colon year_digits as supplement_year)]
+  consolidated_supplements = 1*consolidated_supplement as consolidated_supplements
+  second_part = (trf_org_number / number_with_part) [stage_iteration] [[space] date] [consolidated_supplements] [vap_suffix / database_suffix]
+
+  edition_str = "Edition" / "Ed." / "ED" / "Ed"
+  edition = edition_str [space] (1*digit [(dot 1*digit)]) as edition
+
+  one_of_efards = %x45 / %x46 / %x41 / %x52 / %x44 / %x53
+  lower_char = lower
+  languages = *(1*lower_char [","] / (one_of_efards [slash])) as languages
+  language = "(" languages ")"
+  all_parts = "(all parts)" as all_parts
+  fragment_notation = slash ("FRAGC" / "FRAG") as fragment_type 1*digit as fragment_number
+  third_part_edition = [space] [edition]
+  third_part = third_part_edition [language] [fragment_notation] [all_parts]
+
+  type_with_stage = alt from_table "iec_typed_stages" column "abbr" as type_with_stage [digit as stage_iteration space]
+  supplement_type_with_stage = (alt from_table "iec_typed_stages" column "abbr" / "FRAGC" / "FRAG") as type_with_stage
+
+  guide_prefix = "Guide" / "GUIDE"
+  identifier_copublishers_no_third = [guide_prefix as type_with_stage_fr space] [prefix_with_copublishers] [space] [slash] [type_with_stage] [space] second_part third_part_edition
+  identifier_copublishers = identifier_copublishers_no_third third_part
+
+  sheet_notation = slash 1*digit as sheet_number colon year_digits as sheet_year
+  sheet_notation_no_year = slash 1*digit as sheet_number
+  sheet_identifier = (identifier_copublishers_no_third as base) (sheet_notation / sheet_notation_no_year)
+  sheet_supplement_identifier = (identifier_copublishers_no_third as base) sheet_notation slash supplement_type_with_stage [space] second_part third_part
+  standalone_supplement = prefix_with_copublishers slash supplement_type_with_stage space second_part third_part
+  supplement_identifier_no_third = (identifier_copublishers_no_third as base) slash supplement_type_with_stage [space] second_part
+  supplement_identifier = supplement_identifier_no_third third_part
+  supplement_supplement_identifier = (supplement_identifier_no_third as base) slash supplement_type_with_stage [space] second_part third_part
+
+  identifier = working_programme / technical_group / working_document / sheet_supplement_identifier / sheet_identifier / supplement_supplement_identifier / standalone_supplement / supplement_identifier / identifier_copublishers
+
+  entry identifier: identifier
+
+  test {
+    accept "IEC 60050"
+    accept "IEC 8601-1:2019"
+    accept "CISPR 16-1-1"
+    accept "IECQ OD 1234"
+    accept "IEC/TS 80000-1"
+    reject "nonsense"
+  }
+}
