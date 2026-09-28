@@ -15,6 +15,8 @@ echo "== Ruby =="
   done && echo "ruby: all artifacts green")
 echo "== Rust (docker, 4GB cap) =="
 (cd "${PARSANOL_RS:-$BASE/../../parsanol/parsanol-rs}" && PG_ARTIFACT_DIR="$BASE/artifacts" ./docker-test.sh test -p parsanol --test pg_bindings)
+echo "== TypeScript (wasm freshness) =="
+(cd "${PUBID_TS:-$BASE/../pubid-ts}" && ./scripts/check-wasm-freshness.sh)
 echo "== TypeScript (wasm) =="
 (cd "${PUBID_TS:-$BASE/../pubid-ts}" && npm run build >/dev/null && npx tsc -p tsconfig.test.json >/dev/null && node --test dist-test/test/pg-runtime.test.js)
 echo "cross-runtime gate: GREEN"
