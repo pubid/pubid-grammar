@@ -61,4 +61,4 @@ jobs:
           npm run build
           npx tsc -p tsconfig.test.json
           PARG_ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts" \
-            node --test dist-test/test/pg-runtime.test.js
+            node --test dist-test/test/parg-runtime.test.js
