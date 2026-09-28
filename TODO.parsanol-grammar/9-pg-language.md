@@ -2,11 +2,11 @@
 
 PG (**P**arsanol **G**rammar language) is the text source format for
 grammars — the decision in milestone 3 taken to its conclusion: **JSON is
-the compiled artifact, text is the contract.** One `.pg` file per flavor
+the compiled artifact, text is the contract.** One `.parg` file per flavor
 holds the grammar, the parse bindings, the preprocessing steps and the
 entry points; it compiles to the checksummed artifact envelope whose
 grammar section is the portable Grammar JSON every engine already
-registers. Implemented in parsanol-ruby (`Parsanol::PG`), shipped with the
+registers. Implemented in parsanol-ruby (`Parsanol::PARG`), shipped with the
 programming guide: `parsanol-ruby/docs/pg-language-guide.md`.
 
 ## What shipped (parsanol-ruby, branch `pg-language`)
@@ -62,7 +62,7 @@ programming guide: `parsanol-ruby/docs/pg-language-guide.md`.
 
 | Milestone | Effect of PG |
 |---|---|
-| 2 (grammar port) | flavors are ported **to .pg**, not to JSON by hand |
+| 2 (grammar port) | flavors are ported **to .parg**, not to JSON by hand |
 | 3 (artifacts) | the envelope gains bindings/preprocess/tables/lint/source + binding_version; checksum covers everything |
 | 5 (lutaml-model) | `PG::Lutaml.register` is the concrete string-format path |
 | 6 (three tiers) | `preprocess` tables are Tier 2 data in the artifact; `render:`/`derive:` sections reserved as Tier 1 output side |
@@ -76,10 +76,10 @@ programming guide: `parsanol-ruby/docs/pg-language-guide.md`.
       through artifact-based parsing end to end.
 - [ ] **G3** — shape freeze (parsanol-rs#146) recorded as
       `parsanol-tree/v2` validation at artifact load.
-- [ ] **G4** — port the pubid ISO grammar to `.pg` as the pilot (milestone
+- [ ] **G4** — port the pubid ISO grammar to `.parg` as the pilot (milestone
       2 start), using `alt from_table` against the existing `stages` data.
-- [ ] **G5** — rs/wasm consume `.pg` artifacts in CI (checksum + portable
+- [ ] **G5** — rs/wasm consume `.parg` artifacts in CI (checksum + portable
       JSON equality gate across engines).
 - [ ] **G6** — preprocessing vocabulary growth policy (parsanol-rs#147):
       grow-with-minor vs hard freeze after the ISO pilot.
-- [ ] **G7** — self-hosting (parse PG with PG) and `.pg` module imports.
+- [ ] **G7** — self-hosting (parse PG with PG) and `.parg` module imports.

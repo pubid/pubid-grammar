@@ -1,13 +1,13 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Per-flavor R1 probe: compares the PG artifact's builder-ready shape
+# Per-flavor R1 probe: compares the PARG artifact's builder-ready shape
 # against the pubid monorepo parslet tree for inputs scraped from the
 # monorepo's flavor specs. Reports structural parity so a flavor's
 # parser swap can be gated before wiring.
 #
 #   PARSANOL_RUBY=... ruby scripts/parity-probe.rb [flavor ...]
-#   (default: every .pg flavor with a monorepo Parser)
+#   (default: every .parg flavor with a monorepo Parser)
 
 require "parsanol"
 require "parsanol/pg"
@@ -21,7 +21,7 @@ $LOAD_PATH.unshift File.join(MONO, "lib")
 require "pubid"
 LEAF_KEYS = %i[value line column offset length].freeze
 
-# The monorepo flavors whose .pg grammar is independent (sub-grammars
+# The monorepo flavors whose .parg grammar is independent (sub-grammars
 # aiee/ire/nesc/pg are authoring-side; idf rides with iso's joint form).
 SKIP = %w[aiee ire nesc pg idf].freeze
 
@@ -51,7 +51,7 @@ def scrape_inputs(flavor)
 end
 
 flavors = if ARGV.empty?
-            Dir.glob("#{BASE}/grammars/*.pg").map { |f| File.basename(f, ".pg") }.sort - SKIP
+            Dir.glob("#{BASE}/grammars/*.parg").map { |f| File.basename(f, ".parg") }.sort - SKIP
           else
             ARGV
           end
@@ -66,11 +66,11 @@ results = flavors.map do |flavor|
     next [flavor, :no_parser, 0, 0, 0]
   end
   begin
-    doc = Parsanol::PG::Parser.new(File.read("#{BASE}/grammars/#{flavor}.pg")).parse
-    Parsanol::PG::Imports.merge!(doc, ["#{BASE}/grammars"]) if doc.uses.any?
-    env = Parsanol::PG::Compiler.compile(doc, tables_dir: "#{BASE}/tables").envelope
-    artifact = Parsanol::PG::Artifact.new(env, nil, "#{BASE}/tables")
-  rescue Parsanol::PG::Error => e
+    doc = Parsanol::PARG::Parser.new(File.read("#{BASE}/grammars/#{flavor}.parg")).parse
+    Parsanol::PARG::Imports.merge!(doc, ["#{BASE}/grammars"]) if doc.uses.any?
+    env = Parsanol::PARG::Compiler.compile(doc, tables_dir: "#{BASE}/tables").envelope
+    artifact = Parsanol::PARG::Artifact.new(env, nil, "#{BASE}/tables")
+  rescue Parsanol::PARG::Error => e
     puts format("%-14s COMPILE-FAIL %s", flavor, e.message[0, 60])
     next [flavor, :compile_fail, 0, 0, 0]
   end

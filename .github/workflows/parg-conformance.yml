@@ -1,4 +1,4 @@
-name: pg-conformance
+name: parg-conformance
 on:
   push:
     branches: [main, ocp-and-schemas]
@@ -28,12 +28,12 @@ jobs:
           bundle exec ruby -Ilib -e '
             require "parsanol"
             Dir.glob(File.expand_path(ARGV[0])).sort.each do |f|
-              name = File.basename(f, ".pg")
-              document = Parsanol::PG::Parser.new(File.read(f)).parse
-              Parsanol::PG::Imports.merge!(document, [File.dirname(f)])
-              Parsanol::PG::Compiler.compile(document, tables_dir: File.join(File.dirname(f), "../tables"))
+              name = File.basename(f, ".parg")
+              document = Parsanol::PARG::Parser.new(File.read(f)).parse
+              Parsanol::PARG::Imports.merge!(document, [File.dirname(f)])
+              Parsanol::PARG::Compiler.compile(document, tables_dir: File.join(File.dirname(f), "../tables"))
               puts name
-            end' "$GITHUB_WORKSPACE/grammars/*.pg"
+            end' "$GITHUB_WORKSPACE/grammars/*.parg"
   rust:
     runs-on: ubuntu-latest
     steps:
@@ -43,7 +43,7 @@ jobs:
           git clone --depth 1 --branch "$RS_REF" \
             https://github.com/parsanol/parsanol-rs ../parsanol-rs
           cd ../parsanol-rs
-          PG_ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts" \
+          PARG_ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts" \
             ./docker-test.sh test -p parsanol --test pg_bindings
   typescript:
     runs-on: ubuntu-latest
@@ -60,5 +60,5 @@ jobs:
           npm install
           npm run build
           npx tsc -p tsconfig.test.json
-          PG_ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts" \
-            node --test dist-test/test/pg-runtime.test.js
+          PARG_ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts" \
+            node --test dist-test/test/parg-runtime.test.js
