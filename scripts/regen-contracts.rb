@@ -2,7 +2,7 @@ ruby_repo = ENV["PARSANOL_RUBY"] ||
             File.expand_path("../../../parsanol/parsanol-ruby", __dir__)
 $LOAD_PATH.unshift File.join(ruby_repo, "lib")
 require "parsanol"
-require "parsanol/pg"
+require "parsanol/parg"
 require "json"
 require "digest"
 

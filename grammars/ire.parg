@@ -17,9 +17,13 @@ grammar PubidIre version "0.1.0" {
   ire_prefix = ("IEEE-IRE" / "IRE") as publisher
   ire_type = ("Trans." / "Standard" / "Std") as type
   number = (((digits (space / dot) upper digits)) / ((digits dot "IRE" digits dot digits upper digits)) / ((2*4upper dash digits)) / (digits)) as number
-  date = [([space] [(dash / ",")] [space] (year) as year)]
+  yr_sep = (space [(dash / ",")] [space]) / (dash / ",") / space
+  date = [yr_sep (year) as year]
 
-  ire_identifier_year_first = ((year) as year) space ire_prefix space [(ire_type space)] number [([space] [(dash / ",")] [space] (year_full) as full_year)]
+  # The trailing optional is flattened on purpose: a nested [([x] [y])]
+  # compiles to branches that commit past the leading space in the
+  # pure-Ruby VM, losing the backtrack the year-less forms need.
+  ire_identifier_year_first = ((year) as year) space ire_prefix space [(ire_type space)] number [yr_sep (year_full) as full_year]
   ire_identifier_prefix_first = ire_prefix space [(ire_type space)] number date
   ire_identifier = ire_identifier_year_first / ire_identifier_prefix_first
 
