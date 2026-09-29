@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 env:
-  RUBY_REF: pg-authoring
+  RUBY_REF: main
   RS_REF: main
   TS_REF: main
 
@@ -44,7 +44,7 @@ jobs:
             https://github.com/parsanol/parsanol-rs ../parsanol-rs
           cd ../parsanol-rs
           PARG_ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts" \
-            ./docker-test.sh test -p parsanol --test pg_bindings
+            ./docker-test.sh test -p parsanol --test parg_bindings
   typescript:
     runs-on: ubuntu-latest
     steps:
