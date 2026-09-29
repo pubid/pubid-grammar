@@ -8,7 +8,7 @@ on:
 env:
   RUBY_REF: pg-authoring
   RS_REF: main
-  TS_REF: fix/urn-parity-iec-nist
+  TS_REF: main
 
 jobs:
   grammar:
