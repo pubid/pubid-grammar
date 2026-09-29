@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 env:
-  RUBY_REF: pg-authoring
+  RUBY_REF: main
   RS_REF: main
   TS_REF: main
 
