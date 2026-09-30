@@ -10,10 +10,8 @@
 #   (default: every .parg flavor with a monorepo Parser)
 
 require "parsanol"
-require "parsanol/pg"
+require "parsanol/parg"
 require "json"
-
-$LOAD_PATH.unshift File.join(MONO, "lib") if ENV.key?("PUBID_MONO")
 
 BASE = File.expand_path("..", __dir__)
 MONO = ENV["PUBID_MONO"] || File.expand_path("../../pubid/pubid", BASE)
