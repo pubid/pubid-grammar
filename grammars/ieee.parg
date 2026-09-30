@@ -55,10 +55,10 @@ grammar PubidIeee version "0.1.0" {
   ieee_crossref = ((((slash "C" digits dot digits dot digits dash ((year_digits))))) as ieee_crossref)
   ipcea_copub = ((((slash "IPCEA" space (1*(letter / digit / "." / dash))))) as ipcea_copub)
   s_designation = ([(publisher space)] [(((type_word)) as type [space])] (("S" dash digits)) as s_number [ipcea_copub] [parenthetical])
-  number = ((([("P")] *upper digits *((digits / upper)) [((dash digits !(year_digits)) *(dash digits))] [lower])) as number)
+  number = ((([("P")] *upper digits *((digits / upper)) [((dash digits !(year_digits)) *(dash digits !(year_digits)))] [lower])) as number)
   type_word = "Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.") / (("N" / "n") "o") / "No"
-  part = (dot / dash) (1*alnum_char) as part
-  subpart = (dot / dash / "_") ([(("REV" / "Rev"))] 1*(digit / lower) [(dot digits)]) as subpart
+  part = ((dot / dash) (1*alnum_char)) as part
+  subpart = ((dot / dash / "_") ([(("REV" / "Rev"))] 1*(digit / lower) [(dot digits)])) as subpart
   year = (((dot / dash) date_standalone ["(E)"]))
   draft_status = ((("Active Unapproved" / "Active Approved" / "Unapproved" / "Approved" / "Active") space))
   draft_prefix = (([space] ("/" / "_" / dash / space)))
@@ -121,12 +121,19 @@ grammar PubidIeee version "0.1.0" {
   psi_date = ((comma ((month_name / month_numeric) as month) (space / dash) (year_digits) as year) / (dash (year_digits) as year [(dash (2digit) as month)]))
   ieee_astm_si_psi = ((((("IEEE/ASTM" / "IEEE"))) as publishers) space (("PSI" / "SI")) as si_type ((space / ".")) ((digits)) as number [(((("." ((year_digits)) as year))))] [(((psi_draft [psi_date])) / ((psi_date [psi_draft])))] [parenthetical])
   no_prefix_ieee = ((((characteristic_ieee_number)) as number) ([((dash (upper / lower)))] as suffix) ([((dash (year_digits)))] as year) [draft] [(("(E)") / ("(F)"))] [parenthetical])
+  # Publisherless form of the generic tail (the original parser's
+  # `parameters((organizations >> space).maybe)` route): LAST in the
+  # choice so it only accepts what every publisher-led alternative
+  # rejected — joint and copublished shapes still fail (their letter
+  # prefixes cannot satisfy `number`), preserving the rejection
+  # contract downstream fallbacks rely on.
+  publisherless_ieee = ([(((type_word)) as type [space])] ((number)) [((part_subpart_year / edition))] [corrigendum] [draft] [revision_suffix] [parenthetical])
   corrigendum_identifier = ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [(((type_word)) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "Cor" [(dash / dot / space)] [space] ((digits)) as cor_number [((dash / ":" / space) ((year_digits)) as cor_year)] [parenthetical]
   interpretation_identifier = ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [(((type_word)) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "INT" [((dash / ":" / space) ((year_digits)) as int_year)] [parenthetical]
   conformance_identifier = ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [(((type_word)) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "Conformance" ((1*digit)) as conf_number dash ((year_digits)) as conf_year [parenthetical]
   multi_numbered_identifier = ((((((([(publisher space)] [(((type_word)) as type [space])] ((number)) [((part_subpart_year / edition))]))) as primary_identifier) ((((slash "C" digits dot digits dot digits dash ((year_digits)))) as secondary_crossref)))) / ((((((comma space) [(((type_word)) as type [space])] ((number)) dash ((year_digits)))) as secondary_joint))))
   csa_dual_published = (((((((publisher) space) [(((type_word)) as type [space])] ((number)) [((part_subpart_year / edition))])) as ieee_portion) slash "CSA" space ((((("C" 2digit dot digit space ("No" / "NO") dot space (1*(digit / ".")) ((dash / ":")) 2digit)) / (("C" (1*(digit / ".")) dash 2digit)) / (("C" 2digit dot digit space ("No" / "NO") dot space (1*(digit / ".")) ":" 2digit)) / (("C" (1*(digit / ".")) ":" 2digit))) as csa_portion))))
-  identifier = combined_aiee_identifier / aiee_identifier / ire_identifier / nesc_identifier / ieee_astm_si_psi / multi_numbered_identifier / csa_dual_published / s_designation / corrigendum_identifier / interpretation_identifier / conformance_identifier / joint_development_ieee_format / joint_development_iso_format / joint_development_iso_iec_edition / joint_development_embedded_stage / iec_ieee_copublished / number_first_identifier / ieee_approved_draft_identifier / ieee_draft_p_identifier / ieee_p_identifier / ansi_p_identifier / (((((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))))) [((draft_status)) as draft_status] [(("Draft Std") as type [space])] [(((type_word)) as type [((space "No" space))] [space])] ((number)) [((part_subpart_year / edition))] [corrigendum] [amendment] [interpretation] [conformance] [ashrae_copub] [ieee_crossref] [draft] [revision_suffix] [trailing_month_year] [ashrae_copub] [book_nickname] [corrigendum] [edition] [parenthetical] [book_nickname] [redline] [title_portion] [approved_draft_suffix] / no_prefix_ieee
+  identifier = combined_aiee_identifier / aiee_identifier / ire_identifier / nesc_identifier / ieee_astm_si_psi / multi_numbered_identifier / csa_dual_published / s_designation / corrigendum_identifier / interpretation_identifier / conformance_identifier / joint_development_ieee_format / joint_development_iso_format / joint_development_iso_iec_edition / joint_development_embedded_stage / iec_ieee_copublished / number_first_identifier / ieee_approved_draft_identifier / ieee_draft_p_identifier / ieee_p_identifier / ansi_p_identifier / (((((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))))) [((draft_status)) as draft_status] [(("Draft Std") as type [space])] [(((type_word)) as type [((space "No" space))] [space])] ((number)) [((part_subpart_year / edition))] [corrigendum] [amendment] [interpretation] [conformance] [ashrae_copub] [ieee_crossref] [draft] [revision_suffix] [trailing_month_year] [ashrae_copub] [book_nickname] [corrigendum] [edition] [parenthetical] [book_nickname] [redline] [title_portion] [approved_draft_suffix] / no_prefix_ieee / publisherless_ieee
 
   entry identifier: identifier
 
@@ -135,6 +142,10 @@ grammar PubidIeee version "0.1.0" {
     accept "IEEE P802.11"
     accept "ANSI/IEEE Std 91-1984"
     accept "IEEE/ASTM SI 10-2010"
+    accept "IEEE Std 11073-10417-2009"
+    accept "IEEE Std 1547-2018"
+    accept "Std 11073-10417-2009"
+    accept "Std 802.15.4j-2013"
     reject "nonsense"
   }
 }
