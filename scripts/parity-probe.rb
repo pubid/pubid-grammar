@@ -20,8 +20,9 @@ require "pubid"
 LEAF_KEYS = %i[value line column offset length].freeze
 
 # The monorepo flavors whose .parg grammar is independent (sub-grammars
-# aiee/ire/nesc/pg are authoring-side; idf rides with iso's joint form).
-SKIP = %w[aiee ire nesc pg idf].freeze
+# aiee/ire/nesc and the self-grammar parg are authoring-side; idf rides
+# with iso's joint form).
+SKIP = %w[aiee ire nesc parg idf].freeze
 
 def normalize(node, top: false)
   case node
