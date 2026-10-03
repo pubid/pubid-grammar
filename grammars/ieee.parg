@@ -26,9 +26,10 @@ grammar PubidIeee version "0.1.0" {
   letter = upper / lower
   digits = 1*digit
   space = " "
-  dash = "-"
+  dash = "-" / "&#x2013;" / "–"
   dot = "."
   slash = "/"
+  stage_sep = slash / "_"
   comma = ", "
   non_nl = %x01-09 / %x0B-10FFFF
   non_rparen = %x01-27 / %x2A-10FFFF
@@ -64,7 +65,7 @@ grammar PubidIeee version "0.1.0" {
   draft_prefix = (([space] ("/" / "_" / dash / space)))
   draft_version = (!(("R" dash)) [("D" !("IS"))] ((((1*2digit dot 1*2digit dot 1*2digit))) / ((((1*2digit dot 1*2digit [lower]))) / (((dot digits))) / (((digits "+" digits))) / (((digits [dot] "e" digits))) / ((([dash] (1*alnum_char) [(("-d") / (("_") *alnum_char))])))) as draft_version))
   draft_date = (((("," [space]) / space) (month_name) as month space ((year_digits)) as year)) / ((space ((year_digits)) as year)) / ((("," / space) (month_numeric) as month (space / dash) ((year_digits)) as year)) / (((([space] comma [space]) / space) (month_name) as month (((space ((digits)) as day) (((("," / space / dash)) ((year_digits)) as year))) / ([((space ((digits)) as day)) comma] ((year_digits)) as year) / ((comma [space] ((year_digits)) as year)) / ((space ((year_digits)) as year)))))
-  fdraft = ((((slash ((("FDIS" / "CDV" / "CD" / "WD" / "PWI" / "NP")) as fdraft_stage [(((((("," [space]) / space) (month_name) as month space (year_digits) as year))) / (((("," / space) (year_digits) as year))))] [parenthetical]))) as fdraft))
+  fdraft = ((((stage_sep ((("FDIS" / "CDV" / "CD" / "WD" / "PWI" / "NP")) as fdraft_stage [(((((("," [space]) / space) (month_name) as month space (year_digits) as year))) / (((("," / space) (year_digits) as year))))] [parenthetical]))) as fdraft))
   draft = ((draft_prefix (1*2draft_version) [((dot digits) as revision)] [((("=" (((("D" ("FDIS" / "CDV" / "PWI" / "DIS" / "WD" / "NP" / "CD"))) / (("FDIS" / "CDV" / "PWI" / "DIS" / "WD" / "NP" / "CD"))) as draft_iso_stage)) [(dot / dash)] [digits as draft_iso_iteration]))] [draft_date])) as draft
   revision_suffix = (slash "R" dash (1*alnum_char) as revision)
   edition = ((((comma (year_digits) as edition_year " Edition"))) / ((((space / dash)) "Edition " ((digits dot digits)) as edition (((" - ")) / space / dash) ((year_digits)) as edition_year [(dash (2digit) as edition_month)])))
@@ -102,8 +103,8 @@ grammar PubidIeee version "0.1.0" {
   iso_stage = ((("FDIS" / (("FCD" [digit])) / (("CDV" [digit])) / (("DIS" [digit])) / (("CD" [digit])) / "WD" / "PWI" / "NP")) as iso_stage)
 
   iec_ieee_copublished = ("IEC/IEEE" space !("P") &((*non_digit_nl digit)) ((1*non_nl)) as content)
-  joint_development_ieee_format = (("ISO/IEC/IEEE" / "IEEE/ISO/IEC" / "ISO/IEEE" / "IEC/IEEE" / "IEEE/CSA") as joint_publishers) space (("P") as project_marker) (digits) as number [(dot / dash) (digits) as part] [((slash (("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP")) as iso_stage slash "V" (digits) as iso_stage_iteration)) / (slash digits [dot digits] [dash (digits) as draft_version]) / (slash "D" "=" (("FDIS" / "FCD" / "CDV" / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as draft_iso_stage) [(((":" (("19" / "20") 2digit)) / ("-" (("19" / "20") 2digit) [2digit]))) as draft_stage_year] [(dot (digits 0*1letter)) as draft_iso_iteration]) / (slash "D" [dash] (1*(digit / ".")) as draft_version [((comma / space) (month_name) as draft_month space (year_digits) as draft_year) / (comma (year_digits)) as draft_year]) / (comma (("FDIS" / "FCD" / "CDV" / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP")) as iec_stage [digits] as stage_iteration)] [edition] [((dash (year_digits) as year [dash (month_numeric) as month] ("" as printed_dash_year)) / (((([comma] space) / (comma [space]) / space) (month_name) as month space (year_digits) as year ("" as printed_month_year))) / ((comma) space (month_name) as month [space] (year_digits) as year) / (dash (year_digits) as year))] [revision_suffix]
-  joint_development_iso_format = ((("ISO/IEC/IEEE" / "IEEE/ISO/IEC" / "IEEE/IEC/ISO" / "ISO/IEEE") as joint_publishers space ((iso_stage [space "Std"] space) / ("" as iso_published [space]))) / ((("IEC/IEEE" / "IEEE/IEC" / "ISO/IEC" / "IEEE") as joint_publishers space iso_stage [space "Std"] space)))["P"] as project_marker (digits) as number [((dot !(year_digits)) (digits) as part) / (dash ("" as part_dash) !(year_digits) (digits) as part)] [((":" (year_digits) as year) / (dash (year_digits) as year [dash (month_numeric) as month] ("" as printed_dash_year)) / ((([comma] space) / (comma [space])) (month_name) as month space (year_digits) as year ("" as printed_month_year)))] [space "(" (1*non_rparen) as edition_marker ")"] [((slash "D" "=" (("FDIS" / "FCD" / "CDV" / ("DIS" [digit]) / ("CD" [digit]) / "WD" / "PWI" / "NP") as draft_iso_stage) [(((":" (("19" / "20") 2digit)) / ("-" (("19" / "20") 2digit) [2digit]))) as draft_stage_year] [(dot (digits 0*1letter) as draft_iso_iteration)]) / (slash "D" [dash] (1*(digit / ".")) as draft_version [((([comma] space) / (comma [space])) (month_name) as draft_month space (year_digits) as draft_year) / (comma (year_digits) as draft_year)]))] [slash "Amd" [dot / space] (digits) as amd_number [(":" / dash) (year_digits) as amd_year]] [edition] [revision_suffix] [parenthetical]
+  joint_development_ieee_format = (("ISO/IEC/IEEE" / "IEEE/ISO/IEC" / "ISO/IEEE" / "IEC/IEEE" / "IEEE/CSA") as joint_publishers) space (("P") as project_marker) (digits) as number [(dot / dash) (digits) as part] [((stage_sep ("D" (digits) [dot digits]) stage_sep ("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as iso_stage)) / (stage_sep ("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as iso_stage space (year_digits) as year) / ((stage_sep (("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP")) as iso_stage slash "V" (digits) as iso_stage_iteration)) / (slash digits [dot digits] [dash (digits) as draft_version]) / (slash "D" "=" (("FDIS" / "FCD" / "CDV" / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as draft_iso_stage) [(((":" (("19" / "20") 2digit)) / ("-" (("19" / "20") 2digit) [2digit]))) as draft_stage_year] [(dot (digits 0*1letter)) as draft_iso_iteration]) / (slash "D" [dash] (1*(digit / ".")) as draft_version [((comma / space) (month_name) as draft_month space (year_digits) as draft_year) / (comma (year_digits)) as draft_year]) / (comma (("FDIS" / "FCD" / "CDV" / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP")) as iec_stage [digits] as stage_iteration)] [edition] [((dash (year_digits) as year [dash (month_numeric) as month] ("" as printed_dash_year)) / (((([comma] space) / (comma [space]) / ("," [space]) / space) (month_name) as month space (year_digits) as year ("" as printed_month_year))) / ((comma) space (month_name) as month [space] (year_digits) as year) / (dash (year_digits) as year))] [revision_suffix] [parenthetical]
+  joint_development_iso_format = ((("ISO/IEC/IEEE" / "IEEE/ISO/IEC" / "IEEE/IEC/ISO" / "ISO/IEEE") as joint_publishers [space] ((iso_stage [space "Std"] space) / ((slash [space]) iso_stage [space "Std"] space) / ("" as iso_published [space]))) / ((("IEC/IEEE" / "IEEE/IEC" / "ISO/IEC" / "IEEE") as joint_publishers [space] ((slash [space]) iso_stage / iso_stage) [space "Std"] space)))["P"] as project_marker (digits) as number [((dot !(year_digits)) (digits) as part) / (dash ("" as part_dash) !(year_digits) (digits) as part)] [((":" (year_digits) as year) / (dash (year_digits) as year [dash (month_numeric) as month] ("" as printed_dash_year)) / ((([comma] space) / (comma [space])) (month_name) as month space (year_digits) as year ("" as printed_month_year)))] [space "(" (1*non_rparen) as edition_marker ")"] [((slash "D" "=" (("FDIS" / "FCD" / "CDV" / ("DIS" [digit]) / ("CD" [digit]) / "WD" / "PWI" / "NP") as draft_iso_stage) [(((":" (("19" / "20") 2digit)) / ("-" (("19" / "20") 2digit) [2digit]))) as draft_stage_year] [(dot (digits 0*1letter) as draft_iso_iteration)]) / (slash "D" [dash] (1*(digit / ".")) as draft_version [((([comma] space) / (comma [space])) (month_name) as draft_month space (year_digits) as draft_year) / (comma (year_digits) as draft_year)]))] [slash "Amd" [dot / space] (digits) as amd_number [(":" / dash) (year_digits) as amd_year]] [edition] [revision_suffix] [parenthetical]
   joint_development_iso_iec_edition = ((("ISO/IEC") as joint_publishers) space ("" as iso_published) [("P")] as project_marker (digits) as number [((dot (digits)) as part) / ((dash ("" as iec_label_dash) !(year_digits) (digits) as part))] (":" [space] (year_digits) as year) [space] parenthetical)
   joint_development_embedded_stage = ((("" as stage_embedded) (((((("ISO/IEC/IEEE" / "IEEE/ISO/IEC" / "IEEE/IEC/ISO" / "ISO/IEEE" / "IEC/IEEE" / "IEEE/IEC" / "ISO/IEC" / "IEEE"))) as joint_publishers) space [("P") as project_marker] ((digits)) as number [((((dot / dash) !(year_digits) ((digits)) as part)))] dot (iso_stage) (!(digit / letter)) [(((((":" ((year_digits)) as year))) / ((((dash ((year_digits)) as year [(dash (month_numeric) as month)])))) / (((((("," [space]) / space) (month_name) as month space ((year_digits)) as year))))))]))))
   number_first_identifier = ((number [((((dash ((year_digits)) as year))))] space (((((publisher)) ((*copublisher) as copublishers)) as publishers)) space [(((type_word)) as type [space])] (((0*non_nl)) as title)))
@@ -119,7 +120,7 @@ grammar PubidIeee version "0.1.0" {
   nesc_identifier = ((&((nesc.draft_nesc / nesc.name_first / nesc.c2_standard / nesc.year_first)) (((([("IEEE" space "Std" space)]) (((nesc.nesc_identifier)) as nesc))))))
   psi_draft = (((slash "D" [dash] (((digits)) as draft_version))))
   psi_date = ((comma ((month_name / month_numeric) as month) (space / dash) (year_digits) as year) / (dash (year_digits) as year [(dash (2digit) as month)]))
-  ieee_astm_si_psi = ((((("IEEE/ASTM" / "IEEE"))) as publishers) space (("PSI" / "SI")) as si_type ((space / ".")) ((digits)) as number [(((("." ((year_digits)) as year))))] [(((psi_draft [psi_date])) / ((psi_date [psi_draft])))] [parenthetical])
+  ieee_astm_si_psi = ((((("IEEE/ASTM" / "IEEE/ ASTM" / "IEEE"))) as publishers) space (("PSI" / "SI")) as si_type ((space / ".")) ((digits)) as number [(((("." ((year_digits)) as year))))] [(((psi_draft [psi_date])) / ((psi_date [psi_draft])))] [parenthetical])
   no_prefix_ieee = ((((characteristic_ieee_number)) as number) ([((dash (upper / lower)))] as suffix) ([((dash (year_digits)))] as year) [draft] [(("(E)") / ("(F)"))] [parenthetical])
   # Publisherless form of the generic tail (the original parser's
   # `parameters((organizations >> space).maybe)` route): LAST in the
@@ -144,6 +145,18 @@ grammar PubidIeee version "0.1.0" {
   entry identifier: identifier
 
   test {
+    # the joint-draft underscore dialect parses directly (no shim):
+    # "_CDV/V3" keeps its /V iteration, "_DIS"/"_FDIS" stage words
+    accept "IEC/IEEE P63195_CDV/V3, February 2020"
+    accept "ISO/IEC/IEEE P24641_D2_CD, June 2020"
+    accept "ISO/IEC/IEEE P24748-3/D3_FDIS, April 2020 (E)"
+    accept "ISO/IEC/IEEE P26511.2_FDIS 2018"
+    accept "ISO/IEC/IEEE P24641_D3_CD2,March 2021"
+    # crawled stray slash between the joint publisher list and the stage
+    accept "ISO/IEC/IEEE/ FDIS 15288"
+    accept "ISO/IEC/IEEE/FDIS 15288"
+    # crawled "IEEE/ ASTM" spacing
+    accept "IEEE/ ASTM SI 10-2010"
     accept "IEEE Std 100-2000"
     accept "IEEE P802.11"
     accept "ANSI/IEEE Std 91-1984"
