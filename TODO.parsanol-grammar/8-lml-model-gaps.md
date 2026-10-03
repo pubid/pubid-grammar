@@ -20,6 +20,7 @@ on each, awaiting owner calls:
 
 | Decision | Issue |
 |---|---|
+| lutaml-model: grammar-backed formats reference impl (L1) | lutaml/lutaml-model#920 |
 | Artifact envelope v2: parse bindings section | parsanol/parsanol-rs#143 |
 | Artifact envelope: render/derive specs (output side) | parsanol/parsanol-rs#144 |
 | Structured parse error wire format | parsanol/parsanol-rs#145 |
