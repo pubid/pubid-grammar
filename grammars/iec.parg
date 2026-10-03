@@ -26,7 +26,9 @@ grammar PubidIec version "0.1.0" {
 
   ## IEC publishers, longest-first: the qualified forms must precede
   ## the bare "IEC".
-  prefix_sole_publisher = ("IECQ OD" / "IECQ CS" / "IEC CAB" / "IEC CA" / "IECRE" / "CISPR" / "IECEE" / "IECEx" / "IECQ" / "IEC" / "ISO") as publisher
+  # CEI is IEC's French spelling (pubid#488): French-language IEC
+  # documents print "CEI ..." identifiers; it parses as the IEC publisher.
+  prefix_sole_publisher = ("IECQ OD" / "IECQ CS" / "IEC CAB" / "IEC CA" / "IECRE" / "CISPR" / "IECEE" / "IECEx" / "IECQ" / "IEC" / "ISO" / "CEI") as publisher
   organization = "IEC" / "ISO" / "IEEE" / "CIW" / "SAE" / "CIE" / "ASME" / "ASTM" / "OECD" / "HL7" / "CEI" / "UNDP"
   copublishers_item = slash [space] organization as copublisher
   copublishers = (*copublishers_item) as copublishers
@@ -69,7 +71,8 @@ grammar PubidIec version "0.1.0" {
 
   one_of_efards = %x45 / %x46 / %x41 / %x52 / %x44 / %x53
   lower_char = lower
-  languages = (*(1*lower_char [","] / (one_of_efards [slash]))) as languages
+  # The house-style separator is "-" (pubid#491); "," stays accepted.
+  languages = (*(1*lower_char [("," / "-")] / (one_of_efards [slash]))) as languages
   language = "(" languages ")"
   all_parts = "(all parts)"
   fragment_notation = slash ("FRAGC" / "FRAG") as fragment_type (1*digit) as fragment_number
