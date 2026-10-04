@@ -38,7 +38,7 @@ grammar PgMeta version "1.0.0" {
   pred = ("!" / "&") postfixed
   postfixed = primary [pq "as" pq ident]
   table_alt = "alt" pq "from_table" pq dstring pq "column" pq dstring
-  set_expr = "set" pq ident pq "=" pq dstring
+  set_expr = "set" pq ident pq "=" pq (dstring / "(" [pq] choice [pq] ")")
   switch_arm = (dstring / "_") pq "->" pq dotted_ident
   switch_expr = "switch" pq ident pq "{" *nlws [switch_arm *(nlws switch_arm)] *nlws "}"
   custom_line = "custom" pq ident pq "=" pq dstring
@@ -80,6 +80,8 @@ grammar PgMeta version "1.0.0" {
     accept "grammar T version \"1\" { state block_kind: symbol a = %x30-39 }"
     accept "grammar T version \"1\" { a = (set block_kind = \"quote\") %x30-39 }"
     accept "grammar T version \"1\" { a = (switch block_kind { \"quote\" -> q _ -> never }) }"
+    accept "grammar T version \"1\" { a = (set d = (3*4(%x2D)) %x0A) }"
+    accept "grammar T version \"1\" { a = (!(state d) %x61-7A) }"
     reject "nonsense"
     reject "grammar T version \"1\" { = }"
   }
