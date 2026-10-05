@@ -141,7 +141,7 @@ grammar PubidIeee version "0.1.0" {
   # the IEEE date convention ("IEEE P15026.2/D=FDIS-201008"). Final
   # alternative: it only accepts what every publisher-led rule above
   # rejected, so plain IEEE drafts keep their existing routes.
-  ieee_iso_draft_designation = ((publisher) space [("P") as project_marker] (digits) as number [part [1*subpart]] (slash "D" "=" ((("FDIS" / "FCD" / "CDV" / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP")) as iso_stage)) (("-" (("19" / "20") 2digit) [2digit])) as draft_stage_year)
+  ieee_iso_draft_designation = ((publisher) space [(draft_status)] [("P") as project_marker] (digits) as number [part [1*subpart]] (slash "D" "=" ((("FDIS" / "FCD" / "CDV" / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP")) as iso_stage)) (("-" (("19" / "20") 2digit) [2digit])) as draft_stage_year)
   publisherless_ieee = ([(((type_word)) as type [space])] ((number)) [((part_subpart_year / edition))] [corrigendum] [rev_inline] [draft] [revision_suffix] [parenthetical])
   corrigendum_identifier = ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [(((type_word)) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "Cor" [(dash / dot / space)] [space] ((digits)) as cor_number [((dash / ":" / space) ((year_digits)) as cor_year)] [parenthetical]
   interpretation_identifier = ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [(((type_word)) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "INT" [((dash / ":" / space) ((year_digits)) as int_year)] [parenthetical]
