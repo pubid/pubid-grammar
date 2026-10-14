@@ -1,1 +1,1 @@
-{"grammar":"ogc","artifact_checksum":"sha256:9ed7fca92fec3cf1b70467ab663370a5fb11636e6c7c3806a349ad78960548a6","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"OGC 06-121r9","captures":{}},{"input":"20-024","captures":{}},{"input":"nonsense","captures":{}}]}}}
+{"grammar":"ogc","artifact_checksum":"sha256:4ede0a6dc5bf503913790b662887b74c458522da0850dccd47b841ba56ab7cc5","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"OGC 06-121r9","captures":{}},{"input":"20-024","captures":{}},{"input":"nonsense","captures":{}}]}}}
