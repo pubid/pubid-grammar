@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 env:
-  RUBY_REF: bb429fd4629111c4dbded7ddb28f38b0b95e63b9d
+  RUBY_REF: bb429fd1bc86ab0978100325186f18c2ffa2cfbb
   RS_REF: main
   TS_REF: main
 
