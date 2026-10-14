@@ -97,7 +97,9 @@ grammar PubidIeee version "0.1.0" {
   # a comma year ("Cor 1, 2015"), or hand its trailing comma to the
   # corrigendum's own draft (", D4, July 2015") — three alternatives,
   # no mid-alternative backtracking.
-  corrigendum = ((("_" / slash / dash / space) ("Corrigendum" / "Cor") [(dash / dot / space)] [space] [digits as cor_number] [(( (dash / ":" / space) ((year_digits) / ("20" ("1" / "0") ("x" / "X" / digit))) as cor_year ) / ( comma ((year_digits) / ("20" ("1" / "0") ("x" / "X" / digit))) as cor_year ) / (comma space))]) as corrigendum)
+  # A corrigendum year: 4-digit, or the 201x-style pre-publication placeholder.
+  yearish = ((year_digits) / ("20" ("1" / "0") ("x" / "X" / digit)))
+  corrigendum = ((("_" / slash / dash / space) ("Corrigendum" / "Cor") [(dash / dot / space)] [space] [digits as cor_number] [ ( (comma !yearish [space] draft as cor_draft)   / (comma yearish as cor_year)   / ((dash / ":" / space) yearish as cor_year) ) ]) as corrigendum)
   amendment = (((((("_" / slash / dash / space)) (("Amendment" / "Amd")) [(dash / dot / space)] [space] [digits as amd_number] [((dash / ":" / space) (year_digits) as amd_year)]))) as amendment)
   interpretation = ((((slash "INT" [((dash / ":" / space) (year_digits) as int_year)]))) as interpretation)
   reaffirmed = (((((("Reaffirmed " ((year_digits)) as year))) / ((([space] ("(R" ((year_digits)) as year ")")))))) as reaffirmed)
@@ -168,7 +170,7 @@ grammar PubidIeee version "0.1.0" {
   # rejected, so plain IEEE drafts keep their existing routes.
   ieee_iso_draft_designation = ((publisher) space [((draft_status)) as draft_status] [("P") as project_marker] (digits) as number [part [1*subpart]] (slash "D" "=" ((("FDIS" / "FCD" / "CDV" / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP")) as iso_stage)) (("-" (("19" / "20") 2digit) [2digit])) as draft_stage_year)
   publisherless_ieee = ([(((type_word)) as type [space])] ((number)) [((part_subpart_year / edition))] [corrigendum] [rev_inline] [draft] [revision_suffix] [parenthetical])
-  corrigendum_identifier = ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [(((type_word)) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "Cor" [(dash / dot / space)] [space] ((digits)) as cor_number [(( (dash / ":" / space) ((year_digits) / ("20" ("1" / "0") ("x" / "X" / digit))) as cor_year ) / ( comma ((year_digits) / ("20" ("1" / "0") ("x" / "X" / digit))) as cor_year ) / (comma space))] [draft] [parenthetical]
+  corrigendum_identifier = ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [(((type_word)) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "Cor" [(dash / dot / space)] [space] ((digits)) as cor_number [ ( (comma !yearish [space] draft as cor_draft)   / (comma yearish as cor_year)   / ((dash / ":" / space) yearish as cor_year) ) ] [draft] [parenthetical]
   interpretation_identifier = ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [(((type_word)) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "INT" [((dash / ":" / space) ((year_digits)) as int_year)] [parenthetical]
   conformance_identifier = ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [(((type_word)) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "Conformance" ((1*digit)) as conf_number ([space] dash [space]) ((year_digits)) as conf_year [parenthetical]
   multi_numbered_identifier = ((((((([(publisher space)] [(((type_word)) as type [space])] ((number)) [((part_subpart_year / edition))]))) as primary_identifier) ((((slash "C" digits dot digits dot digits ([space] dash [space]) ((year_digits)))) as secondary_crossref)))) / ((((((comma space) [(((type_word)) as type [space])] ((number)) ([space] dash [space]) ((year_digits)))) as secondary_joint))))
