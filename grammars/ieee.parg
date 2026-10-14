@@ -62,15 +62,23 @@ grammar PubidIeee version "0.1.0" {
   # late for the separator and the P prefix).
   number = ((([("P")] *upper digits *((digits / upper)) [lower])) as number)
   type_word = "Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.") / (("N" / "n") "o") / "No"
-  part = ((dot / dash) !(year_digits) (1*(!(("REV" / "Rev" / "rev") [space] (alnum_char)) alnum_char))) as part
-  subpart = ((dot / dash / "_") !(year_digits) (1*(!(("REV" / "Rev" / "rev") [space] (alnum_char)) (digit / lower)) [(dot digits)])) as subpart
+  part = ((dot / dash) !(year_digits) (1*(!(("REV" / "Rev" / "rev")) alnum_char))) as part
+  subpart = ((dot / dash / "_") !(year_digits) (1*(!(("REV" / "Rev" / "rev")) (digit / lower)) [(dot digits)])) as subpart
   year = (((([space] (dot / dash) [space])) date_standalone ["(E)"]))
   draft_status = ((("Active Unapproved" / "Active Approved" / "Unapproved" / "Approved" / "Active") space))
   draft_prefix = (([space] ("/" / "_" / dash / space)))
   rev_word = ("REV" / "Rev" / "rev")
-  rev_numbered = ([(dash / "_" / dot / space / slash)] (rev_word) [space] (1*digit) as revision)
-  rev_lettered = ([(dash / "_" / dot / space / slash)] (rev_word) (1*alnum_char))
-  rev_inline = ((rev_numbered) / (rev_lettered))
+  rev_sep = (dash / "_" / dot / space / slash)
+  # The lettered revision id ("REVi", "REVmc") is identity - the IEEE 802
+  # series letter suffix - and its separator is preserved as printed
+  # ("P802.11-REVmc" renders "P802.11-Revmc"; a glued "REVi" stays glued).
+  # A draft-D token after the word is the DRAFT (the "REVD2.2" family), so
+  # the lettered capture declines it. The word with no id is kept as the
+  # rev_bare marker ("802.1AR-Rev/D2.2").
+  rev_numbered = ([rev_sep] (rev_word) [space] (1*digit) as revision)
+  rev_lettered = (([rev_sep] as rev_sep) (rev_word) (!(("D" digit)) (1*alnum_char)) as revision)
+  rev_bare = (([rev_sep] as rev_sep) (rev_word) as rev_bare)
+  rev_inline = ((rev_numbered) / (rev_lettered) / (rev_bare))
   draft_version = (!(("R" dash)) [("D" !("IS"))] ((((1*2digit dot 1*2digit dot 1*2digit))) / ((((1*2digit dot 1*2digit [lower]))) / ((dot (!(year_digits)) (1*(alnum_char / dot)))) / (((digits "+" digits))) / (((digits [dot] "e" digits))) / ((((dash) (!(year_digits)) (1*alnum_char) [(("-d") / (("_") *alnum_char))])) / (((dash) (year_digits) as dash_year [dash (month_numeric) as dash_month]))) / (((1*alnum_char) [(("-d") / (("_") *alnum_char))]))) as draft_version))
   # A draft date may comma-join its month and year (", Feb, 2011")
   # - the canonical forced-comma render (IEEE publisher, dated draft).
@@ -189,6 +197,12 @@ grammar PubidIeee version "0.1.0" {
     accept "IEEE PC37.30.2/D043 Rev 18"
     accept "IEEE Std P802.16.2-REVa/D8"
     accept "IEEE Std P802.16/REVd/D5"
+    # lettered REV is identity and keeps its printed separator; the bare
+    # word with no id is the rev_bare marker (pubid ruling 2026-10-14)
+    accept "IEEE P802.11-REVmc/D8.0, Aug 2016"
+    accept "IEEE P802.15.3RevA-D00, January 2016"
+    accept "IEEE P802.15.4REVi/D09, 04 2011"
+    accept "IEEE Std 802.1AR-Rev/D2.2, September 2017"
     # hyphenated drafts with -YYYY[-MM] dates
     accept "IEEE P802.16/D-3-2017-07"
     accept "ANSI PC63.15/D-1.04-2017-06"
