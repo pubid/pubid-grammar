@@ -38,6 +38,7 @@ jobs:
             echo "::error::schemas/ or corpora/ are stale against grammars/ — run rake contracts:regen and commit the output"
             exit 1
           }
+          cd "$GITHUB_WORKSPACE/../parsanol-ruby"
           bundle exec ruby -Ilib -e '
             require "parsanol"
             Dir.glob(File.expand_path(ARGV[0])).sort.each do |f|
