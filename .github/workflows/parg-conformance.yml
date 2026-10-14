@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 env:
-  RUBY_REF: main
+  RUBY_REF: bb429fd4629111c4dbded7ddb28f38b0b95e63b9d
   RS_REF: main
   TS_REF: main
 
@@ -39,15 +39,9 @@ jobs:
             exit 1
           }
           cd "$GITHUB_WORKSPACE/../parsanol-ruby"
-          bundle exec ruby -Ilib -e '
-            require "parsanol"
-            Dir.glob(File.expand_path(ARGV[0])).sort.each do |f|
-              name = File.basename(f, ".parg")
-              document = Parsanol::PARG::Parser.new(File.read(f)).parse
-              Parsanol::PARG::Imports.merge!(document, [File.dirname(f)])
-              Parsanol::PARG::Compiler.compile(document, tables_dir: File.join(File.dirname(f), "../tables"))
-              puts name
-            end' "$GITHUB_WORKSPACE/grammars/*.parg"
+          for f in "$GITHUB_WORKSPACE"/grammars/*.parg; do
+            bundle exec parsanol parg test "$f" || exit 1
+          done
   rust:
     runs-on: ubuntu-latest
     steps:
