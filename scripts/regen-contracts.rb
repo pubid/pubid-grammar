@@ -17,7 +17,7 @@ Dir.glob("#{base}/grammars/*.parg").sort.each do |f|
     document = Parsanol::PARG::Parser.new(File.read(f)).parse
     Parsanol::PARG::Imports.merge!(document, ["#{base}/grammars"])
     envelope = Parsanol::PARG::Compiler.compile(document, tables_dir: "#{base}/tables").envelope
-    artifact = Parsanol::PARG::Artifact.new(envelope, nil, "#{base}/tables")
+    artifact = Parsanol::PARG::Artifact.new(envelope, nil, "#{base}/tables", imports_dir: "#{base}/grammars")
     entry = envelope["default_entry"] || artifact.entries.first
     render_variants = (envelope["render"] || {}).keys
     derive_names = (envelope["derive"] || {}).keys
