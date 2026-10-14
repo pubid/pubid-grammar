@@ -20,8 +20,8 @@ jobs:
           ruby-version: '3.4'
       - name: Compile every grammar (lint + validity + tests)
         run: |
-          git clone --depth 1 --branch "$RUBY_REF" \
-            https://github.com/parsanol/parsanol-ruby ../parsanol-ruby
+          git clone https://github.com/parsanol/parsanol-ruby ../parsanol-ruby
+          git -C ../parsanol-ruby checkout "$RUBY_REF"
           cd ../parsanol-ruby
           bundle install --path vendor/bundle
           # The script is not executable in the checkout and its default
