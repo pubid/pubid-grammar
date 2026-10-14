@@ -1,1 +1,1 @@
-{"grammar":"oasis","artifact_checksum":"sha256:3fcca025d43b7a4bcf86e371e26a907dc812ef2dcda370ef8539fb32821e870c","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"OASIS saml-core-2.0-os","captures":{}},{"input":"nonsense","captures":{}}]}}}
+{"grammar":"oasis","artifact_checksum":"sha256:b8fd9c531ac01dec71390ef77322dfac10066f368231f10bd237b5dacfbf417b","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"OASIS saml-core-2.0-os","captures":{}},{"input":"nonsense","captures":{}}]}}}
