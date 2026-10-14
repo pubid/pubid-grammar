@@ -24,7 +24,10 @@ jobs:
             https://github.com/parsanol/parsanol-ruby ../parsanol-ruby
           cd ../parsanol-ruby
           bundle install --path vendor/bundle
-          "$GITHUB_WORKSPACE/scripts/regen-contracts.rb"
+          # The script is not executable in the checkout and its default
+          # PARSANOL_RUBY path does not exist on the runner — run it under
+          # the cloned bundle (whose install built the native extension).
+          bundle exec ruby "$GITHUB_WORKSPACE/scripts/regen-contracts.rb"
           cd "$GITHUB_WORKSPACE"
           # A grammar change must carry its regenerated contracts: the
           # committed schemas/corpora pin artifact checksums and frozen
