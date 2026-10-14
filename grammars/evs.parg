@@ -1,16 +1,42 @@
-# Port of lib/pubid/evs/parser.rb: the EVS national-adoption wrapper
-# around the CEN/CENELEC grammar — "EVS" ("-" | " ") <CEN identifier>.
-# The CEN spine is IMPORTED via `use` (TODO 11/C6 imports): rules are
-# namespaced cen_cenelec.* while captures keep their contract names.
+# The EVS national identifier: the national prefix ("EVS" / "prEVS") over a
+# CEN/CENELEC adoption, an ISO/IEC adoption, or a plain Estonian standard —
+# plus the EVS-list supplements (national annex, corrigendum, AMD amendment)
+# and the language code. The CEN spine is IMPORTED via `use` (TODO 11/C6
+# imports): rules are namespaced cen_cenelec.* while captures keep their
+# contract names.
 
 use cen_cenelec
 
-grammar PubidEvs version "0.2.0" {
-  evs_separator = (dash / space) as evs_separator
-  identifier = "EVS" evs_separator (cen_cenelec.identifier) as adopted
+grammar PubidEvs version "0.3.0" {
+  identifier = [draft_prefix] "EVS" evs_separator ((cen_cenelec.identifier) as adopted / (evs_intl) as intl / (evs_plain) as plain) [evs_amd] [evs_cor / evs_ac] [evs_na]
 
+  draft_prefix = "pr" as draft_prefix
+  evs_separator = (dash / space) as evs_separator
+
+  # "EVS-ISO 9001:2015", "EVS-IEC 62368-1:2020" (+ their amendments)
+  evs_intl = (((("ISO" / "IEC") as intl_org) space (1*digit) as number) [(dash (1*digit) as part)] [(colon (4digit) as year)])
+  # "EVS 921:2019", "EVS-TS 1:2019", "EVS-TR 1:2019"
+  evs_plain = [(("TS" / "TR") as evs_type) space] (1*digit) as number [(colon (4digit) as year)]
+
+  # " AMD1:2014" / "+AMD1" — the AMD amendment spelling; the separator is
+  # semantic (list: "+A full standard plus the amendment", "/A only amendment")
+  evs_amd = (((plus as supp_plus / slash as supp_slash / space as supp_space) ("AMD" as amd_kind)) (1*digit) as amd_number [(colon (4digit) as amd_year)]) as evs_amd
+  # "+COR:2015" / "/COR" — the COR spelling (the CEN spine consumes +AC itself)
+  evs_cor = (((plus as supp_plus / slash as supp_slash) ("COR" as cor_kind)) [(1*digit) as cor_number] [(colon (4digit) as cor_year)]) as evs_cor
+  # " AC:2015" — the space-separated AC spelling
+  evs_ac = ((space as supp_space) ("AC" as cor_kind) [(1*digit) as cor_number] [(colon (4digit) as cor_year)]) as evs_cor
+  # "+NA:2010" / "/NA" — the national annex
+  evs_na = (((plus as supp_plus / slash as supp_slash) "NA") [(colon (4digit) as na_year)]) as na
+  # The trailing language code (" et" / " en" / " et-en") is extracted by
+  # the parse wrapper (Pubid::Evs.parse) BEFORE the grammar runs — the
+  # CEN adopted_string is greedy over plain text and would swallow it.
+
+  digit = %x30-39
   dash = "-"
   space = " "
+  plus = "+"
+  slash = "/"
+  colon = ":"
 
   entry identifier: identifier
 
@@ -18,6 +44,17 @@ grammar PubidEvs version "0.2.0" {
     accept "EVS-EN 18216:2026"
     accept "EVS-EN ISO 9001:2015/A1:2024"
     accept "EVS EN 196-1:2016"
+    accept "EVS 921:2019"
+    accept "EVS-TS 1:2019"
+    accept "EVS-TR 1:2019"
+    accept "EVS-ISO 9001:2015"
+    accept "EVS-IEC 62368-1:2020"
+    accept "EVS-EN 1993-1-1:2005+NA:2010"
+    accept "EVS-EN 1993-1-1:2005/NA"
+    accept "EVS-EN 50581:2012+COR:2015"
+    accept "EVS-EN 50581:2012+AC:2015"
+    accept "EVS-EN 71-1:2011 AMD1:2014"
+    accept "prEVS-EN 100:2026"
     reject "nonsense"
   }
 }
