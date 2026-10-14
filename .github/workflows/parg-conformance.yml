@@ -24,7 +24,17 @@ jobs:
             https://github.com/parsanol/parsanol-ruby ../parsanol-ruby
           cd ../parsanol-ruby
           bundle install --path vendor/bundle
-          $GITHUB_WORKSPACE/scripts/regen-contracts.rb || true
+          "$GITHUB_WORKSPACE/scripts/regen-contracts.rb"
+          cd "$GITHUB_WORKSPACE"
+          # A grammar change must carry its regenerated contracts: the
+          # committed schemas/corpora pin artifact checksums and frozen
+          # corpus cases, so drift here means the PR forgot the regen
+          # (the #33 gap — the regen ran with "|| true" and nothing
+          # compared its output, so a round-stale contracts set passed).
+          git diff --exit-code -- schemas corpora || {
+            echo "::error::schemas/ or corpora/ are stale against grammars/ — run rake contracts:regen and commit the output"
+            exit 1
+          }
           bundle exec ruby -Ilib -e '
             require "parsanol"
             Dir.glob(File.expand_path(ARGV[0])).sort.each do |f|
