@@ -1,6 +1,9 @@
 # Port of lib/pubid/omg/parser.rb: OMG <acronym>[ <version>[<sep><part>]]
 # with the beta-label word-boundary guards (a bare "beta" must not be
-# swallowed by the part rule). The GLUED catalogue label ("Beta1", the
+# swallowed by the part rule). The GLUED CATALOGUE label ("Beta1" --
+# capitalized, the /spec/ALMAS/1.5/Beta1 URL segment) classifies into
+# the version (the 2026-10-19 pubid#548 ruling); the LOWERCASE glued
+# form ("beta2") stays a document part (the DDS ruling, spec-pinned). A
 # /spec/ALMAS/1.5/Beta1 URL segment) classifies into the version (the
 # 2026-10-19 pubid#548 ruling); a Beta-prefixed part without digits
 # ("BetaWave") still lexes as the part — the boundary guard keeps it.
@@ -10,7 +13,7 @@
   acronym_join = %x2D / %x2F
   acronym = (letter 1*acronym_char *(acronym_join 1*acronym_char)) as acronym
   word_boundary = !alnum_char
-  beta = (" beta" !alnum_char ([space 1*digit !alnum_char]) / (space ("Beta" / "beta") [1*digit] !alnum_char))
+  beta = (" beta" !alnum_char ([space 1*digit !alnum_char]) / (space "Beta" [1*digit] !alnum_char))
   version = (1*digit *(dot 1*digit) [beta]) as version
   part_separator = space / slash
   part = (1*alnum_char) as part
