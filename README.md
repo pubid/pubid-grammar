@@ -42,3 +42,10 @@ Consumers:
 See `TODO.parsanol-grammar/0-scope-repositories.md` through
 `9-pg-language.md`, in order. The engine prerequisites (milestone 1)
 are tracked partly in parsanol-rs/parsanol-ruby.
+
+## Adding a flavor
+
+[docs/ADD-A-FLAVOR.md](docs/ADD-A-FLAVOR.md) is the end-to-end
+checklist: grammar and capture self-tests, the bake and contracts regen,
+the conformance gates, the Ruby flavor, the corpus round, the TypeScript
+mirror and the release rhythm.
