@@ -70,3 +70,15 @@ jobs:
           npx tsc -p tsconfig.test.json
           PARG_ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts" \
             node --test dist-test/test/parg-runtime.test.js
+      # The F4 corpora record the tree the NATIVE engine produced for
+      # every case; this gate parses each one through the WASM engine and
+      # fails with flavor#index + input + want/got on any drift. It also
+      # requires every artifact's freshness envelope and, when the
+      # grammar sources are present, compiledFrom() to hold (TODO.SOTA/04).
+      - name: Cross-engine corpus gate (native expectations vs wasm)
+        run: |
+          cd ../pubid-ts
+          PARG_ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts" \
+          PARG_CORPORA_DIR="$GITHUB_WORKSPACE/corpora" \
+          PARG_GRAMMAR_DIR="$GITHUB_WORKSPACE/grammars" \
+            node scripts/corpus-parity.mjs

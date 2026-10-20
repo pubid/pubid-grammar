@@ -18,5 +18,11 @@ echo "== Rust (docker, 4GB cap) =="
 echo "== TypeScript (registry engine) =="
 (cd "${PUBID_TS:-$BASE/../pubid-ts}" && npm ls parsanol --depth=0)
 echo "== TypeScript (wasm) =="
-(cd "${PUBID_TS:-$BASE/../pubid-ts}" && npm run build >/dev/null && npx tsc -p tsconfig.test.json >/dev/null && node --test dist-test/test/pg-runtime.test.js)
+(cd "${PUBID_TS:-$BASE/../pubid-ts}" && npm run build >/dev/null && npx tsc -p tsconfig.test.json >/dev/null && node --test dist-test/test/parg-runtime.test.js)
+echo "== Cross-engine corpus (native expectations vs wasm) =="
+(cd "${PUBID_TS:-$BASE/../pubid-ts}" && \
+  PARG_ARTIFACT_DIR="$BASE/artifacts" \
+  PARG_CORPORA_DIR="$BASE/corpora" \
+  PARG_GRAMMAR_DIR="$BASE/grammars" \
+    node scripts/corpus-parity.mjs)
 echo "cross-runtime gate: GREEN"
