@@ -18,9 +18,9 @@ grammar PubidJcgm version "0.1.0" {
   language_portion = "(" (("E/F" / "F/E") / upper) as languages ")"
   base = publisher space number_portion [date_portion] [language_portion]
   meeting_identifier = publisher space digits as number ordinal_suffix space "Meeting" as type_with_stage [(space "(" year_digits as date ")")]
-  amendment_identifier = (base as base) slash "Amd" as type_with_stage space digits as number [(colon (full_date / year_only))]
+  amendment_identifier = (base as base) slash "Amd" as type_with_stage (space / ("." [space])) digits as number [(colon (full_date / year_only))]
   corrigendum_identifier = (base as base) space "Corrigendum" as type_with_stage
-  numbered_corrigendum_identifier = (base as base) slash "Cor" as type_with_stage space digits as number [(colon (full_date / year_only))]
+  numbered_corrigendum_identifier = (base as base) slash "Cor" as type_with_stage (space / ("." [space])) digits as number [(colon (full_date / year_only))]
   named_number = ("GUM" / ("VIM" [(dash digits)])) as number
   named_guide_identifier = publisher space named_number
   identifier = meeting_identifier / amendment_identifier / corrigendum_identifier / numbered_corrigendum_identifier / base / named_guide_identifier
@@ -36,6 +36,8 @@ grammar PubidJcgm version "0.1.0" {
     accept "JCGM 200:2008(F)"
     accept "JCGM 100:2008"
     accept "JCGM 1st Meeting (2004)"
+    accept "JCGM 100:2008/Amd.1:2026"
+    accept "JCGM 101:2008/Cor.1:2009"
     reject "nonsense"
   }
 }
