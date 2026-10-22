@@ -1155,7 +1155,7 @@
           },
           {
             "Entity": {
-              "atom": 1316
+              "atom": 1313
             }
           },
           {
@@ -1417,12 +1417,12 @@
           },
           {
             "Entity": {
-              "atom": 957
+              "atom": 950
             }
           },
           {
             "Entity": {
-              "atom": 478
+              "atom": 475
             }
           },
           {
@@ -2693,7 +2693,7 @@
           },
           {
             "Entity": {
-              "atom": 476
+              "atom": 473
             }
           },
           {
@@ -2703,7 +2703,7 @@
           },
           {
             "Entity": {
-              "atom": 471
+              "atom": 468
             }
           },
           {
@@ -2726,24 +2726,6 @@
           },
           {
             "Str": {
-              "pattern": "n"
-            }
-          },
-          {
-            "Entity": {
-              "atom": 106
-            }
-          },
-          {
-            "Sequence": {
-              "atoms": [
-                442,
-                443
-              ]
-            }
-          },
-          {
-            "Str": {
               "pattern": "r"
             }
           },
@@ -2755,14 +2737,14 @@
           {
             "Sequence": {
               "atoms": [
-                445,
-                446
+                442,
+                443
               ]
             }
           },
           {
             "Lookahead": {
-              "atom": 447,
+              "atom": 444,
               "positive": false
             }
           },
@@ -2778,7 +2760,7 @@
           },
           {
             "Lookahead": {
-              "atom": 450,
+              "atom": 447,
               "positive": false
             }
           },
@@ -2855,6 +2837,9 @@
           {
             "Alternative": {
               "atoms": [
+                449,
+                450,
+                451,
                 452,
                 453,
                 454,
@@ -2865,16 +2850,13 @@
                 459,
                 460,
                 461,
-                462,
-                463,
-                464,
-                465
+                462
               ]
             }
           },
           {
             "Lookahead": {
-              "atom": 466,
+              "atom": 463,
               "positive": false
             }
           },
@@ -2885,7 +2867,7 @@
           },
           {
             "Repetition": {
-              "atom": 468,
+              "atom": 465,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -2894,11 +2876,11 @@
           {
             "Sequence": {
               "atoms": [
+                445,
+                446,
                 448,
-                449,
-                451,
-                467,
-                469
+                464,
+                466
               ]
             }
           },
@@ -2906,8 +2888,7 @@
             "Alternative": {
               "atoms": [
                 441,
-                444,
-                470
+                467
               ]
             }
           },
@@ -2918,7 +2899,7 @@
           },
           {
             "Lookahead": {
-              "atom": 472,
+              "atom": 469,
               "positive": false
             }
           },
@@ -2926,13 +2907,13 @@
             "Sequence": {
               "atoms": [
                 438,
-                473
+                470
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 474,
+              "atom": 471,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -2942,7 +2923,7 @@
             "Sequence": {
               "atoms": [
                 437,
-                475
+                472
               ]
             }
           },
@@ -2983,7 +2964,7 @@
           {
             "Named": {
               "name": "first_number",
-              "atom": 477
+              "atom": 474
             }
           },
           {
@@ -2999,15 +2980,15 @@
           {
             "Sequence": {
               "atoms": [
-                479,
-                480
+                476,
+                477
               ]
             }
           },
           {
             "Named": {
               "name": "edition_year",
-              "atom": 481
+              "atom": 478
             }
           },
           {
@@ -3023,7 +3004,7 @@
           {
             "Named": {
               "name": "edition_month",
-              "atom": 484
+              "atom": 481
             }
           },
           {
@@ -3034,15 +3015,15 @@
           {
             "Named": {
               "name": "edition_year",
-              "atom": 486
+              "atom": 483
             }
           },
           {
             "Sequence": {
               "atoms": [
-                483,
-                485,
-                487
+                480,
+                482,
+                484
               ]
             }
           },
@@ -3059,7 +3040,7 @@
           {
             "Named": {
               "name": "fips_part",
-              "atom": 490
+              "atom": 487
             }
           },
           {
@@ -3075,7 +3056,7 @@
           {
             "Named": {
               "name": "edition_month",
-              "atom": 493
+              "atom": 490
             }
           },
           {
@@ -3086,7 +3067,7 @@
           {
             "Named": {
               "name": "edition_day",
-              "atom": 495
+              "atom": 492
             }
           },
           {
@@ -3102,19 +3083,19 @@
           {
             "Named": {
               "name": "edition_year",
-              "atom": 498
+              "atom": 495
             }
           },
           {
             "Sequence": {
               "atoms": [
+                486,
+                488,
                 489,
                 491,
-                492,
+                493,
                 494,
-                496,
-                497,
-                499
+                496
               ]
             }
           },
@@ -3131,7 +3112,7 @@
           {
             "Named": {
               "name": "decimal_base",
-              "atom": 502
+              "atom": 499
             }
           },
           {
@@ -3147,30 +3128,30 @@
           {
             "Named": {
               "name": "decimal_suffix",
-              "atom": 505
-            }
-          },
-          {
-            "Sequence": {
-              "atoms": [
-                504,
-                506
-              ]
+              "atom": 502
             }
           },
           {
             "Sequence": {
               "atoms": [
                 501,
-                503,
-                507
+                503
+              ]
+            }
+          },
+          {
+            "Sequence": {
+              "atoms": [
+                498,
+                500,
+                504
               ]
             }
           },
           {
             "Named": {
               "name": "decimal_number",
-              "atom": 508
+              "atom": 505
             }
           },
           {
@@ -3186,7 +3167,7 @@
           {
             "Named": {
               "name": "letter_base",
-              "atom": 511
+              "atom": 508
             }
           },
           {
@@ -3202,38 +3183,14 @@
           {
             "Named": {
               "name": "letter_suffix_extra",
-              "atom": 514
+              "atom": 511
             }
           },
           {
             "Sequence": {
               "atoms": [
-                513,
-                515
-              ]
-            }
-          },
-          {
-            "Str": {
-              "pattern": "n"
-            }
-          },
-          {
-            "Entity": {
-              "atom": 106
-            }
-          },
-          {
-            "Named": {
-              "name": "letter_suffix_extra",
-              "atom": 518
-            }
-          },
-          {
-            "Sequence": {
-              "atoms": [
-                517,
-                519
+                510,
+                512
               ]
             }
           },
@@ -3245,31 +3202,30 @@
           {
             "Named": {
               "name": "letter_suffix",
-              "atom": 521
+              "atom": 514
             }
           },
           {
             "Alternative": {
               "atoms": [
-                516,
-                520,
-                522
+                513,
+                515
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                510,
-                512,
-                523
+                507,
+                509,
+                516
               ]
             }
           },
           {
             "Named": {
               "name": "letter_number",
-              "atom": 524
+              "atom": 517
             }
           },
           {
@@ -3285,7 +3241,7 @@
           {
             "Named": {
               "name": "letter_base",
-              "atom": 527
+              "atom": 520
             }
           },
           {
@@ -3300,7 +3256,7 @@
           },
           {
             "Lookahead": {
-              "atom": 530,
+              "atom": 523,
               "positive": false
             }
           },
@@ -3312,7 +3268,7 @@
           {
             "Named": {
               "name": "letter_suffix",
-              "atom": 532
+              "atom": 525
             }
           },
           {
@@ -3328,33 +3284,33 @@
           {
             "Alternative": {
               "atoms": [
-                534,
-                535
+                527,
+                528
               ]
             }
           },
           {
             "Lookahead": {
-              "atom": 536,
+              "atom": 529,
               "positive": false
             }
           },
           {
             "Sequence": {
               "atoms": [
+                519,
+                521,
+                522,
+                524,
                 526,
-                528,
-                529,
-                531,
-                533,
-                537
+                530
               ]
             }
           },
           {
             "Named": {
               "name": "letter_number",
-              "atom": 538
+              "atom": 531
             }
           },
           {
@@ -3369,7 +3325,7 @@
           },
           {
             "Repetition": {
-              "atom": 541,
+              "atom": 534,
               "min": 4,
               "max": 4,
               "tag": "Repetition"
@@ -3378,7 +3334,7 @@
           {
             "Named": {
               "name": "dash_year",
-              "atom": 542
+              "atom": 535
             }
           },
           {
@@ -3388,7 +3344,7 @@
           },
           {
             "Lookahead": {
-              "atom": 544,
+              "atom": 537,
               "positive": false
             }
           },
@@ -3399,13 +3355,13 @@
           },
           {
             "Lookahead": {
-              "atom": 546,
+              "atom": 539,
               "positive": false
             }
           },
           {
             "Entity": {
-              "atom": 581
+              "atom": 574
             }
           },
           {
@@ -3426,9 +3382,9 @@
           {
             "Alternative": {
               "atoms": [
-                549,
-                550,
-                551
+                542,
+                543,
+                544
               ]
             }
           },
@@ -3439,7 +3395,7 @@
           },
           {
             "Repetition": {
-              "atom": 553,
+              "atom": 546,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -3463,25 +3419,25 @@
           {
             "Alternative": {
               "atoms": [
-                555,
-                556,
-                557
+                548,
+                549,
+                550
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                554,
-                558
+                547,
+                551
               ]
             }
           },
           {
             "Alternative": {
               "atoms": [
-                552,
-                559
+                545,
+                552
               ]
             }
           },
@@ -3497,7 +3453,7 @@
           },
           {
             "Repetition": {
-              "atom": 562,
+              "atom": 555,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -3516,15 +3472,15 @@
           {
             "Sequence": {
               "atoms": [
-                563,
-                564,
-                565
+                556,
+                557,
+                558
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 566,
+              "atom": 559,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -3548,14 +3504,14 @@
           {
             "Sequence": {
               "atoms": [
-                569,
-                570
+                562,
+                563
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 571,
+              "atom": 564,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -3564,14 +3520,14 @@
           {
             "Sequence": {
               "atoms": [
-                568,
-                572
+                561,
+                565
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 573,
+              "atom": 566,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -3590,14 +3546,14 @@
           {
             "Sequence": {
               "atoms": [
-                575,
-                576
+                568,
+                569
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 577,
+              "atom": 570,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -3606,36 +3562,36 @@
           {
             "Sequence": {
               "atoms": [
-                561,
+                554,
+                560,
                 567,
-                574,
-                578
+                571
               ]
             }
           },
           {
             "Named": {
               "name": "part",
-              "atom": 579
+              "atom": 572
             }
           },
           {
             "Sequence": {
               "atoms": [
-                560,
-                580
+                553,
+                573
               ]
             }
           },
           {
             "Lookahead": {
-              "atom": 548,
+              "atom": 541,
               "positive": false
             }
           },
           {
             "Entity": {
-              "atom": 592
+              "atom": 585
             }
           },
           {
@@ -3670,7 +3626,7 @@
           },
           {
             "Repetition": {
-              "atom": 589,
+              "atom": 582,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -3679,30 +3635,30 @@
           {
             "Sequence": {
               "atoms": [
-                584,
-                585,
-                586,
-                587,
-                588,
-                590
+                577,
+                578,
+                579,
+                580,
+                581,
+                583
               ]
             }
           },
           {
             "Named": {
               "name": "crpl_range",
-              "atom": 591
+              "atom": 584
             }
           },
           {
             "Lookahead": {
-              "atom": 583,
+              "atom": 576,
               "positive": false
             }
           },
           {
             "Entity": {
-              "atom": 704
+              "atom": 697
             }
           },
           {
@@ -3712,7 +3668,7 @@
           },
           {
             "Lookahead": {
-              "atom": 595,
+              "atom": 588,
               "positive": false
             }
           },
@@ -3723,7 +3679,7 @@
           },
           {
             "Lookahead": {
-              "atom": 597,
+              "atom": 590,
               "positive": false
             }
           },
@@ -3735,7 +3691,7 @@
           {
             "Named": {
               "name": "number_only",
-              "atom": 599
+              "atom": 592
             }
           },
           {
@@ -3751,30 +3707,30 @@
           {
             "Named": {
               "name": "letter",
-              "atom": 602
+              "atom": 595
             }
           },
           {
             "Sequence": {
               "atoms": [
-                600,
-                601,
-                603
+                593,
+                594,
+                596
               ]
             }
           },
           {
             "Named": {
               "name": "revision_letter",
-              "atom": 604
+              "atom": 597
             }
           },
           {
             "Sequence": {
               "atoms": [
-                596,
-                598,
-                605
+                589,
+                591,
+                598
               ]
             }
           },
@@ -3796,8 +3752,8 @@
           {
             "Alternative": {
               "atoms": [
-                608,
-                609
+                601,
+                602
               ]
             }
           },
@@ -3808,7 +3764,7 @@
           },
           {
             "Lookahead": {
-              "atom": 611,
+              "atom": 604,
               "positive": false
             }
           },
@@ -3819,24 +3775,24 @@
           },
           {
             "Lookahead": {
-              "atom": 613,
+              "atom": 606,
               "positive": false
             }
           },
           {
             "Sequence": {
               "atoms": [
-                612,
-                614
+                605,
+                607
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                607,
-                610,
-                615
+                600,
+                603,
+                608
               ]
             }
           },
@@ -3868,18 +3824,18 @@
           {
             "Sequence": {
               "atoms": [
-                620,
-                621
+                613,
+                614
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                617,
-                618,
-                619,
-                622
+                610,
+                611,
+                612,
+                615
               ]
             }
           },
@@ -3906,10 +3862,10 @@
           {
             "Sequence": {
               "atoms": [
-                624,
-                625,
-                626,
-                627
+                617,
+                618,
+                619,
+                620
               ]
             }
           },
@@ -3921,7 +3877,7 @@
           {
             "Named": {
               "name": "number_only",
-              "atom": 629
+              "atom": 622
             }
           },
           {
@@ -3947,14 +3903,14 @@
           {
             "Sequence": {
               "atoms": [
-                633,
-                634
+                626,
+                627
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 635,
+              "atom": 628,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -3963,30 +3919,30 @@
           {
             "Sequence": {
               "atoms": [
-                632,
-                636
+                625,
+                629
               ]
             }
           },
           {
             "Named": {
               "name": "edition_id",
-              "atom": 637
+              "atom": 630
             }
           },
           {
             "Sequence": {
               "atoms": [
-                631,
-                638
+                624,
+                631
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                630,
-                639
+                623,
+                632
               ]
             }
           },
@@ -4022,7 +3978,7 @@
           },
           {
             "Repetition": {
-              "atom": 646,
+              "atom": 639,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -4031,12 +3987,12 @@
           {
             "Sequence": {
               "atoms": [
-                641,
-                642,
-                643,
-                644,
-                645,
-                647
+                634,
+                635,
+                636,
+                637,
+                638,
+                640
               ]
             }
           },
@@ -4058,9 +4014,9 @@
           {
             "Sequence": {
               "atoms": [
-                649,
-                650,
-                651
+                642,
+                643,
+                644
               ]
             }
           },
@@ -4086,17 +4042,17 @@
           },
           {
             "Lookahead": {
-              "atom": 656,
+              "atom": 649,
               "positive": false
             }
           },
           {
             "Sequence": {
               "atoms": [
-                653,
-                654,
-                655,
-                657
+                646,
+                647,
+                648,
+                650
               ]
             }
           },
@@ -4113,8 +4069,8 @@
           {
             "Sequence": {
               "atoms": [
-                659,
-                660
+                652,
+                653
               ]
             }
           },
@@ -4126,7 +4082,7 @@
           {
             "Named": {
               "name": "number_only",
-              "atom": 662
+              "atom": 655
             }
           },
           {
@@ -4142,16 +4098,16 @@
           {
             "Sequence": {
               "atoms": [
-                663,
-                664,
-                665
+                656,
+                657,
+                658
               ]
             }
           },
           {
             "Named": {
               "name": "revision_letter",
-              "atom": 666
+              "atom": 659
             }
           },
           {
@@ -4167,15 +4123,15 @@
           {
             "Sequence": {
               "atoms": [
-                668,
-                669
+                661,
+                662
               ]
             }
           },
           {
             "Named": {
               "name": "revision_letter_suffix",
-              "atom": 670
+              "atom": 663
             }
           },
           {
@@ -4201,14 +4157,14 @@
           {
             "Sequence": {
               "atoms": [
-                674,
-                675
+                667,
+                668
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 676,
+              "atom": 669,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -4217,29 +4173,29 @@
           {
             "Sequence": {
               "atoms": [
-                673,
-                677
+                666,
+                670
               ]
             }
           },
           {
             "Named": {
               "name": "edition_id",
-              "atom": 678
+              "atom": 671
             }
           },
           {
             "Sequence": {
               "atoms": [
-                672,
-                679
+                665,
+                672
               ]
             }
           },
           {
             "Named": {
               "name": "revision_simple",
-              "atom": 680
+              "atom": 673
             }
           },
           {
@@ -4264,7 +4220,7 @@
           },
           {
             "Repetition": {
-              "atom": 685,
+              "atom": 678,
               "min": 1,
               "max": 3,
               "tag": "Repetition"
@@ -4277,21 +4233,21 @@
           },
           {
             "Lookahead": {
-              "atom": 687,
+              "atom": 680,
               "positive": false
             }
           },
           {
             "Sequence": {
               "atoms": [
-                686,
-                688
+                679,
+                681
               ]
             }
           },
           {
             "Entity": {
-              "atom": 476
+              "atom": 473
             }
           },
           {
@@ -4317,24 +4273,24 @@
           {
             "Sequence": {
               "atoms": [
-                691,
-                692,
-                693,
-                694
+                684,
+                685,
+                686,
+                687
               ]
             }
           },
           {
             "Lookahead": {
-              "atom": 695,
+              "atom": 688,
               "positive": false
             }
           },
           {
             "Sequence": {
               "atoms": [
-                690,
-                696
+                683,
+                689
               ]
             }
           },
@@ -4350,6 +4306,68 @@
           },
           {
             "Lookahead": {
+              "atom": 692,
+              "positive": false
+            }
+          },
+          {
+            "Sequence": {
+              "atoms": [
+                691,
+                693
+              ]
+            }
+          },
+          {
+            "Alternative": {
+              "atoms": [
+                690,
+                694
+              ]
+            }
+          },
+          {
+            "Alternative": {
+              "atoms": [
+                599,
+                609,
+                616,
+                621,
+                633,
+                641,
+                645,
+                651,
+                654,
+                660,
+                664,
+                674,
+                675,
+                676,
+                677,
+                682,
+                695
+              ]
+            }
+          },
+          {
+            "Named": {
+              "name": "second_number",
+              "atom": 696
+            }
+          },
+          {
+            "Lookahead": {
+              "atom": 587,
+              "positive": false
+            }
+          },
+          {
+            "Entity": {
+              "atom": 47
+            }
+          },
+          {
+            "Lookahead": {
               "atom": 699,
               "positive": false
             }
@@ -4357,90 +4375,28 @@
           {
             "Sequence": {
               "atoms": [
+                538,
+                540,
+                575,
+                586,
                 698,
                 700
               ]
             }
           },
           {
-            "Alternative": {
+            "Sequence": {
               "atoms": [
-                697,
+                533,
+                536,
                 701
-              ]
-            }
-          },
-          {
-            "Alternative": {
-              "atoms": [
-                606,
-                616,
-                623,
-                628,
-                640,
-                648,
-                652,
-                658,
-                661,
-                667,
-                671,
-                681,
-                682,
-                683,
-                684,
-                689,
-                702
-              ]
-            }
-          },
-          {
-            "Named": {
-              "name": "second_number",
-              "atom": 703
-            }
-          },
-          {
-            "Lookahead": {
-              "atom": 594,
-              "positive": false
-            }
-          },
-          {
-            "Entity": {
-              "atom": 47
-            }
-          },
-          {
-            "Lookahead": {
-              "atom": 706,
-              "positive": false
-            }
-          },
-          {
-            "Sequence": {
-              "atoms": [
-                545,
-                547,
-                582,
-                593,
-                705,
-                707
-              ]
-            }
-          },
-          {
-            "Sequence": {
-              "atoms": [
-                540,
-                543,
-                708
               ]
             }
           },
           {
             "Named": {
               "name": "edition_dash_year",
-              "atom": 709
+              "atom": 702
             }
           },
           {
@@ -4450,7 +4406,7 @@
           },
           {
             "Entity": {
-              "atom": 704
+              "atom": 697
             }
           },
           {
@@ -4465,7 +4421,7 @@
           },
           {
             "Repetition": {
-              "atom": 714,
+              "atom": 707,
               "min": 4,
               "max": 4,
               "tag": "Repetition"
@@ -4474,7 +4430,7 @@
           {
             "Named": {
               "name": "dash_year",
-              "atom": 715
+              "atom": 708
             }
           },
           {
@@ -4484,7 +4440,7 @@
           },
           {
             "Lookahead": {
-              "atom": 717,
+              "atom": 710,
               "positive": false
             }
           },
@@ -4495,35 +4451,35 @@
           },
           {
             "Lookahead": {
-              "atom": 719,
+              "atom": 712,
               "positive": false
             }
           },
           {
             "Entity": {
-              "atom": 581
+              "atom": 574
             }
           },
           {
             "Lookahead": {
-              "atom": 721,
+              "atom": 714,
               "positive": false
             }
           },
           {
             "Entity": {
-              "atom": 592
+              "atom": 585
             }
           },
           {
             "Lookahead": {
-              "atom": 723,
+              "atom": 716,
               "positive": false
             }
           },
           {
             "Entity": {
-              "atom": 791
+              "atom": 784
             }
           },
           {
@@ -4533,7 +4489,7 @@
           },
           {
             "Repetition": {
-              "atom": 726,
+              "atom": 719,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -4552,7 +4508,53 @@
           {
             "Alternative": {
               "atoms": [
-                728,
+                721,
+                722
+              ]
+            }
+          },
+          {
+            "Entity": {
+              "atom": 8
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 724,
+              "min": 0,
+              "max": 1,
+              "tag": "Maybe"
+            }
+          },
+          {
+            "Entity": {
+              "atom": 39
+            }
+          },
+          {
+            "Named": {
+              "name": "revision_month",
+              "atom": 726
+            }
+          },
+          {
+            "Entity": {
+              "atom": 44
+            }
+          },
+          {
+            "Named": {
+              "name": "revision_year",
+              "atom": 728
+            }
+          },
+          {
+            "Sequence": {
+              "atoms": [
+                720,
+                723,
+                725,
+                727,
                 729
               ]
             }
@@ -4571,52 +4573,6 @@
             }
           },
           {
-            "Entity": {
-              "atom": 39
-            }
-          },
-          {
-            "Named": {
-              "name": "revision_month",
-              "atom": 733
-            }
-          },
-          {
-            "Entity": {
-              "atom": 44
-            }
-          },
-          {
-            "Named": {
-              "name": "revision_year",
-              "atom": 735
-            }
-          },
-          {
-            "Sequence": {
-              "atoms": [
-                727,
-                730,
-                732,
-                734,
-                736
-              ]
-            }
-          },
-          {
-            "Entity": {
-              "atom": 8
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 738,
-              "min": 0,
-              "max": 1,
-              "tag": "Maybe"
-            }
-          },
-          {
             "Str": {
               "pattern": "r"
             }
@@ -4629,8 +4585,8 @@
           {
             "Alternative": {
               "atoms": [
-                740,
-                741
+                733,
+                734
               ]
             }
           },
@@ -4642,7 +4598,7 @@
           {
             "Named": {
               "name": "revision",
-              "atom": 743
+              "atom": 736
             }
           },
           {
@@ -4658,17 +4614,17 @@
           {
             "Named": {
               "name": "revision_year",
-              "atom": 746
+              "atom": 739
             }
           },
           {
             "Sequence": {
               "atoms": [
-                739,
-                742,
-                744,
-                745,
-                747
+                732,
+                735,
+                737,
+                738,
+                740
               ]
             }
           },
@@ -4685,9 +4641,55 @@
           {
             "Alternative": {
               "atoms": [
-                749,
-                750
+                742,
+                743
               ]
+            }
+          },
+          {
+            "Entity": {
+              "atom": 8
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 745,
+              "min": 0,
+              "max": 1,
+              "tag": "Maybe"
+            }
+          },
+          {
+            "Entity": {
+              "atom": 43
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 747,
+              "min": 4,
+              "max": 4,
+              "tag": "Repetition"
+            }
+          },
+          {
+            "Named": {
+              "name": "revision_year",
+              "atom": 748
+            }
+          },
+          {
+            "Sequence": {
+              "atoms": [
+                744,
+                746,
+                749
+              ]
+            }
+          },
+          {
+            "Str": {
+              "pattern": "rev"
             }
           },
           {
@@ -4705,21 +4707,13 @@
           },
           {
             "Entity": {
-              "atom": 43
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 754,
-              "min": 4,
-              "max": 4,
-              "tag": "Repetition"
+              "atom": 44
             }
           },
           {
             "Named": {
               "name": "revision_year",
-              "atom": 755
+              "atom": 754
             }
           },
           {
@@ -4727,45 +4721,7 @@
               "atoms": [
                 751,
                 753,
-                756
-              ]
-            }
-          },
-          {
-            "Str": {
-              "pattern": "rev"
-            }
-          },
-          {
-            "Entity": {
-              "atom": 8
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 759,
-              "min": 0,
-              "max": 1,
-              "tag": "Maybe"
-            }
-          },
-          {
-            "Entity": {
-              "atom": 44
-            }
-          },
-          {
-            "Named": {
-              "name": "revision_year",
-              "atom": 761
-            }
-          },
-          {
-            "Sequence": {
-              "atoms": [
-                758,
-                760,
-                762
+                755
               ]
             }
           },
@@ -4807,20 +4763,20 @@
           {
             "Alternative": {
               "atoms": [
-                764,
-                765,
-                766,
-                767,
-                768,
-                769,
-                770
+                757,
+                758,
+                759,
+                760,
+                761,
+                762,
+                763
               ]
             }
           },
           {
             "Named": {
               "name": "revision_prefix",
-              "atom": 771
+              "atom": 764
             }
           },
           {
@@ -4830,7 +4786,7 @@
           },
           {
             "Repetition": {
-              "atom": 773,
+              "atom": 766,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -4848,7 +4804,7 @@
           },
           {
             "Repetition": {
-              "atom": 776,
+              "atom": 769,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -4857,8 +4813,8 @@
           {
             "Sequence": {
               "atoms": [
-                775,
-                777
+                768,
+                770
               ]
             }
           },
@@ -4869,7 +4825,7 @@
           },
           {
             "Repetition": {
-              "atom": 779,
+              "atom": 772,
               "min": 1,
               "max": null,
               "tag": "Repetition"
@@ -4878,30 +4834,30 @@
           {
             "Alternative": {
               "atoms": [
-                778,
-                780
+                771,
+                773
               ]
             }
           },
           {
             "Named": {
               "name": "revision_id",
-              "atom": 781
+              "atom": 774
             }
           },
           {
             "Sequence": {
               "atoms": [
-                772,
-                774,
-                782
+                765,
+                767,
+                775
               ]
             }
           },
           {
             "Named": {
               "name": "revision",
-              "atom": 783
+              "atom": 776
             }
           },
           {
@@ -4911,7 +4867,7 @@
           },
           {
             "Entity": {
-              "atom": 787
+              "atom": 780
             }
           },
           {
@@ -4921,45 +4877,45 @@
           },
           {
             "Lookahead": {
-              "atom": 786,
+              "atom": 779,
               "positive": false
             }
           },
           {
             "Sequence": {
               "atoms": [
-                785,
-                788
+                778,
+                781
               ]
             }
           },
           {
             "Named": {
               "name": "revision_standalone",
-              "atom": 789
+              "atom": 782
             }
           },
           {
             "Alternative": {
               "atoms": [
-                737,
-                748,
-                757,
-                763,
-                784,
-                790
+                730,
+                741,
+                750,
+                756,
+                777,
+                783
               ]
             }
           },
           {
             "Lookahead": {
-              "atom": 725,
+              "atom": 718,
               "positive": false
             }
           },
           {
             "Entity": {
-              "atom": 817
+              "atom": 810
             }
           },
           {
@@ -4975,8 +4931,8 @@
           {
             "Sequence": {
               "atoms": [
-                794,
-                795
+                787,
+                788
               ]
             }
           },
@@ -4987,7 +4943,7 @@
           },
           {
             "Repetition": {
-              "atom": 797,
+              "atom": 790,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -4995,7 +4951,7 @@
           },
           {
             "Repetition": {
-              "atom": 798,
+              "atom": 791,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -5014,8 +4970,8 @@
           {
             "Sequence": {
               "atoms": [
-                800,
-                801
+                793,
+                794
               ]
             }
           },
@@ -5032,8 +4988,8 @@
           {
             "Sequence": {
               "atoms": [
-                803,
-                804
+                796,
+                797
               ]
             }
           },
@@ -5045,14 +5001,14 @@
           {
             "Alternative": {
               "atoms": [
-                805,
-                806
+                798,
+                799
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 807,
+              "atom": 800,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -5061,15 +5017,15 @@
           {
             "Sequence": {
               "atoms": [
-                799,
-                802,
-                808
+                792,
+                795,
+                801
               ]
             }
           },
           {
             "Entity": {
-              "atom": 815
+              "atom": 808
             }
           },
           {
@@ -5090,66 +5046,66 @@
           {
             "Sequence": {
               "atoms": [
-                811,
-                812,
-                813
+                804,
+                805,
+                806
               ]
             }
           },
           {
             "Named": {
               "name": "public_draft",
-              "atom": 814
+              "atom": 807
             }
           },
           {
             "Alternative": {
               "atoms": [
-                796,
-                809,
-                810
+                789,
+                802,
+                803
               ]
             }
           },
           {
             "Named": {
               "name": "draft",
-              "atom": 816
+              "atom": 809
             }
           },
           {
             "Lookahead": {
-              "atom": 793,
+              "atom": 786,
               "positive": false
             }
           },
           {
             "Sequence": {
               "atoms": [
-                718,
-                720,
-                722,
-                724,
-                792,
-                818
+                711,
+                713,
+                715,
+                717,
+                785,
+                811
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                711,
-                712,
-                713,
-                716,
-                819
+                704,
+                705,
+                706,
+                709,
+                812
               ]
             }
           },
           {
             "Named": {
               "name": "second_number_edition_year",
-              "atom": 820
+              "atom": 813
             }
           },
           {
@@ -5159,7 +5115,7 @@
           },
           {
             "Entity": {
-              "atom": 704
+              "atom": 697
             }
           },
           {
@@ -5175,7 +5131,7 @@
           {
             "Named": {
               "name": "edition_month",
-              "atom": 825
+              "atom": 818
             }
           },
           {
@@ -5186,7 +5142,7 @@
           {
             "Named": {
               "name": "edition_year",
-              "atom": 827
+              "atom": 820
             }
           },
           {
@@ -5196,7 +5152,7 @@
           },
           {
             "Lookahead": {
-              "atom": 829,
+              "atom": 822,
               "positive": false
             }
           },
@@ -5207,35 +5163,35 @@
           },
           {
             "Lookahead": {
-              "atom": 831,
+              "atom": 824,
               "positive": false
             }
           },
           {
             "Entity": {
-              "atom": 581
+              "atom": 574
             }
           },
           {
             "Lookahead": {
-              "atom": 833,
+              "atom": 826,
               "positive": false
             }
           },
           {
             "Entity": {
-              "atom": 592
+              "atom": 585
             }
           },
           {
             "Lookahead": {
-              "atom": 835,
+              "atom": 828,
               "positive": false
             }
           },
           {
             "Entity": {
-              "atom": 924
+              "atom": 917
             }
           },
           {
@@ -5245,7 +5201,7 @@
           },
           {
             "Repetition": {
-              "atom": 838,
+              "atom": 831,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -5253,7 +5209,7 @@
           },
           {
             "Repetition": {
-              "atom": 839,
+              "atom": 832,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -5282,14 +5238,14 @@
           {
             "Sequence": {
               "atoms": [
-                843,
-                844
+                836,
+                837
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 845,
+              "atom": 838,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -5298,37 +5254,37 @@
           {
             "Sequence": {
               "atoms": [
-                842,
-                846
+                835,
+                839
               ]
             }
           },
           {
             "Named": {
               "name": "edition_id",
-              "atom": 847
+              "atom": 840
             }
           },
           {
             "Sequence": {
               "atoms": [
-                841,
-                848
+                834,
+                841
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                840,
-                849
+                833,
+                842
               ]
             }
           },
           {
             "Named": {
               "name": "edition_e",
-              "atom": 850
+              "atom": 843
             }
           },
           {
@@ -5359,14 +5315,14 @@
           {
             "Sequence": {
               "atoms": [
-                855,
-                856
+                848,
+                849
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 857,
+              "atom": 850,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -5375,22 +5331,22 @@
           {
             "Sequence": {
               "atoms": [
-                854,
-                858
+                847,
+                851
               ]
             }
           },
           {
             "Named": {
               "name": "edition_id",
-              "atom": 859
+              "atom": 852
             }
           },
           {
             "Sequence": {
               "atoms": [
-                853,
-                860
+                846,
+                853
               ]
             }
           },
@@ -5402,22 +5358,22 @@
           {
             "Named": {
               "name": "edition_letter",
-              "atom": 862
+              "atom": 855
             }
           },
           {
             "Sequence": {
               "atoms": [
-                852,
-                861,
-                863
+                845,
+                854,
+                856
               ]
             }
           },
           {
             "Named": {
               "name": "edition_r_with_space_letter",
-              "atom": 864
+              "atom": 857
             }
           },
           {
@@ -5448,14 +5404,14 @@
           {
             "Sequence": {
               "atoms": [
-                869,
-                870
+                862,
+                863
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 871,
+              "atom": 864,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -5464,37 +5420,37 @@
           {
             "Sequence": {
               "atoms": [
-                868,
-                872
+                861,
+                865
               ]
             }
           },
           {
             "Named": {
               "name": "edition_id",
-              "atom": 873
+              "atom": 866
             }
           },
           {
             "Sequence": {
               "atoms": [
-                867,
-                874
+                860,
+                867
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                866,
-                875
+                859,
+                868
               ]
             }
           },
           {
             "Named": {
               "name": "edition_r_with_space",
-              "atom": 876
+              "atom": 869
             }
           },
           {
@@ -5520,14 +5476,14 @@
           {
             "Sequence": {
               "atoms": [
-                880,
-                881
+                873,
+                874
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 882,
+              "atom": 875,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -5536,22 +5492,22 @@
           {
             "Sequence": {
               "atoms": [
-                879,
-                883
+                872,
+                876
               ]
             }
           },
           {
             "Named": {
               "name": "edition_id",
-              "atom": 884
+              "atom": 877
             }
           },
           {
             "Sequence": {
               "atoms": [
-                878,
-                885
+                871,
+                878
               ]
             }
           },
@@ -5563,21 +5519,21 @@
           {
             "Named": {
               "name": "edition_letter",
-              "atom": 887
+              "atom": 880
             }
           },
           {
             "Sequence": {
               "atoms": [
-                886,
-                888
+                879,
+                881
               ]
             }
           },
           {
             "Named": {
               "name": "edition_r_no_space_letter",
-              "atom": 889
+              "atom": 882
             }
           },
           {
@@ -5603,14 +5559,14 @@
           {
             "Sequence": {
               "atoms": [
-                893,
-                894
+                886,
+                887
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 895,
+              "atom": 888,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -5619,29 +5575,29 @@
           {
             "Sequence": {
               "atoms": [
-                892,
-                896
+                885,
+                889
               ]
             }
           },
           {
             "Named": {
               "name": "edition_id",
-              "atom": 897
+              "atom": 890
             }
           },
           {
             "Sequence": {
               "atoms": [
-                891,
-                898
+                884,
+                891
               ]
             }
           },
           {
             "Named": {
               "name": "edition_r_no_space",
-              "atom": 899
+              "atom": 892
             }
           },
           {
@@ -5651,7 +5607,7 @@
           },
           {
             "Repetition": {
-              "atom": 901,
+              "atom": 894,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -5669,7 +5625,7 @@
           },
           {
             "Repetition": {
-              "atom": 904,
+              "atom": 897,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -5683,23 +5639,23 @@
           {
             "Named": {
               "name": "edition_id",
-              "atom": 906
+              "atom": 899
             }
           },
           {
             "Sequence": {
               "atoms": [
-                902,
-                903,
-                905,
-                907
+                895,
+                896,
+                898,
+                900
               ]
             }
           },
           {
             "Named": {
               "name": "edition_rev",
-              "atom": 908
+              "atom": 901
             }
           },
           {
@@ -5715,14 +5671,14 @@
           {
             "Named": {
               "name": "edition_id",
-              "atom": 911
+              "atom": 904
             }
           },
           {
             "Sequence": {
               "atoms": [
-                910,
-                912
+                903,
+                905
               ]
             }
           },
@@ -5733,22 +5689,22 @@
           },
           {
             "Lookahead": {
-              "atom": 914,
+              "atom": 907,
               "positive": false
             }
           },
           {
             "Sequence": {
               "atoms": [
-                913,
-                915
+                906,
+                908
               ]
             }
           },
           {
             "Named": {
               "name": "edition_historical",
-              "atom": 916
+              "atom": 909
             }
           },
           {
@@ -5763,7 +5719,7 @@
           },
           {
             "Repetition": {
-              "atom": 919,
+              "atom": 912,
               "min": 4,
               "max": 4,
               "tag": "Repetition"
@@ -5772,94 +5728,94 @@
           {
             "Sequence": {
               "atoms": [
-                918,
-                920
+                911,
+                913
               ]
             }
           },
           {
             "Named": {
               "name": "dash_year",
-              "atom": 921
+              "atom": 914
             }
           },
           {
             "Named": {
               "name": "edition_dash_year",
-              "atom": 922
+              "atom": 915
             }
           },
           {
             "Alternative": {
               "atoms": [
-                851,
-                865,
-                877,
-                890,
-                900,
-                909,
-                917,
-                923
+                844,
+                858,
+                870,
+                883,
+                893,
+                902,
+                910,
+                916
               ]
             }
           },
           {
             "Lookahead": {
-              "atom": 837,
+              "atom": 830,
               "positive": false
             }
           },
           {
             "Entity": {
-              "atom": 791
+              "atom": 784
             }
           },
           {
             "Lookahead": {
-              "atom": 926,
+              "atom": 919,
               "positive": false
             }
           },
           {
             "Entity": {
-              "atom": 817
+              "atom": 810
             }
           },
           {
             "Lookahead": {
-              "atom": 928,
+              "atom": 921,
               "positive": false
             }
           },
           {
             "Sequence": {
               "atoms": [
-                830,
-                832,
-                834,
-                836,
-                925,
-                927,
-                929
-              ]
-            }
-          },
-          {
-            "Sequence": {
-              "atoms": [
-                822,
                 823,
-                824,
-                826,
-                828,
-                930
+                825,
+                827,
+                829,
+                918,
+                920,
+                922
+              ]
+            }
+          },
+          {
+            "Sequence": {
+              "atoms": [
+                815,
+                816,
+                817,
+                819,
+                821,
+                923
               ]
             }
           },
           {
             "Named": {
               "name": "fips_month_year_after_part",
-              "atom": 931
+              "atom": 924
             }
           },
           {
@@ -5869,7 +5825,7 @@
           },
           {
             "Entity": {
-              "atom": 704
+              "atom": 697
             }
           },
           {
@@ -5889,7 +5845,7 @@
           },
           {
             "Repetition": {
-              "atom": 937,
+              "atom": 930,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -5898,24 +5854,24 @@
           {
             "Sequence": {
               "atoms": [
-                936,
-                938
+                929,
+                931
               ]
             }
           },
           {
             "Named": {
               "name": "part_number",
-              "atom": 939
+              "atom": 932
             }
           },
           {
             "Sequence": {
               "atoms": [
-                933,
-                934,
-                935,
-                940
+                926,
+                927,
+                928,
+                933
               ]
             }
           },
@@ -5926,13 +5882,58 @@
           },
           {
             "Entity": {
-              "atom": 704
+              "atom": 697
             }
           },
           {
             "Sequence": {
               "atoms": [
-                942,
+                935,
+                936
+              ]
+            }
+          },
+          {
+            "Entity": {
+              "atom": 47
+            }
+          },
+          {
+            "Entity": {
+              "atom": 585
+            }
+          },
+          {
+            "Entity": {
+              "atom": 697
+            }
+          },
+          {
+            "Alternative": {
+              "atoms": [
+                939,
+                940
+              ]
+            }
+          },
+          {
+            "Entity": {
+              "atom": 917
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 942,
+              "min": 0,
+              "max": 1,
+              "tag": "Maybe"
+            }
+          },
+          {
+            "Sequence": {
+              "atoms": [
+                938,
+                941,
                 943
               ]
             }
@@ -5944,84 +5945,39 @@
           },
           {
             "Entity": {
-              "atom": 592
-            }
-          },
-          {
-            "Entity": {
-              "atom": 704
-            }
-          },
-          {
-            "Alternative": {
-              "atoms": [
-                946,
-                947
-              ]
-            }
-          },
-          {
-            "Entity": {
-              "atom": 924
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 949,
-              "min": 0,
-              "max": 1,
-              "tag": "Maybe"
+              "atom": 917
             }
           },
           {
             "Sequence": {
               "atoms": [
                 945,
-                948,
-                950
-              ]
-            }
-          },
-          {
-            "Entity": {
-              "atom": 47
-            }
-          },
-          {
-            "Entity": {
-              "atom": 924
-            }
-          },
-          {
-            "Sequence": {
-              "atoms": [
-                952,
-                953
+                946
               ]
             }
           },
           {
             "Alternative": {
               "atoms": [
-                482,
-                488,
-                500,
-                509,
-                525,
-                539,
-                710,
-                821,
-                932,
-                941,
+                479,
+                485,
+                497,
+                506,
+                518,
+                532,
+                703,
+                814,
+                925,
+                934,
+                937,
                 944,
-                951,
-                954
+                947
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 955,
+              "atom": 948,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -6031,7 +5987,7 @@
             "Sequence": {
               "atoms": [
                 229,
-                956
+                949
               ]
             }
           },
@@ -6056,20 +6012,20 @@
           {
             "Sequence": {
               "atoms": [
-                959,
-                960
+                952,
+                953
               ]
             }
           },
           {
             "Named": {
               "name": "edition_year",
-              "atom": 961
+              "atom": 954
             }
           },
           {
             "Repetition": {
-              "atom": 962,
+              "atom": 955,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -6093,15 +6049,15 @@
           {
             "Alternative": {
               "atoms": [
-                964,
-                965,
-                966
+                957,
+                958,
+                959
               ]
             }
           },
           {
             "Lookahead": {
-              "atom": 967,
+              "atom": 960,
               "positive": false
             }
           },
@@ -6113,14 +6069,14 @@
           {
             "Sequence": {
               "atoms": [
-                968,
-                969
+                961,
+                962
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 970,
+              "atom": 963,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -6128,12 +6084,12 @@
           },
           {
             "Entity": {
-              "atom": 924
+              "atom": 917
             }
           },
           {
             "Repetition": {
-              "atom": 972,
+              "atom": 965,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -6141,7 +6097,7 @@
           },
           {
             "Entity": {
-              "atom": 1004
+              "atom": 997
             }
           },
           {
@@ -6156,7 +6112,7 @@
           },
           {
             "Repetition": {
-              "atom": 976,
+              "atom": 969,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -6164,7 +6120,7 @@
           },
           {
             "Repetition": {
-              "atom": 977,
+              "atom": 970,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -6183,31 +6139,31 @@
           {
             "Alternative": {
               "atoms": [
-                979,
-                980
+                972,
+                973
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                978,
-                981
+                971,
+                974
               ]
             }
           },
           {
             "Alternative": {
               "atoms": [
-                975,
-                982
+                968,
+                975
               ]
             }
           },
           {
             "Named": {
               "name": "update_prefix",
-              "atom": 983
+              "atom": 976
             }
           },
           {
@@ -6218,12 +6174,12 @@
           {
             "Named": {
               "name": "update_number",
-              "atom": 985
+              "atom": 978
             }
           },
           {
             "Repetition": {
-              "atom": 986,
+              "atom": 979,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -6241,9 +6197,55 @@
           },
           {
             "Repetition": {
-              "atom": 989,
+              "atom": 982,
               "min": 4,
               "max": 4,
+              "tag": "Repetition"
+            }
+          },
+          {
+            "Named": {
+              "name": "update_year",
+              "atom": 983
+            }
+          },
+          {
+            "Entity": {
+              "atom": 43
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 985,
+              "min": 2,
+              "max": 2,
+              "tag": "Repetition"
+            }
+          },
+          {
+            "Named": {
+              "name": "update_month",
+              "atom": 986
+            }
+          },
+          {
+            "Sequence": {
+              "atoms": [
+                984,
+                987
+              ]
+            }
+          },
+          {
+            "Entity": {
+              "atom": 43
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 989,
+              "min": 4,
+              "max": null,
               "tag": "Repetition"
             }
           },
@@ -6254,70 +6256,24 @@
             }
           },
           {
-            "Entity": {
-              "atom": 43
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 992,
-              "min": 2,
-              "max": 2,
-              "tag": "Repetition"
-            }
-          },
-          {
-            "Named": {
-              "name": "update_month",
-              "atom": 993
-            }
-          },
-          {
-            "Sequence": {
-              "atoms": [
-                991,
-                994
-              ]
-            }
-          },
-          {
-            "Entity": {
-              "atom": 43
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 996,
-              "min": 4,
-              "max": null,
-              "tag": "Repetition"
-            }
-          },
-          {
-            "Named": {
-              "name": "update_year",
-              "atom": 997
-            }
-          },
-          {
             "Alternative": {
               "atoms": [
-                995,
-                998
+                988,
+                991
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                988,
-                999
+                981,
+                992
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1000,
+              "atom": 993,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -6326,28 +6282,28 @@
           {
             "Sequence": {
               "atoms": [
-                987,
-                1001
+                980,
+                994
               ]
             }
           },
           {
             "Named": {
               "name": "update",
-              "atom": 1002
+              "atom": 995
             }
           },
           {
             "Sequence": {
               "atoms": [
-                984,
-                1003
+                977,
+                996
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 974,
+              "atom": 967,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -6381,15 +6337,15 @@
           {
             "Alternative": {
               "atoms": [
-                1008,
-                1009,
-                1010
+                1001,
+                1002,
+                1003
               ]
             }
           },
           {
             "Lookahead": {
-              "atom": 1011,
+              "atom": 1004,
               "positive": false
             }
           },
@@ -6401,30 +6357,30 @@
           {
             "Sequence": {
               "atoms": [
-                1012,
-                1013
+                1005,
+                1006
               ]
             }
           },
           {
             "Alternative": {
               "atoms": [
-                1007,
-                1014
+                1000,
+                1007
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1006,
-                1015
+                999,
+                1008
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1016,
+              "atom": 1009,
               "min": 0,
               "max": 3,
               "tag": "Repetition"
@@ -6432,12 +6388,12 @@
           },
           {
             "Entity": {
-              "atom": 1312
+              "atom": 1309
             }
           },
           {
             "Entity": {
-              "atom": 1050
+              "atom": 1043
             }
           },
           {
@@ -6453,14 +6409,14 @@
           {
             "Alternative": {
               "atoms": [
-                1020,
-                1021
+                1013,
+                1014
               ]
             }
           },
           {
             "Entity": {
-              "atom": 1037
+              "atom": 1030
             }
           },
           {
@@ -6531,31 +6487,31 @@
           {
             "Alternative": {
               "atoms": [
+                1017,
+                1018,
+                1019,
+                1020,
+                1021,
+                1022,
+                1023,
                 1024,
                 1025,
                 1026,
                 1027,
                 1028,
-                1029,
-                1030,
-                1031,
-                1032,
-                1033,
-                1034,
-                1035,
-                1036
+                1029
               ]
             }
           },
           {
             "Named": {
               "name": "stage_id",
-              "atom": 1023
+              "atom": 1016
             }
           },
           {
             "Entity": {
-              "atom": 1046
+              "atom": 1039
             }
           },
           {
@@ -6591,10 +6547,56 @@
           {
             "Alternative": {
               "atoms": [
-                1040,
-                1041,
-                1042,
-                1043,
+                1033,
+                1034,
+                1035,
+                1036,
+                1037,
+                1038
+              ]
+            }
+          },
+          {
+            "Named": {
+              "name": "stage_type",
+              "atom": 1032
+            }
+          },
+          {
+            "Sequence": {
+              "atoms": [
+                1031,
+                1040
+              ]
+            }
+          },
+          {
+            "Named": {
+              "name": "stage",
+              "atom": 1041
+            }
+          },
+          {
+            "Sequence": {
+              "atoms": [
+                1015,
+                1042
+              ]
+            }
+          },
+          {
+            "Str": {
+              "pattern": "n"
+            }
+          },
+          {
+            "Entity": {
+              "atom": 106
+            }
+          },
+          {
+            "Sequence": {
+              "atoms": [
                 1044,
                 1045
               ]
@@ -6602,35 +6604,13 @@
           },
           {
             "Named": {
-              "name": "stage_type",
-              "atom": 1039
-            }
-          },
-          {
-            "Sequence": {
-              "atoms": [
-                1038,
-                1047
-              ]
-            }
-          },
-          {
-            "Named": {
-              "name": "stage",
-              "atom": 1048
-            }
-          },
-          {
-            "Sequence": {
-              "atoms": [
-                1022,
-                1049
-              ]
+              "name": "n_letter_part",
+              "atom": 1046
             }
           },
           {
             "Entity": {
-              "atom": 1056
+              "atom": 1053
             }
           },
           {
@@ -6645,7 +6625,7 @@
           },
           {
             "Repetition": {
-              "atom": 1053,
+              "atom": 1050,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -6654,20 +6634,20 @@
           {
             "Named": {
               "name": "section",
-              "atom": 1054
+              "atom": 1051
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1052,
-                1055
+                1049,
+                1052
               ]
             }
           },
           {
             "Entity": {
-              "atom": 1061
+              "atom": 1058
             }
           },
           {
@@ -6683,20 +6663,20 @@
           {
             "Alternative": {
               "atoms": [
-                1058,
-                1059
+                1055,
+                1056
               ]
             }
           },
           {
             "Named": {
               "name": "index",
-              "atom": 1060
+              "atom": 1057
             }
           },
           {
             "Entity": {
-              "atom": 1066
+              "atom": 1063
             }
           },
           {
@@ -6712,20 +6692,20 @@
           {
             "Alternative": {
               "atoms": [
-                1063,
-                1064
+                1060,
+                1061
               ]
             }
           },
           {
             "Named": {
               "name": "insert",
-              "atom": 1065
+              "atom": 1062
             }
           },
           {
             "Entity": {
-              "atom": 1069
+              "atom": 1066
             }
           },
           {
@@ -6736,22 +6716,22 @@
           {
             "Named": {
               "name": "appendix",
-              "atom": 1068
+              "atom": 1065
             }
           },
           {
             "Entity": {
-              "atom": 815
+              "atom": 808
             }
           },
           {
             "Entity": {
-              "atom": 924
+              "atom": 917
             }
           },
           {
             "Entity": {
-              "atom": 1106
+              "atom": 1103
             }
           },
           {
@@ -6766,7 +6746,7 @@
           },
           {
             "Repetition": {
-              "atom": 1074,
+              "atom": 1071,
               "min": 4,
               "max": 4,
               "tag": "Repetition"
@@ -6775,14 +6755,33 @@
           {
             "Sequence": {
               "atoms": [
-                1073,
-                1075
+                1070,
+                1072
               ]
             }
           },
           {
             "Named": {
               "name": "date_year",
+              "atom": 1073
+            }
+          },
+          {
+            "Entity": {
+              "atom": 43
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 1075,
+              "min": 2,
+              "max": 2,
+              "tag": "Repetition"
+            }
+          },
+          {
+            "Named": {
+              "name": "date_month",
               "atom": 1076
             }
           },
@@ -6801,35 +6800,16 @@
           },
           {
             "Named": {
-              "name": "date_month",
+              "name": "date_day",
               "atom": 1079
             }
           },
           {
-            "Entity": {
-              "atom": 43
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 1081,
-              "min": 2,
-              "max": 2,
-              "tag": "Repetition"
-            }
-          },
-          {
-            "Named": {
-              "name": "date_day",
-              "atom": 1082
-            }
-          },
-          {
             "Sequence": {
               "atoms": [
+                1074,
                 1077,
-                1080,
-                1083
+                1080
               ]
             }
           },
@@ -6845,7 +6825,7 @@
           },
           {
             "Repetition": {
-              "atom": 1086,
+              "atom": 1083,
               "min": 4,
               "max": 4,
               "tag": "Repetition"
@@ -6854,15 +6834,15 @@
           {
             "Sequence": {
               "atoms": [
-                1085,
-                1087
+                1082,
+                1084
               ]
             }
           },
           {
             "Named": {
               "name": "date_year",
-              "atom": 1088
+              "atom": 1085
             }
           },
           {
@@ -6872,7 +6852,7 @@
           },
           {
             "Repetition": {
-              "atom": 1090,
+              "atom": 1087,
               "min": 2,
               "max": 2,
               "tag": "Repetition"
@@ -6881,14 +6861,14 @@
           {
             "Named": {
               "name": "date_month",
-              "atom": 1091
+              "atom": 1088
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1089,
-                1092
+                1086,
+                1089
               ]
             }
           },
@@ -6904,7 +6884,7 @@
           },
           {
             "Repetition": {
-              "atom": 1095,
+              "atom": 1092,
               "min": 4,
               "max": 4,
               "tag": "Repetition"
@@ -6913,15 +6893,15 @@
           {
             "Sequence": {
               "atoms": [
-                1094,
-                1096
+                1091,
+                1093
               ]
             }
           },
           {
             "Named": {
               "name": "date_year",
-              "atom": 1097
+              "atom": 1094
             }
           },
           {
@@ -6937,7 +6917,7 @@
           {
             "Named": {
               "name": "date_month",
-              "atom": 1100
+              "atom": 1097
             }
           },
           {
@@ -6948,37 +6928,37 @@
           {
             "Sequence": {
               "atoms": [
-                1099,
-                1101,
-                1102
+                1096,
+                1098,
+                1099
               ]
             }
           },
           {
             "Named": {
               "name": "date_year",
-              "atom": 1103
+              "atom": 1100
             }
           },
           {
             "Alternative": {
               "atoms": [
-                1084,
-                1093,
-                1098,
-                1104
+                1081,
+                1090,
+                1095,
+                1101
               ]
             }
           },
           {
             "Named": {
               "name": "date",
-              "atom": 1105
+              "atom": 1102
             }
           },
           {
             "Entity": {
-              "atom": 1154
+              "atom": 1151
             }
           },
           {
@@ -6994,8 +6974,8 @@
           {
             "Alternative": {
               "atoms": [
-                1108,
-                1109
+                1105,
+                1106
               ]
             }
           },
@@ -7006,7 +6986,7 @@
           },
           {
             "Repetition": {
-              "atom": 1111,
+              "atom": 1108,
               "min": 1,
               "max": 2,
               "tag": "Repetition"
@@ -7015,7 +6995,7 @@
           {
             "Named": {
               "name": "edition",
-              "atom": 1112
+              "atom": 1109
             }
           },
           {
@@ -7026,15 +7006,15 @@
           {
             "Named": {
               "name": "edition_letter",
-              "atom": 1114
+              "atom": 1111
             }
           },
           {
             "Sequence": {
               "atoms": [
+                1107,
                 1110,
-                1113,
-                1115
+                1112
               ]
             }
           },
@@ -7050,7 +7030,7 @@
           },
           {
             "Repetition": {
-              "atom": 1118,
+              "atom": 1115,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7064,16 +7044,16 @@
           {
             "Sequence": {
               "atoms": [
-                1117,
-                1119,
-                1120
+                1114,
+                1116,
+                1117
               ]
             }
           },
           {
             "Named": {
               "name": "edition_year",
-              "atom": 1121
+              "atom": 1118
             }
           },
           {
@@ -7089,8 +7069,8 @@
           {
             "Alternative": {
               "atoms": [
-                1123,
-                1124
+                1120,
+                1121
               ]
             }
           },
@@ -7101,7 +7081,7 @@
           },
           {
             "Repetition": {
-              "atom": 1126,
+              "atom": 1123,
               "min": 1,
               "max": 3,
               "tag": "Repetition"
@@ -7110,7 +7090,7 @@
           {
             "Named": {
               "name": "edition",
-              "atom": 1127
+              "atom": 1124
             }
           },
           {
@@ -7125,7 +7105,7 @@
           },
           {
             "Repetition": {
-              "atom": 1130,
+              "atom": 1127,
               "min": 3,
               "max": 9,
               "tag": "Repetition"
@@ -7134,7 +7114,7 @@
           {
             "Named": {
               "name": "edition_month",
-              "atom": 1131
+              "atom": 1128
             }
           },
           {
@@ -7145,24 +7125,24 @@
           {
             "Named": {
               "name": "edition_year",
-              "atom": 1133
+              "atom": 1130
             }
           },
           {
             "Sequence": {
               "atoms": [
+                1126,
                 1129,
-                1132,
-                1134
+                1131
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
+                1122,
                 1125,
-                1128,
-                1135
+                1132
               ]
             }
           },
@@ -7178,7 +7158,7 @@
           },
           {
             "Repetition": {
-              "atom": 1138,
+              "atom": 1135,
               "min": 4,
               "max": 4,
               "tag": "Repetition"
@@ -7187,15 +7167,15 @@
           {
             "Sequence": {
               "atoms": [
-                1137,
-                1139
+                1134,
+                1136
               ]
             }
           },
           {
             "Named": {
               "name": "edition_year",
-              "atom": 1140
+              "atom": 1137
             }
           },
           {
@@ -7205,7 +7185,7 @@
           },
           {
             "Repetition": {
-              "atom": 1142,
+              "atom": 1139,
               "min": 2,
               "max": 2,
               "tag": "Repetition"
@@ -7214,12 +7194,12 @@
           {
             "Named": {
               "name": "edition_month",
-              "atom": 1143
+              "atom": 1140
             }
           },
           {
             "Repetition": {
-              "atom": 1144,
+              "atom": 1141,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7228,8 +7208,8 @@
           {
             "Sequence": {
               "atoms": [
-                1141,
-                1145
+                1138,
+                1142
               ]
             }
           },
@@ -7245,7 +7225,7 @@
           },
           {
             "Repetition": {
-              "atom": 1148,
+              "atom": 1145,
               "min": 3,
               "max": 9,
               "tag": "Repetition"
@@ -7254,7 +7234,7 @@
           {
             "Named": {
               "name": "edition_month",
-              "atom": 1149
+              "atom": 1146
             }
           },
           {
@@ -7265,37 +7245,37 @@
           {
             "Named": {
               "name": "edition_year",
-              "atom": 1151
+              "atom": 1148
             }
           },
           {
             "Sequence": {
               "atoms": [
+                1144,
                 1147,
-                1150,
-                1152
+                1149
               ]
             }
           },
           {
             "Alternative": {
               "atoms": [
-                1116,
-                1122,
-                1136,
-                1146,
-                1153
+                1113,
+                1119,
+                1133,
+                1143,
+                1150
               ]
             }
           },
           {
             "Entity": {
-              "atom": 791
+              "atom": 784
             }
           },
           {
             "Entity": {
-              "atom": 1200
+              "atom": 1197
             }
           },
           {
@@ -7311,14 +7291,14 @@
           {
             "Alternative": {
               "atoms": [
-                1157,
-                1158
+                1154,
+                1155
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1159,
+              "atom": 1156,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7336,7 +7316,7 @@
           },
           {
             "Repetition": {
-              "atom": 1162,
+              "atom": 1159,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7360,14 +7340,14 @@
           {
             "Sequence": {
               "atoms": [
-                1165,
-                1166
+                1162,
+                1163
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1167,
+              "atom": 1164,
               "min": 0,
               "max": null,
               "tag": "Repetition"
@@ -7376,24 +7356,24 @@
           {
             "Sequence": {
               "atoms": [
-                1164,
-                1168
+                1161,
+                1165
               ]
             }
           },
           {
             "Named": {
               "name": "version",
-              "atom": 1169
+              "atom": 1166
             }
           },
           {
             "Sequence": {
               "atoms": [
+                1157,
+                1158,
                 1160,
-                1161,
-                1163,
-                1170
+                1167
               ]
             }
           },
@@ -7410,8 +7390,8 @@
           {
             "Alternative": {
               "atoms": [
-                1172,
-                1173
+                1169,
+                1170
               ]
             }
           },
@@ -7443,14 +7423,14 @@
           {
             "Sequence": {
               "atoms": [
-                1178,
-                1179
+                1175,
+                1176
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1180,
+              "atom": 1177,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7459,24 +7439,24 @@
           {
             "Sequence": {
               "atoms": [
-                1175,
-                1176,
-                1177,
-                1181
+                1172,
+                1173,
+                1174,
+                1178
               ]
             }
           },
           {
             "Named": {
               "name": "version",
-              "atom": 1182
+              "atom": 1179
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1174,
-                1183
+                1171,
+                1180
               ]
             }
           },
@@ -7493,14 +7473,14 @@
           {
             "Alternative": {
               "atoms": [
-                1185,
-                1186
+                1182,
+                1183
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1187,
+              "atom": 1184,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7539,14 +7519,14 @@
           {
             "Sequence": {
               "atoms": [
-                1193,
-                1194
+                1190,
+                1191
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1195,
+              "atom": 1192,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7555,40 +7535,40 @@
           {
             "Sequence": {
               "atoms": [
-                1190,
-                1191,
-                1192,
-                1196
+                1187,
+                1188,
+                1189,
+                1193
               ]
             }
           },
           {
             "Named": {
               "name": "version",
-              "atom": 1197
+              "atom": 1194
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1188,
-                1189,
-                1198
+                1185,
+                1186,
+                1195
               ]
             }
           },
           {
             "Alternative": {
               "atoms": [
-                1171,
-                1184,
-                1199
+                1168,
+                1181,
+                1196
               ]
             }
           },
           {
             "Entity": {
-              "atom": 1222
+              "atom": 1219
             }
           },
           {
@@ -7598,7 +7578,7 @@
           },
           {
             "Repetition": {
-              "atom": 1202,
+              "atom": 1199,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7606,7 +7586,7 @@
           },
           {
             "Repetition": {
-              "atom": 1203,
+              "atom": 1200,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7630,17 +7610,17 @@
           {
             "Alternative": {
               "atoms": [
-                1205,
-                1206,
-                1207
+                1202,
+                1203,
+                1204
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1204,
-                1208
+                1201,
+                1205
               ]
             }
           },
@@ -7672,16 +7652,16 @@
           {
             "Alternative": {
               "atoms": [
-                1211,
-                1212,
-                1213,
-                1214
+                1208,
+                1209,
+                1210,
+                1211
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1215,
+              "atom": 1212,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7694,7 +7674,7 @@
           },
           {
             "Repetition": {
-              "atom": 1217,
+              "atom": 1214,
               "min": 0,
               "max": 2,
               "tag": "Repetition"
@@ -7703,46 +7683,46 @@
           {
             "Sequence": {
               "atoms": [
-                1216,
-                1218
+                1213,
+                1215
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1210,
-                1219
+                1207,
+                1216
               ]
             }
           },
           {
             "Named": {
               "name": "volume",
-              "atom": 1220
+              "atom": 1217
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1209,
-                1221
+                1206,
+                1218
               ]
             }
           },
           {
             "Entity": {
-              "atom": 581
+              "atom": 574
             }
           },
           {
             "Entity": {
-              "atom": 1004
+              "atom": 997
             }
           },
           {
             "Entity": {
-              "atom": 1238
+              "atom": 1235
             }
           },
           {
@@ -7763,9 +7743,9 @@
           {
             "Alternative": {
               "atoms": [
-                1226,
-                1227,
-                1228
+                1223,
+                1224,
+                1225
               ]
             }
           },
@@ -7782,14 +7762,14 @@
           {
             "Alternative": {
               "atoms": [
-                1230,
-                1231
+                1227,
+                1228
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1232,
+              "atom": 1229,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7802,7 +7782,7 @@
           },
           {
             "Repetition": {
-              "atom": 1234,
+              "atom": 1231,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7811,27 +7791,27 @@
           {
             "Named": {
               "name": "addendum_number",
-              "atom": 1235
+              "atom": 1232
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1229,
-                1233,
-                1236
+                1226,
+                1230,
+                1233
               ]
             }
           },
           {
             "Named": {
               "name": "addendum",
-              "atom": 1237
+              "atom": 1234
             }
           },
           {
             "Entity": {
-              "atom": 1287
+              "atom": 1284
             }
           },
           {
@@ -7841,7 +7821,7 @@
           },
           {
             "Repetition": {
-              "atom": 1240,
+              "atom": 1237,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7849,7 +7829,7 @@
           },
           {
             "Repetition": {
-              "atom": 1241,
+              "atom": 1238,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7862,7 +7842,7 @@
           },
           {
             "Repetition": {
-              "atom": 1243,
+              "atom": 1240,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -7896,11 +7876,11 @@
           {
             "Alternative": {
               "atoms": [
+                1242,
+                1243,
+                1244,
                 1245,
-                1246,
-                1247,
-                1248,
-                1249
+                1246
               ]
             }
           },
@@ -7912,7 +7892,7 @@
           {
             "Named": {
               "name": "supplement_with_rev",
-              "atom": 1251
+              "atom": 1248
             }
           },
           {
@@ -7923,7 +7903,7 @@
           {
             "Named": {
               "name": "supp_month_start",
-              "atom": 1253
+              "atom": 1250
             }
           },
           {
@@ -7934,7 +7914,7 @@
           {
             "Named": {
               "name": "supp_year_start",
-              "atom": 1255
+              "atom": 1252
             }
           },
           {
@@ -7950,7 +7930,7 @@
           {
             "Named": {
               "name": "supp_month_end",
-              "atom": 1258
+              "atom": 1255
             }
           },
           {
@@ -7961,24 +7941,24 @@
           {
             "Named": {
               "name": "supp_year_end",
-              "atom": 1260
+              "atom": 1257
             }
           },
           {
             "Sequence": {
               "atoms": [
+                1251,
+                1253,
                 1254,
                 1256,
-                1257,
-                1259,
-                1261
+                1258
               ]
             }
           },
           {
             "Named": {
               "name": "supplement_date_range",
-              "atom": 1262
+              "atom": 1259
             }
           },
           {
@@ -7989,7 +7969,7 @@
           {
             "Named": {
               "name": "supp_month",
-              "atom": 1264
+              "atom": 1261
             }
           },
           {
@@ -8000,21 +7980,21 @@
           {
             "Named": {
               "name": "supp_year",
-              "atom": 1266
+              "atom": 1263
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1265,
-                1267
+                1262,
+                1264
               ]
             }
           },
           {
             "Named": {
               "name": "supplement_date",
-              "atom": 1268
+              "atom": 1265
             }
           },
           {
@@ -8025,7 +8005,7 @@
           {
             "Named": {
               "name": "supp_number",
-              "atom": 1270
+              "atom": 1267
             }
           },
           {
@@ -8041,22 +8021,22 @@
           {
             "Named": {
               "name": "supp_year",
-              "atom": 1273
+              "atom": 1270
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1271,
-                1272,
-                1274
+                1268,
+                1269,
+                1271
               ]
             }
           },
           {
             "Named": {
               "name": "supplement_slash_year",
-              "atom": 1275
+              "atom": 1272
             }
           },
           {
@@ -8067,7 +8047,7 @@
           {
             "Named": {
               "name": "supp_year",
-              "atom": 1277
+              "atom": 1274
             }
           },
           {
@@ -8088,15 +8068,15 @@
           {
             "Alternative": {
               "atoms": [
-                1279,
-                1280,
-                1281
+                1276,
+                1277,
+                1278
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1282,
+              "atom": 1279,
               "min": 1,
               "max": null,
               "tag": "Repetition"
@@ -8105,24 +8085,24 @@
           {
             "Named": {
               "name": "supplement_suffix",
-              "atom": 1283
+              "atom": 1280
             }
           },
           {
             "Alternative": {
               "atoms": [
-                1252,
-                1263,
-                1269,
-                1276,
-                1278,
-                1284
+                1249,
+                1260,
+                1266,
+                1273,
+                1275,
+                1281
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1285,
+              "atom": 1282,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -8131,16 +8111,16 @@
           {
             "Sequence": {
               "atoms": [
-                1242,
-                1244,
-                1250,
-                1286
+                1239,
+                1241,
+                1247,
+                1283
               ]
             }
           },
           {
             "Entity": {
-              "atom": 1295
+              "atom": 1292
             }
           },
           {
@@ -8150,7 +8130,7 @@
           },
           {
             "Repetition": {
-              "atom": 1289,
+              "atom": 1286,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -8169,28 +8149,28 @@
           {
             "Alternative": {
               "atoms": [
-                1291,
-                1292
+                1288,
+                1289
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1290,
-                1293
+                1287,
+                1290
               ]
             }
           },
           {
             "Named": {
               "name": "errata",
-              "atom": 1294
+              "atom": 1291
             }
           },
           {
             "Entity": {
-              "atom": 1311
+              "atom": 1308
             }
           },
           {
@@ -8206,14 +8186,14 @@
           {
             "Alternative": {
               "atoms": [
-                1297,
-                1298
+                1294,
+                1295
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1299,
+              "atom": 1296,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -8256,7 +8236,7 @@
           },
           {
             "Repetition": {
-              "atom": 1307,
+              "atom": 1304,
               "min": 2,
               "max": 4,
               "tag": "Repetition"
@@ -8265,57 +8245,58 @@
           {
             "Alternative": {
               "atoms": [
+                1298,
+                1299,
+                1300,
                 1301,
                 1302,
                 1303,
-                1304,
-                1305,
-                1306,
-                1308
+                1305
               ]
             }
           },
           {
             "Named": {
               "name": "translation",
-              "atom": 1309
+              "atom": 1306
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1300,
-                1310
+                1297,
+                1307
               ]
             }
           },
           {
             "Alternative": {
               "atoms": [
-                1019,
-                1051,
-                1057,
-                1062,
+                1012,
+                1047,
+                1048,
+                1054,
+                1059,
+                1064,
                 1067,
-                1070,
-                1071,
-                1072,
-                1107,
-                1155,
-                1156,
-                1201,
-                1223,
-                1224,
-                1225,
-                1239,
-                1288,
-                1296
+                1068,
+                1069,
+                1104,
+                1152,
+                1153,
+                1198,
+                1220,
+                1221,
+                1222,
+                1236,
+                1285,
+                1293
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1018,
+              "atom": 1011,
               "min": 0,
               "max": null,
               "tag": "Repetition"
@@ -8323,12 +8304,12 @@
           },
           {
             "Entity": {
-              "atom": 817
+              "atom": 810
             }
           },
           {
             "Repetition": {
-              "atom": 1314,
+              "atom": 1311,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -8342,20 +8323,20 @@
                 188,
                 189,
                 227,
-                958,
-                963,
-                971,
-                973,
-                1005,
-                1017,
-                1313,
-                1315
+                951,
+                956,
+                964,
+                966,
+                998,
+                1010,
+                1310,
+                1312
               ]
             }
           },
           {
             "Entity": {
-              "atom": 1330
+              "atom": 1327
             }
           },
           {
@@ -8376,7 +8357,7 @@
           {
             "Named": {
               "name": "series",
-              "atom": 1320
+              "atom": 1317
             }
           },
           {
@@ -8396,7 +8377,7 @@
           },
           {
             "Repetition": {
-              "atom": 1324,
+              "atom": 1321,
               "min": 4,
               "max": 4,
               "tag": "Repetition"
@@ -8405,7 +8386,7 @@
           {
             "Named": {
               "name": "year",
-              "atom": 1325
+              "atom": 1322
             }
           },
           {
@@ -8416,16 +8397,16 @@
           {
             "Sequence": {
               "atoms": [
-                1322,
+                1319,
+                1320,
                 1323,
-                1326,
-                1327
+                1324
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1328,
+              "atom": 1325,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -8434,16 +8415,16 @@
           {
             "Sequence": {
               "atoms": [
+                1315,
+                1316,
                 1318,
-                1319,
-                1321,
-                1329
+                1326
               ]
             }
           },
           {
             "Entity": {
-              "atom": 1362
+              "atom": 1359
             }
           },
           {
@@ -8594,6 +8575,9 @@
           {
             "Alternative": {
               "atoms": [
+                1329,
+                1330,
+                1331,
                 1332,
                 1333,
                 1334,
@@ -8619,17 +8603,14 @@
                 1354,
                 1355,
                 1356,
-                1357,
-                1358,
-                1359,
-                1360
+                1357
               ]
             }
           },
           {
             "Named": {
               "name": "series",
-              "atom": 1361
+              "atom": 1358
             }
           },
           {
@@ -8645,22 +8626,22 @@
           {
             "Alternative": {
               "atoms": [
-                1363,
-                1364
+                1360,
+                1361
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1331,
-                1365
+                1328,
+                1362
               ]
             }
           },
           {
             "Entity": {
-              "atom": 1376
+              "atom": 1373
             }
           },
           {
@@ -8670,38 +8651,38 @@
           },
           {
             "Entity": {
-              "atom": 1037
+              "atom": 1030
             }
           },
           {
             "Named": {
               "name": "stage_id",
-              "atom": 1369
+              "atom": 1366
             }
           },
           {
             "Entity": {
-              "atom": 1046
+              "atom": 1039
             }
           },
           {
             "Named": {
               "name": "stage_type",
-              "atom": 1371
+              "atom": 1368
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1370,
-                1372
+                1367,
+                1369
               ]
             }
           },
           {
             "Named": {
               "name": "stage",
-              "atom": 1373
+              "atom": 1370
             }
           },
           {
@@ -8712,15 +8693,15 @@
           {
             "Sequence": {
               "atoms": [
-                1368,
-                1374,
-                1375
+                1365,
+                1371,
+                1372
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1367,
+              "atom": 1364,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -8728,12 +8709,12 @@
           },
           {
             "Entity": {
-              "atom": 957
+              "atom": 950
             }
           },
           {
             "Repetition": {
-              "atom": 1378,
+              "atom": 1375,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -8741,7 +8722,7 @@
           },
           {
             "Entity": {
-              "atom": 1392
+              "atom": 1389
             }
           },
           {
@@ -8757,7 +8738,7 @@
           {
             "Named": {
               "name": "fips_part",
-              "atom": 1382
+              "atom": 1379
             }
           },
           {
@@ -8773,7 +8754,7 @@
           {
             "Named": {
               "name": "fips_month",
-              "atom": 1385
+              "atom": 1382
             }
           },
           {
@@ -8784,7 +8765,7 @@
           {
             "Named": {
               "name": "fips_day",
-              "atom": 1387
+              "atom": 1384
             }
           },
           {
@@ -8800,25 +8781,25 @@
           {
             "Named": {
               "name": "fips_year",
-              "atom": 1390
+              "atom": 1387
             }
           },
           {
             "Sequence": {
               "atoms": [
+                1378,
+                1380,
                 1381,
                 1383,
-                1384,
+                1385,
                 1386,
-                1388,
-                1389,
-                1391
+                1388
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1380,
+              "atom": 1377,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -8826,12 +8807,12 @@
           },
           {
             "Entity": {
-              "atom": 1312
+              "atom": 1309
             }
           },
           {
             "Repetition": {
-              "atom": 1394,
+              "atom": 1391,
               "min": 0,
               "max": null,
               "tag": "Repetition"
@@ -8839,12 +8820,12 @@
           },
           {
             "Entity": {
-              "atom": 817
+              "atom": 810
             }
           },
           {
             "Repetition": {
-              "atom": 1396,
+              "atom": 1393,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -8852,7 +8833,7 @@
           },
           {
             "Entity": {
-              "atom": 1422
+              "atom": 1419
             }
           },
           {
@@ -8862,7 +8843,7 @@
           },
           {
             "Entity": {
-              "atom": 1404
+              "atom": 1401
             }
           },
           {
@@ -8883,15 +8864,15 @@
           {
             "Alternative": {
               "atoms": [
-                1401,
-                1402,
-                1403
+                1398,
+                1399,
+                1400
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1400,
+              "atom": 1397,
               "min": 3,
               "max": null,
               "tag": "Repetition"
@@ -8900,7 +8881,7 @@
           {
             "Named": {
               "name": "translation",
-              "atom": 1405
+              "atom": 1402
             }
           },
           {
@@ -8911,9 +8892,9 @@
           {
             "Sequence": {
               "atoms": [
-                1399,
-                1406,
-                1407
+                1396,
+                1403,
+                1404
               ]
             }
           },
@@ -8924,12 +8905,12 @@
           },
           {
             "Entity": {
-              "atom": 1404
+              "atom": 1401
             }
           },
           {
             "Repetition": {
-              "atom": 1410,
+              "atom": 1407,
               "min": 3,
               "max": null,
               "tag": "Repetition"
@@ -8938,14 +8919,14 @@
           {
             "Named": {
               "name": "translation",
-              "atom": 1411
+              "atom": 1408
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1409,
-                1412
+                1406,
+                1409
               ]
             }
           },
@@ -8956,7 +8937,7 @@
           },
           {
             "Repetition": {
-              "atom": 1414,
+              "atom": 1411,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -8970,17 +8951,17 @@
           {
             "Named": {
               "name": "translation",
-              "atom": 1416
+              "atom": 1413
             }
           },
           {
             "Entity": {
-              "atom": 1404
+              "atom": 1401
             }
           },
           {
             "Repetition": {
-              "atom": 1418,
+              "atom": 1415,
               "min": 3,
               "max": null,
               "tag": "Repetition"
@@ -8989,30 +8970,30 @@
           {
             "Named": {
               "name": "translation",
-              "atom": 1419
+              "atom": 1416
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1415,
-                1417,
-                1420
+                1412,
+                1414,
+                1417
               ]
             }
           },
           {
             "Alternative": {
               "atoms": [
-                1408,
-                1413,
-                1421
+                1405,
+                1410,
+                1418
               ]
             }
           },
           {
             "Repetition": {
-              "atom": 1398,
+              "atom": 1395,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -9020,12 +9001,12 @@
           },
           {
             "Entity": {
-              "atom": 1050
+              "atom": 1043
             }
           },
           {
             "Repetition": {
-              "atom": 1424,
+              "atom": 1421,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -9034,14 +9015,14 @@
           {
             "Sequence": {
               "atoms": [
-                1366,
-                1377,
-                1379,
-                1393,
-                1395,
-                1397,
-                1423,
-                1425
+                1363,
+                1374,
+                1376,
+                1390,
+                1392,
+                1394,
+                1420,
+                1422
               ]
             }
           },
@@ -9063,16 +9044,16 @@
           {
             "Alternative": {
               "atoms": [
-                1428,
-                1429
+                1425,
+                1426
               ]
             }
           },
           {
             "Sequence": {
               "atoms": [
-                1427,
-                1430
+                1424,
+                1427
               ]
             }
           },
@@ -9083,12 +9064,12 @@
           },
           {
             "Entity": {
-              "atom": 1376
+              "atom": 1373
             }
           },
           {
             "Repetition": {
-              "atom": 1433,
+              "atom": 1430,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -9107,102 +9088,102 @@
           {
             "Alternative": {
               "atoms": [
-                1435,
-                1436
-              ]
-            }
-          },
-          {
-            "Entity": {
-              "atom": 957
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 1438,
-              "min": 0,
-              "max": 1,
-              "tag": "Maybe"
-            }
-          },
-          {
-            "Entity": {
-              "atom": 1392
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 1440,
-              "min": 0,
-              "max": 1,
-              "tag": "Maybe"
-            }
-          },
-          {
-            "Entity": {
-              "atom": 1312
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 1442,
-              "min": 0,
-              "max": null,
-              "tag": "Repetition"
-            }
-          },
-          {
-            "Entity": {
-              "atom": 817
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 1444,
-              "min": 0,
-              "max": 1,
-              "tag": "Maybe"
-            }
-          },
-          {
-            "Entity": {
-              "atom": 1422
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 1446,
-              "min": 0,
-              "max": 1,
-              "tag": "Maybe"
-            }
-          },
-          {
-            "Entity": {
-              "atom": 1050
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 1448,
-              "min": 0,
-              "max": 1,
-              "tag": "Maybe"
-            }
-          },
-          {
-            "Sequence": {
-              "atoms": [
-                1431,
                 1432,
+                1433
+              ]
+            }
+          },
+          {
+            "Entity": {
+              "atom": 950
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 1435,
+              "min": 0,
+              "max": 1,
+              "tag": "Maybe"
+            }
+          },
+          {
+            "Entity": {
+              "atom": 1389
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 1437,
+              "min": 0,
+              "max": 1,
+              "tag": "Maybe"
+            }
+          },
+          {
+            "Entity": {
+              "atom": 1309
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 1439,
+              "min": 0,
+              "max": null,
+              "tag": "Repetition"
+            }
+          },
+          {
+            "Entity": {
+              "atom": 810
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 1441,
+              "min": 0,
+              "max": 1,
+              "tag": "Maybe"
+            }
+          },
+          {
+            "Entity": {
+              "atom": 1419
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 1443,
+              "min": 0,
+              "max": 1,
+              "tag": "Maybe"
+            }
+          },
+          {
+            "Entity": {
+              "atom": 1043
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 1445,
+              "min": 0,
+              "max": 1,
+              "tag": "Maybe"
+            }
+          },
+          {
+            "Sequence": {
+              "atoms": [
+                1428,
+                1429,
+                1431,
                 1434,
-                1437,
-                1439,
-                1441,
-                1443,
-                1445,
-                1447,
-                1449
+                1436,
+                1438,
+                1440,
+                1442,
+                1444,
+                1446
               ]
             }
           },
@@ -9213,12 +9194,12 @@
           },
           {
             "Entity": {
-              "atom": 1376
+              "atom": 1373
             }
           },
           {
             "Repetition": {
-              "atom": 1452,
+              "atom": 1449,
               "min": 0,
               "max": 1,
               "tag": "Maybe"
@@ -9236,102 +9217,102 @@
           },
           {
             "Alternative": {
-              "atoms": [
-                1454,
-                1455
-              ]
-            }
-          },
-          {
-            "Entity": {
-              "atom": 957
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 1457,
-              "min": 0,
-              "max": 1,
-              "tag": "Maybe"
-            }
-          },
-          {
-            "Entity": {
-              "atom": 1392
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 1459,
-              "min": 0,
-              "max": 1,
-              "tag": "Maybe"
-            }
-          },
-          {
-            "Entity": {
-              "atom": 1312
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 1461,
-              "min": 0,
-              "max": null,
-              "tag": "Repetition"
-            }
-          },
-          {
-            "Entity": {
-              "atom": 817
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 1463,
-              "min": 0,
-              "max": 1,
-              "tag": "Maybe"
-            }
-          },
-          {
-            "Entity": {
-              "atom": 1422
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 1465,
-              "min": 0,
-              "max": 1,
-              "tag": "Maybe"
-            }
-          },
-          {
-            "Entity": {
-              "atom": 1050
-            }
-          },
-          {
-            "Repetition": {
-              "atom": 1467,
-              "min": 0,
-              "max": 1,
-              "tag": "Maybe"
-            }
-          },
-          {
-            "Sequence": {
               "atoms": [
                 1451,
+                1452
+              ]
+            }
+          },
+          {
+            "Entity": {
+              "atom": 950
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 1454,
+              "min": 0,
+              "max": 1,
+              "tag": "Maybe"
+            }
+          },
+          {
+            "Entity": {
+              "atom": 1389
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 1456,
+              "min": 0,
+              "max": 1,
+              "tag": "Maybe"
+            }
+          },
+          {
+            "Entity": {
+              "atom": 1309
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 1458,
+              "min": 0,
+              "max": null,
+              "tag": "Repetition"
+            }
+          },
+          {
+            "Entity": {
+              "atom": 810
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 1460,
+              "min": 0,
+              "max": 1,
+              "tag": "Maybe"
+            }
+          },
+          {
+            "Entity": {
+              "atom": 1419
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 1462,
+              "min": 0,
+              "max": 1,
+              "tag": "Maybe"
+            }
+          },
+          {
+            "Entity": {
+              "atom": 1043
+            }
+          },
+          {
+            "Repetition": {
+              "atom": 1464,
+              "min": 0,
+              "max": 1,
+              "tag": "Maybe"
+            }
+          },
+          {
+            "Sequence": {
+              "atoms": [
+                1448,
+                1450,
                 1453,
-                1456,
-                1458,
-                1460,
-                1462,
-                1464,
-                1466,
-                1468
+                1455,
+                1457,
+                1459,
+                1461,
+                1463,
+                1465
               ]
             }
           },
@@ -9341,15 +9322,15 @@
                 0,
                 151,
                 184,
-                1317,
-                1426,
-                1450,
-                1469
+                1314,
+                1423,
+                1447,
+                1466
               ]
             }
           }
         ],
-        "root": 1470
+        "root": 1467
       },
       "bindings": []
     }
@@ -9405,8 +9386,7 @@
       "rule roman: branches 6 and 7 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule roman: branches 6 and 10 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule roman: branches 7 and 10 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule number_suffix: branches 1 and 3 are order-dependent (first set not statically known)",
-      "rule number_suffix: branches 2 and 3 are order-dependent (first set not statically known)",
+      "rule number_suffix: branches 1 and 2 are order-dependent (first set not statically known)",
       "rule edition: branches 1 and 2 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule edition: branches 1 and 3 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule edition: branches 1 and 6 are order-dependent (shared first bytes; ordered choice is decisive)",
@@ -9440,9 +9420,8 @@
       "rule version: branches 1 and 3 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule version: branches 2 and 3 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule translation: branches 2 and 3 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 1 and 6 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 1 and 7 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 1 and 9 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 1 and 8 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 1 and 10 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 1 and 11 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 1 and 12 are order-dependent (shared first bytes; ordered choice is decisive)",
@@ -9450,25 +9429,16 @@
       "rule parts: branches 1 and 14 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 1 and 15 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 1 and 16 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 1 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 2 and 16 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 2 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 3 and 4 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 3 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 4 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 5 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 6 and 7 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 6 and 9 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 6 and 10 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 6 and 11 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 6 and 12 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 6 and 13 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 6 and 14 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 6 and 15 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 6 and 16 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 6 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 1 and 17 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 1 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 2 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 3 and 17 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 3 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 4 and 5 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 4 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 5 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 6 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 7 and 8 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 7 and 9 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 7 and 10 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 7 and 11 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 7 and 12 are order-dependent (shared first bytes; ordered choice is decisive)",
@@ -9477,19 +9447,21 @@
       "rule parts: branches 7 and 15 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 7 and 16 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 7 and 17 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 7 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 7 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 8 and 9 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 8 and 10 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 8 and 11 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 8 and 12 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 8 and 13 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 8 and 14 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 8 and 15 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 8 and 16 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 8 and 17 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 9 and 10 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 9 and 11 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 8 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 8 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 9 and 12 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 9 and 13 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 9 and 14 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 9 and 15 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 9 and 16 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 9 and 17 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 9 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 10 and 11 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 10 and 12 are order-dependent (shared first bytes; ordered choice is decisive)",
@@ -9497,32 +9469,41 @@
       "rule parts: branches 10 and 14 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 10 and 15 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 10 and 16 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 10 and 17 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 10 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 10 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 11 and 12 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 11 and 13 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 11 and 14 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 11 and 15 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 11 and 16 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 11 and 17 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 11 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 11 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 12 and 13 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 12 and 14 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 12 and 15 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 12 and 16 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 12 and 17 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 12 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 12 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 13 and 14 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 13 and 15 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 13 and 16 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 13 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 13 and 17 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 13 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 14 and 15 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 14 and 16 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 14 and 17 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 14 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 14 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 15 and 16 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 15 and 17 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 15 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 15 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 16 and 17 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule parts: branches 16 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
-      "rule parts: branches 17 and 18 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 16 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 17 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
+      "rule parts: branches 18 and 19 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule identifier: branches 1 and 2 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule identifier: branches 1 and 3 are order-dependent (shared first bytes; ordered choice is decisive)",
       "rule identifier: branches 1 and 4 are order-dependent (shared first bytes; ordered choice is decisive)",
@@ -9600,8 +9581,8 @@
     }
   ],
   "docs": {},
-  "source": "# Port of lib/pubid/nist/parser.rb — NIST/NBS identifiers: compound and\n# simple series, report numbers (first/second number families), editions\n# (e/r/rev/dash-year), dates (ISO, dash, month-year), revisions,\n# versions, volumes, parts, updates, addenda, supplements, errata,\n# drafts, stages (old \"(1pd)\" and new \".1pd\"), circ supplements,\n# dated NBS bulletins and the Research Library series. The gem's\n# parse()-side preprocessing (Preprocessor + ALL_PARTS suffix +\n# parsed_format tagging) is Tier-3 and outside the grammar. Source\n# deviations, all lint-forced longest-first reorderings that preserve\n# the accept-set under PEG backtracking: esp before es in language_code,\n# romans ordered longest-first, CSM before CS in simple_series; the\n# empty-alternative captures (:supplement_empty, addendum's str(\"\"))\n# become bracketed optionals.\n\ngrammar PubidNist version \"0.1.0\" {\n  digit = %x30-39\n  upper_letter = %x41-5A\n  lower_letter = %x61-7A\n  letter = upper_letter / lower_letter\n  word_char = letter / digit / \"_\"\n  any_char = %x01-10FFFF\n  digits = 1*digit\n  space = \" \"\n  dot = \".\"\n  dash = \"-\"\n  slash = \"/\"\n  hash_prefix = \"#\"\n\n  month_abbrev = \"January\" / \"February\" / \"September\" / \"November\" / \"December\" / \"October\" / \"August\" / \"June\" / \"March\" / \"April\" / \"July\" / \"May\" / \"Jan\" / \"Feb\" / \"Mar\" / \"Apr\" / \"Jun\" / \"Jul\" / \"Aug\" / \"Sep\" / \"Oct\" / \"Nov\" / \"Dec\"\n  language_code = ([(space / dot)] ((\"esp\" / \"es\" / \"pt\" / \"chi\" / \"viet\" / \"port\" / (2*4lower_letter)) as translation))\n  stage_id = \"i\" / \"I\" / \"f\" / \"F\" / \"1\" / \"2\" / \"3\" / \"4\" / \"5\" / \"6\" / \"7\" / \"8\" / \"9\"\n  stage_type = \"pd\" / \"PD\" / \"wd\" / \"WD\" / \"prd\" / \"PRD\"\n  old_stage = (\"(\" (((stage_id) as stage_id (stage_type) as stage_type)) as stage \")\")\n  new_stage = ((space / dot) (((stage_id) as stage_id (stage_type) as stage_type)) as stage)\n  publisher = (\"NBS\" / \"NIST\") as publisher\n  compound_series = (\"NBS BRPD-CRPL-D\" / \"NBS CRPL-F-A\" / \"NBS CRPL-F-B\" / \"NBS CS-E\" / \"CSRC Building Block\" / \"CSRC Use Case\" / \"CSRC Book\" / \"ITL Bulletin\" / \"NSRDS-NBS\" / \"NIST LCIRC\" / \"NBS LCIRC\" / \"NIST.LCIRC\" / \"NBS.LCIRC\" / \"NBS RPT\" / \"NIST PS\" / \"NIST DCI\" / \"NIST Other\" / \"NISTPUB\" / \"NBS CSM\" / \"NBS CIRC\" / \"NBS.CRPL\" / \"NBS CRPL\" / \"NBS CS\" / \"NBS CIS\" / \"NBS HR\" / \"NBS IRPL\" / \"NBS IP\" / \"NBS PS\" / \"NBS BH\") as series\n  simple_series = (\"NCSTAR\" / \"CHIPS\" / \"NWIRP\" / \"CSWP\" / \"JPCRD\" / \"JRES\" / \"OWMWP\" / \"SIBS\" / \"TIBM\" / \"FIPS\" / \"MONO\" / \"AMS\" / \"VTS\" / \"BSS\" / \"BMS\" / \"GCR\" / \"CSM\" / \"CRPL\" / \"CIRC\" / \"TTB\" / \"EAB\" / \"HB\" / \"MP\" / \"NSRDS\" / \"RPT\" / \"LCIRC\" / \"AI\" / \"CS\" / \"IR\" / \"SP\" / \"TN\" / \"PC\" / \"BH\" / \"RB\") as series\n  roman = \"VIII\" / \"VII\" / \"VI\" / \"III\" / \"II\" / \"IX\" / \"IV\" / \"X\" / \"V\" / \"I\"\n\n  number_suffix = ((\"U\" lower_letter)) / (((\"n\" upper_letter))) / ((!(\"r\" digit) letter !(upper_letter) !(\"ec\" / \"ndex\" / \"ndx\" / \"nsert\" / \"rrata\" / \"raft\" / \"pp\" / \"s\" / \"t\" / \"hi\" / \"iet\" / \"ort\" / \"r\" / \"p\") [digits]))\n  digits_with_suffix = (digits [(number_suffix !digit)])\n\n  first_number = (((((2digit) as owmwp_month dash (2digit) as owmwp_day dash (4digit) as owmwp_year)) as owmwp_date_number) / (\"ADHOC\") / ((\"div\" digits)) / ((month_abbrev dash month_abbrev digits)) / (((digits) as number (\"v\" digits as volume_suffix))) as number_with_volume / ((digits dash roman dash digits [(dot digits)])) / ((digits \"GB\" dash digits [upper_letter])) / ((digits upper_letter dash digits)) / ((((\"v\" digits as volume_number) (\"n\" digits as issue_number)))) / ((digits \"supprev\")) / ((digits \"e\" digits \"rev\" digits)) / ((((digits) as number (\"rv\" digits as revision_year)))) as number_with_rev_year / ((digits \"e\" digits \"rev\" month_abbrev digits)) / ((digits \"e\" digits \"supp\" [digits])) / ((((\"e\" digits \"rev\" month_abbrev digits)))) / ((((\"e\" digits \"supp\" [digits])))) / ((digits \"e\" digits)) / ((((\"e\" digits) !(dash digits)))) / ((lower_letter digits)) / ((digits \"supp\" month_abbrev digits)) / ((digits \"supp\" [digits])) / ((digits \"sup\" month_abbrev digits)) / ((digits \"sup\")) / ((((digits) as number ((\"sp\" / \"pt\" / \"es\" / \"SP\" / \"PT\" / \"ES\") as language_code)) (!(upper_letter) !digit !letter !dash !dot))) / ((((digits) as number (\"pt\" digits as part_number) (\"e\" digits as edition_year)))) / ((((digits) as number (\"(\" ((\"SP\" / \"PT\" / \"ES\") as language_code) \")\")))) / (((((digits) as number (upper_letter) as letter_suffix (\"r\" digits as revision_id)))) as number_with_letter_revision) / (digits_with_suffix)) as first_number\n\n  second_number = (!month_abbrev !(\"draft\") ((digits as number_only \"r\" (letter) as letter) as revision_letter) / ((digits ((\"supp\" / \"sup\")) (!digit !letter))) / ((digits (\"r\") digits (\"U\" lower_letter))) / ((digits (\"r\") digits letter)) / (((digits) as number_only (\"r\" (((digits [dot digits])) as edition_id)))) / ((digits (\"_\") digits dash digits [upper_letter])) / ((lower_letter dash digits)) / ((digits (\"pt\") digits !dash)) / ((digits upper_letter)) / ((((digits) as number_only (\"r\") letter))) as revision_letter / ((((\"r\") letter))) as revision_letter_suffix / ((((\"r\" (((digits [dot digits])) as edition_id))))) as revision_simple / (\"NCNR\") / (\"PERMIS\") / (\"BFRL\") / ((1*3upper_letter !(lower_letter))) / (((digits_with_suffix (!(dash month_abbrev digits slash)))) / ((lower_letter !digit)))) as second_number\n\n  edition = (([[space]] (\"e\" (((digits [dot digits])) as edition_id)))) as edition_e / ((space (\"r\" (((digits [dot digits])) as edition_id)) (letter) as edition_letter)) as edition_r_with_space_letter / ((space (\"r\" (((digits [dot digits])) as edition_id)))) as edition_r_with_space / ((((\"r\" (((digits [dot digits])) as edition_id)) (letter) as edition_letter))) as edition_r_no_space_letter / ((((\"r\" (((digits [dot digits])) as edition_id))))) as edition_r_no_space / (([space] \"rev\" [space] digits as edition_id)) as edition_rev / (((dash (%x31-39) as edition_id) !digit)) as edition_historical / (((dash 4digit) as dash_year)) as edition_dash_year\n\n  date = (((((dash 4digit) as date_year (2digit) as date_month (2digit) as date_day)) / (((dash 4digit) as date_year (2digit) as date_month)) / (((dash 4digit) as date_year)) / (((dash (month_abbrev) as date_month digits) as date_year)))) as date\n  iso_date = ((4digit) as date_year dash (2digit) as date_month dash (2digit) as date_day)\n  dated_identifier = ([hash_prefix] publisher (space / dot) (iso_date) as dated_date (space / dot) (1*digit) as dated_seq)\n  research_library_identifier = ((publisher) space (\"Research Library\") as series [(space \"(\" (4digit) as year \")\")])\n  legacy_edition = ((((\"r\" / \" R\")) ((1*2digit)) as edition (lower_letter) as edition_letter)) / ((((\"rev\" [space] digits)) as edition_year)) / ((((\"e\" / \" E\")) ((1*3digit)) as edition ((\"rev\" ((3*9letter)) as edition_month (digits) as edition_year)))) / ((((\"e\" 4digit) as edition_year [(2digit) as edition_month]))) / ((((\"rev\" ((3*9letter)) as edition_month (digits) as edition_year))))\n  crpl_range = ((digits (\"_\") digits dash digits [upper_letter])) as crpl_range\n\n  report_number = (first_number [(((\"_\" digits) as edition_year)) / ((dash (month_abbrev) as edition_month (digits) as edition_year)) / ((dash (digits) as fips_part dash (month_abbrev) as edition_month (digits) as edition_day (slash) (digits) as edition_year)) / (((dash (digits) as decimal_base (dot digits as decimal_suffix))) as decimal_number) / (((dash (digits) as letter_base ((\"U\" (lower_letter) as letter_suffix_extra) / ((\"n\" (upper_letter) as letter_suffix_extra)) / ((upper_letter) as letter_suffix)))) as letter_number) / (((dash (digits) as letter_base (dash) !month_abbrev (upper_letter) as letter_suffix (!(letter / digit)))) as letter_number) / (((dash (4digit) as dash_year (!(space) !dot !part !crpl_range !second_number !dash))) as edition_dash_year) / (((dash (second_number) (dash) (4digit) as dash_year (!(space) !dot !part !crpl_range !revision !draft))) as second_number_edition_year) / (((dash (second_number) (dash) (month_abbrev) as edition_month (digits) as edition_year (!(space) !dot !part !crpl_range !edition !revision !draft))) as fips_month_year_after_part) / (((dash (second_number) (dash) ((digits [upper_letter])) as part_number))) / (((dot (second_number)))) / (((dash ((crpl_range / second_number)) [edition]))) / (((dash (edition))))])\n  volume = ((([[space]] ((\"Vol. \" / \"Vol.\" / \"v\")))) ((digits ([((\"a-l\" / \"m-z\" / \"A-L\" / \"M-Z\"))] (0*2upper_letter)))) as volume)\n  part = (((\" Part. \" / \" Part.\" / \" Part \") / ([space] (\"pt\" / \"p\" / \"P\"))) ((digits [([space] (\"r\") digits)] [(\"add\" [(\"e\" digits)])] [dash digits]) as part))\n  revision = ([space] (\"r\" / \"rev\") [space] month_abbrev as revision_month digits as revision_year) / ([space] (\"r\" / \"rev\") digits as revision slash digits as revision_year) / ((\" r\" / \"r\") [space] (4digit) as revision_year) / (\"rev\" [space] digits as revision_year) / (((\" rev \" / \"rev\" / \" r\" / \"r\" / \" Rev. \" / \" Rev.\" / \" Revision (r)\") as revision_prefix) [space] (((digits [letter]) / (1*letter)) as revision_id)) as revision / ((\" r\" !any_char) as revision_standalone)\n  version = (([(space / dot)] (\"ver\") [space] ((digits *(dot digits))) as version)) / (((\" Ver. \" / \" Version \") ((digits (dot) digits [(dot digits)])) as version)) / (([(dash / space)] (\"v\") ((digits (dot) digits [(dot digits)])) as version))\n  update = ((((\"/Upd\") / ([[space]] ((\"/upd\" / \"-upd\")))) as update_prefix) ((([(digits) as update_number] [dash (((4digit) as update_year (2digit) as update_month) / ((4*digit) as update_year))]))) as update)\n  addendum = ((((\"-add\" / \".add\" / \" Add.\")) [(space / dash)] ([(digits)] as addendum_number))) as addendum\n  supplement = (([[space]] [dot] ((\"Suppl\" / \"Supp\" / \"Sup\" / \"supp\" / \"sup\")) [(((\"rev\")) as supplement_with_rev) / ((((month_abbrev) as supp_month_start (digits) as supp_year_start (dash) (month_abbrev) as supp_month_end (digits) as supp_year_end))) as supplement_date_range / ((((month_abbrev) as supp_month (digits) as supp_year))) as supplement_date / ((((digits) as supp_number (slash) (digits) as supp_year))) as supplement_slash_year / (((digits) as supp_year)) / ((((1*(letter / digit / \"_\"))) as supplement_suffix))]))\n  errata = ((([dash] ((\"errata\" / \"err\"))))) as errata\n  index = ((\"index\" / \"indx\")) as index\n  insert = ((\"insert\" / \"ins\")) as insert\n  appendix = ((\"app\")) as appendix\n  section = ((\"sec\") [digits] as section)\n  dot_word = dot 3*word_char\n  translation = ((\"(\" (3*word_char) as translation \")\")) / ((space (3*word_char) as translation)) / (([space] dot as translation (3*word_char) as translation))\n  pd_suffix = ((space digits (\"pd\"))) as public_draft\n  draft = (((space \"(Draft)\")) / ((([[space]] (dash (\"draft\")) [((space digits) / digits)]))) / ((pd_suffix))) as draft\n  fips_date = ((dash (digits) as fips_part (dash) (month_abbrev) as fips_month (digits) as fips_day (slash) (digits) as fips_year))\n\n  parts = (new_stage / (section) / (index) / (insert) / (appendix) / (pd_suffix) / (edition) / (date) / (legacy_edition) / revision / (version) / (volume) / (part) / (update) / (addendum) / (supplement) / (errata) / (language_code))\n\n  mr_identifier = ([hash_prefix] publisher (dot) (simple_series) [dot] [report_number] [(\"_\" digits) as edition_year] [(!(\"Suppl\" / \"Supp\" / \"Sup\") upper_letter)] [edition] [update] (0*3(dot ((digits) / (!(\"Suppl\" / \"Supp\" / \"Sup\") upper_letter)))) (*parts) [draft])\n  identifier = (circ_supplement_identifier / dated_identifier / mr_identifier / research_library_identifier / (((compound_series) (space / dot)) [old_stage] [report_number] [fips_date] (*parts) [draft] [translation] [new_stage]) / (((publisher) (space / dot)) (simple_series) [old_stage] (space / dot) [report_number] [fips_date] (*parts) [draft] [translation] [new_stage]) / ((simple_series) [old_stage] (space / dot) [report_number] [fips_date] (*parts) [draft] [translation] [new_stage]))\n\n  circ_supplement_identifier = (((((\"NBS CIRC\" / \"NBS LCIRC\" / \"NBS.CIRC\" / \"NBS.LCIRC\") as series) (space / dot))) as circ_series) (((((\"supp\") ((month_abbrev) as supp_month_start (digits) as supp_year_start dash (month_abbrev) as supp_month_end (digits) as supp_year_end))) as supplement_date_range) / (((((\"supp\" / \"sup\") ((4digit) as supp_year_start dash (4digit) as supp_year_end))) as supplement_date_range)) / (((\"supp\" / \"sup\") [(((month_abbrev digits)) as supplement_month_year) / (((digits) as supp_number slash (digits) as supp_year) as supplement_slash_year) / (\"\" as supplement_empty)])) / ((((((digits) as base_number (\"e\" digits as edition_number))) / (((digits) as base_number (lower_letter) as revision_letter (digits) as revision_number)) / (((digits) as base_number (upper_letter) as letter_suffix)) / (((digits) as simple_number))) as base_portion) (((((\"supp\" / \"sup\") [((((month_abbrev digits))) as supplement_month_year / (((dash (digits) as supp_number slash (digits) as supp_year))) as supplement_dash_slash_year / (((dash digits))) as supplement_year / ((((digits) as supp_number slash (digits) as supp_year))) as supplement_slash_year)])) / ((((slash digits as implicit_supplement_year)))) as implicit_supplement))))\n\n  entry identifier: identifier\n\n  test {\n    accept \"NIST SP 800-53\"\n    accept \"NBS FIPS 140-2\"\n    accept \"NIST HB 44\"\n    accept \"NIST TN 1297\"\n    accept \"NBS CIRC 25e\"\n    accept \"NIST NCSTAR 1nA\"\n    accept \"NBS HR 1-1nA\"\n    reject \"nonsense\"\n  }\n}\n",
-  "source_hash": "d1b9e6ae3893c44d1d9ed77ed28049254cbd925d92d3810c84b35d0452e1dcb9",
+  "source": "# Port of lib/pubid/nist/parser.rb — NIST/NBS identifiers: compound and\n# simple series, report numbers (first/second number families), editions\n# (e/r/rev/dash-year), dates (ISO, dash, month-year), revisions,\n# versions, volumes, parts, updates, addenda, supplements, errata,\n# drafts, stages (old \"(1pd)\" and new \".1pd\"), circ supplements,\n# dated NBS bulletins and the Research Library series. The gem's\n# parse()-side preprocessing (Preprocessor + ALL_PARTS suffix +\n# parsed_format tagging) is Tier-3 and outside the grammar. Source\n# deviations, all lint-forced longest-first reorderings that preserve\n# the accept-set under PEG backtracking: esp before es in language_code,\n# romans ordered longest-first, CSM before CS in simple_series; the\n# empty-alternative captures (:supplement_empty, addendum's str(\"\"))\n# become bracketed optionals.\n\ngrammar PubidNist version \"0.1.0\" {\n  digit = %x30-39\n  upper_letter = %x41-5A\n  lower_letter = %x61-7A\n  letter = upper_letter / lower_letter\n  word_char = letter / digit / \"_\"\n  any_char = %x01-10FFFF\n  digits = 1*digit\n  space = \" \"\n  dot = \".\"\n  dash = \"-\"\n  slash = \"/\"\n  hash_prefix = \"#\"\n\n  month_abbrev = \"January\" / \"February\" / \"September\" / \"November\" / \"December\" / \"October\" / \"August\" / \"June\" / \"March\" / \"April\" / \"July\" / \"May\" / \"Jan\" / \"Feb\" / \"Mar\" / \"Apr\" / \"Jun\" / \"Jul\" / \"Aug\" / \"Sep\" / \"Oct\" / \"Nov\" / \"Dec\"\n  language_code = ([(space / dot)] ((\"esp\" / \"es\" / \"pt\" / \"chi\" / \"viet\" / \"port\" / (2*4lower_letter)) as translation))\n  stage_id = \"i\" / \"I\" / \"f\" / \"F\" / \"1\" / \"2\" / \"3\" / \"4\" / \"5\" / \"6\" / \"7\" / \"8\" / \"9\"\n  stage_type = \"pd\" / \"PD\" / \"wd\" / \"WD\" / \"prd\" / \"PRD\"\n  old_stage = (\"(\" (((stage_id) as stage_id (stage_type) as stage_type)) as stage \")\")\n  new_stage = ((space / dot) (((stage_id) as stage_id (stage_type) as stage_type)) as stage)\n  publisher = (\"NBS\" / \"NIST\") as publisher\n  compound_series = (\"NBS BRPD-CRPL-D\" / \"NBS CRPL-F-A\" / \"NBS CRPL-F-B\" / \"NBS CS-E\" / \"CSRC Building Block\" / \"CSRC Use Case\" / \"CSRC Book\" / \"ITL Bulletin\" / \"NSRDS-NBS\" / \"NIST LCIRC\" / \"NBS LCIRC\" / \"NIST.LCIRC\" / \"NBS.LCIRC\" / \"NBS RPT\" / \"NIST PS\" / \"NIST DCI\" / \"NIST Other\" / \"NISTPUB\" / \"NBS CSM\" / \"NBS CIRC\" / \"NBS.CRPL\" / \"NBS CRPL\" / \"NBS CS\" / \"NBS CIS\" / \"NBS HR\" / \"NBS IRPL\" / \"NBS IP\" / \"NBS PS\" / \"NBS BH\") as series\n  simple_series = (\"NCSTAR\" / \"CHIPS\" / \"NWIRP\" / \"CSWP\" / \"JPCRD\" / \"JRES\" / \"OWMWP\" / \"SIBS\" / \"TIBM\" / \"FIPS\" / \"MONO\" / \"AMS\" / \"VTS\" / \"BSS\" / \"BMS\" / \"GCR\" / \"CSM\" / \"CRPL\" / \"CIRC\" / \"TTB\" / \"EAB\" / \"HB\" / \"MP\" / \"NSRDS\" / \"RPT\" / \"LCIRC\" / \"AI\" / \"CS\" / \"IR\" / \"SP\" / \"TN\" / \"PC\" / \"BH\" / \"RB\") as series\n  roman = \"VIII\" / \"VII\" / \"VI\" / \"III\" / \"II\" / \"IX\" / \"IV\" / \"X\" / \"V\" / \"I\"\n\n  number_suffix = ((\"U\" lower_letter)) / ((!(\"r\" digit) letter !(upper_letter) !(\"ec\" / \"ndex\" / \"ndx\" / \"nsert\" / \"rrata\" / \"raft\" / \"pp\" / \"s\" / \"t\" / \"hi\" / \"iet\" / \"ort\" / \"r\" / \"p\") [digits]))\n  digits_with_suffix = (digits [(number_suffix !digit)])\n\n  first_number = (((((2digit) as owmwp_month dash (2digit) as owmwp_day dash (4digit) as owmwp_year)) as owmwp_date_number) / (\"ADHOC\") / ((\"div\" digits)) / ((month_abbrev dash month_abbrev digits)) / (((digits) as number (\"v\" digits as volume_suffix))) as number_with_volume / ((digits dash roman dash digits [(dot digits)])) / ((digits \"GB\" dash digits [upper_letter])) / ((digits upper_letter dash digits)) / ((((\"v\" digits as volume_number) (\"n\" digits as issue_number)))) / ((digits \"supprev\")) / ((digits \"e\" digits \"rev\" digits)) / ((((digits) as number (\"rv\" digits as revision_year)))) as number_with_rev_year / ((digits \"e\" digits \"rev\" month_abbrev digits)) / ((digits \"e\" digits \"supp\" [digits])) / ((((\"e\" digits \"rev\" month_abbrev digits)))) / ((((\"e\" digits \"supp\" [digits])))) / ((digits \"e\" digits)) / ((((\"e\" digits) !(dash digits)))) / ((lower_letter digits)) / ((digits \"supp\" month_abbrev digits)) / ((digits \"supp\" [digits])) / ((digits \"sup\" month_abbrev digits)) / ((digits \"sup\")) / ((((digits) as number ((\"sp\" / \"pt\" / \"es\" / \"SP\" / \"PT\" / \"ES\") as language_code)) (!(upper_letter) !digit !letter !dash !dot))) / ((((digits) as number (\"pt\" digits as part_number) (\"e\" digits as edition_year)))) / ((((digits) as number (\"(\" ((\"SP\" / \"PT\" / \"ES\") as language_code) \")\")))) / (((((digits) as number (upper_letter) as letter_suffix (\"r\" digits as revision_id)))) as number_with_letter_revision) / (digits_with_suffix)) as first_number\n\n  second_number = (!month_abbrev !(\"draft\") ((digits as number_only \"r\" (letter) as letter) as revision_letter) / ((digits ((\"supp\" / \"sup\")) (!digit !letter))) / ((digits (\"r\") digits (\"U\" lower_letter))) / ((digits (\"r\") digits letter)) / (((digits) as number_only (\"r\" (((digits [dot digits])) as edition_id)))) / ((digits (\"_\") digits dash digits [upper_letter])) / ((lower_letter dash digits)) / ((digits (\"pt\") digits !dash)) / ((digits upper_letter)) / ((((digits) as number_only (\"r\") letter))) as revision_letter / ((((\"r\") letter))) as revision_letter_suffix / ((((\"r\" (((digits [dot digits])) as edition_id))))) as revision_simple / (\"NCNR\") / (\"PERMIS\") / (\"BFRL\") / ((1*3upper_letter !(lower_letter))) / (((digits_with_suffix (!(dash month_abbrev digits slash)))) / ((lower_letter !digit)))) as second_number\n\n  edition = (([[space]] (\"e\" (((digits [dot digits])) as edition_id)))) as edition_e / ((space (\"r\" (((digits [dot digits])) as edition_id)) (letter) as edition_letter)) as edition_r_with_space_letter / ((space (\"r\" (((digits [dot digits])) as edition_id)))) as edition_r_with_space / ((((\"r\" (((digits [dot digits])) as edition_id)) (letter) as edition_letter))) as edition_r_no_space_letter / ((((\"r\" (((digits [dot digits])) as edition_id))))) as edition_r_no_space / (([space] \"rev\" [space] digits as edition_id)) as edition_rev / (((dash (%x31-39) as edition_id) !digit)) as edition_historical / (((dash 4digit) as dash_year)) as edition_dash_year\n\n  date = (((((dash 4digit) as date_year (2digit) as date_month (2digit) as date_day)) / (((dash 4digit) as date_year (2digit) as date_month)) / (((dash 4digit) as date_year)) / (((dash (month_abbrev) as date_month digits) as date_year)))) as date\n  iso_date = ((4digit) as date_year dash (2digit) as date_month dash (2digit) as date_day)\n  dated_identifier = ([hash_prefix] publisher (space / dot) (iso_date) as dated_date (space / dot) (1*digit) as dated_seq)\n  research_library_identifier = ((publisher) space (\"Research Library\") as series [(space \"(\" (4digit) as year \")\")])\n  legacy_edition = ((((\"r\" / \" R\")) ((1*2digit)) as edition (lower_letter) as edition_letter)) / ((((\"rev\" [space] digits)) as edition_year)) / ((((\"e\" / \" E\")) ((1*3digit)) as edition ((\"rev\" ((3*9letter)) as edition_month (digits) as edition_year)))) / ((((\"e\" 4digit) as edition_year [(2digit) as edition_month]))) / ((((\"rev\" ((3*9letter)) as edition_month (digits) as edition_year))))\n  crpl_range = ((digits (\"_\") digits dash digits [upper_letter])) as crpl_range\n\n  report_number = (first_number [(((\"_\" digits) as edition_year)) / ((dash (month_abbrev) as edition_month (digits) as edition_year)) / ((dash (digits) as fips_part dash (month_abbrev) as edition_month (digits) as edition_day (slash) (digits) as edition_year)) / (((dash (digits) as decimal_base (dot digits as decimal_suffix))) as decimal_number) / (((dash (digits) as letter_base ((\"U\" (lower_letter) as letter_suffix_extra) / ((upper_letter) as letter_suffix)))) as letter_number) / (((dash (digits) as letter_base (dash) !month_abbrev (upper_letter) as letter_suffix (!(letter / digit)))) as letter_number) / (((dash (4digit) as dash_year (!(space) !dot !part !crpl_range !second_number !dash))) as edition_dash_year) / (((dash (second_number) (dash) (4digit) as dash_year (!(space) !dot !part !crpl_range !revision !draft))) as second_number_edition_year) / (((dash (second_number) (dash) (month_abbrev) as edition_month (digits) as edition_year (!(space) !dot !part !crpl_range !edition !revision !draft))) as fips_month_year_after_part) / (((dash (second_number) (dash) ((digits [upper_letter])) as part_number))) / (((dot (second_number)))) / (((dash ((crpl_range / second_number)) [edition]))) / (((dash (edition))))])\n  volume = ((([[space]] ((\"Vol. \" / \"Vol.\" / \"v\")))) ((digits ([((\"a-l\" / \"m-z\" / \"A-L\" / \"M-Z\"))] (0*2upper_letter)))) as volume)\n  part = (((\" Part. \" / \" Part.\" / \" Part \") / ([space] (\"pt\" / \"p\" / \"P\"))) ((digits [([space] (\"r\") digits)] [(\"add\" [(\"e\" digits)])] [dash digits]) as part))\n  revision = ([space] (\"r\" / \"rev\") [space] month_abbrev as revision_month digits as revision_year) / ([space] (\"r\" / \"rev\") digits as revision slash digits as revision_year) / ((\" r\" / \"r\") [space] (4digit) as revision_year) / (\"rev\" [space] digits as revision_year) / (((\" rev \" / \"rev\" / \" r\" / \"r\" / \" Rev. \" / \" Rev.\" / \" Revision (r)\") as revision_prefix) [space] (((digits [letter]) / (1*letter)) as revision_id)) as revision / ((\" r\" !any_char) as revision_standalone)\n  version = (([(space / dot)] (\"ver\") [space] ((digits *(dot digits))) as version)) / (((\" Ver. \" / \" Version \") ((digits (dot) digits [(dot digits)])) as version)) / (([(dash / space)] (\"v\") ((digits (dot) digits [(dot digits)])) as version))\n  update = ((((\"/Upd\") / ([[space]] ((\"/upd\" / \"-upd\")))) as update_prefix) ((([(digits) as update_number] [dash (((4digit) as update_year (2digit) as update_month) / ((4*digit) as update_year))]))) as update)\n  addendum = ((((\"-add\" / \".add\" / \" Add.\")) [(space / dash)] ([(digits)] as addendum_number))) as addendum\n  supplement = (([[space]] [dot] ((\"Suppl\" / \"Supp\" / \"Sup\" / \"supp\" / \"sup\")) [(((\"rev\")) as supplement_with_rev) / ((((month_abbrev) as supp_month_start (digits) as supp_year_start (dash) (month_abbrev) as supp_month_end (digits) as supp_year_end))) as supplement_date_range / ((((month_abbrev) as supp_month (digits) as supp_year))) as supplement_date / ((((digits) as supp_number (slash) (digits) as supp_year))) as supplement_slash_year / (((digits) as supp_year)) / ((((1*(letter / digit / \"_\"))) as supplement_suffix))]))\n  errata = ((([dash] ((\"errata\" / \"err\"))))) as errata\n  index = ((\"index\" / \"indx\")) as index\n  insert = ((\"insert\" / \"ins\")) as insert\n  appendix = ((\"app\")) as appendix\n  section = ((\"sec\") [digits] as section)\n  dot_word = dot 3*word_char\n  translation = ((\"(\" (3*word_char) as translation \")\")) / ((space (3*word_char) as translation)) / (([space] dot as translation (3*word_char) as translation))\n  pd_suffix = ((space digits (\"pd\"))) as public_draft\n  draft = (((space \"(Draft)\")) / ((([[space]] (dash (\"draft\")) [((space digits) / digits)]))) / ((pd_suffix))) as draft\n  fips_date = ((dash (digits) as fips_part (dash) (month_abbrev) as fips_month (digits) as fips_day (slash) (digits) as fips_year))\n\n  parts = (new_stage / (((\"n\" upper_letter)) as n_letter_part) / (section) / (index) / (insert) / (appendix) / (pd_suffix) / (edition) / (date) / (legacy_edition) / revision / (version) / (volume) / (part) / (update) / (addendum) / (supplement) / (errata) / (language_code))\n\n  mr_identifier = ([hash_prefix] publisher (dot) (simple_series) [dot] [report_number] [(\"_\" digits) as edition_year] [(!(\"Suppl\" / \"Supp\" / \"Sup\") upper_letter)] [edition] [update] (0*3(dot ((digits) / (!(\"Suppl\" / \"Supp\" / \"Sup\") upper_letter)))) (*parts) [draft])\n  identifier = (circ_supplement_identifier / dated_identifier / mr_identifier / research_library_identifier / (((compound_series) (space / dot)) [old_stage] [report_number] [fips_date] (*parts) [draft] [translation] [new_stage]) / (((publisher) (space / dot)) (simple_series) [old_stage] (space / dot) [report_number] [fips_date] (*parts) [draft] [translation] [new_stage]) / ((simple_series) [old_stage] (space / dot) [report_number] [fips_date] (*parts) [draft] [translation] [new_stage]))\n\n  circ_supplement_identifier = (((((\"NBS CIRC\" / \"NBS LCIRC\" / \"NBS.CIRC\" / \"NBS.LCIRC\") as series) (space / dot))) as circ_series) (((((\"supp\") ((month_abbrev) as supp_month_start (digits) as supp_year_start dash (month_abbrev) as supp_month_end (digits) as supp_year_end))) as supplement_date_range) / (((((\"supp\" / \"sup\") ((4digit) as supp_year_start dash (4digit) as supp_year_end))) as supplement_date_range)) / (((\"supp\" / \"sup\") [(((month_abbrev digits)) as supplement_month_year) / (((digits) as supp_number slash (digits) as supp_year) as supplement_slash_year) / (\"\" as supplement_empty)])) / ((((((digits) as base_number (\"e\" digits as edition_number))) / (((digits) as base_number (lower_letter) as revision_letter (digits) as revision_number)) / (((digits) as base_number (upper_letter) as letter_suffix)) / (((digits) as simple_number))) as base_portion) (((((\"supp\" / \"sup\") [((((month_abbrev digits))) as supplement_month_year / (((dash (digits) as supp_number slash (digits) as supp_year))) as supplement_dash_slash_year / (((dash digits))) as supplement_year / ((((digits) as supp_number slash (digits) as supp_year))) as supplement_slash_year)])) / ((((slash digits as implicit_supplement_year)))) as implicit_supplement))))\n\n  entry identifier: identifier\n\n  test {\n    accept \"NIST SP 800-53\"\n    accept \"NBS FIPS 140-2\"\n    accept \"NIST HB 44\"\n    accept \"NIST TN 1297\"\n    accept \"NBS CIRC 25e\"\n    accept \"NIST NCSTAR 1nA\"\n    accept \"NBS HR 1-1nA\"\n    reject \"nonsense\"\n  }\n}\n",
+  "source_hash": "b02c9ad576a3adcd4888b8b679a3f10ef256a153c8179162a08246e98ebf78c3",
   "compiler_version": "1.3.93",
-  "checksum": "sha256:f8fb8663049e7fa1f29e550d37967490c1552558bb91380f4f9b056893e1ee17"
+  "checksum": "sha256:cfcbbb2034b824997bbee794021bb19b6933ee22445d669bfe519734cff263d1"
 }
