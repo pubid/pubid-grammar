@@ -106,6 +106,7 @@ grammar PubidIso version "0.3.0" {
   sc_type = ("SC/QC" / "SC") as sc_type
   tc_subcommittee_part = (slash sc_type space digits as sc_number slash wg_type space digits as wg_number) / (slash sc_type space digits as sc_number)
   tc_document = prefix_sole_publisher (slash / space) tc_type space digits as tc_number [tc_subcommittee_part] space "N" [space] digits as number [(colon year_digits as year)]
+  bare_tc_document = digits as tc_number slash sc_type space digits as sc_number [slash wg_type space digits as wg_number] space "N" [space] digits as number [(colon year_digits as year)]
 
   # ---- legacy ISO/R ----
   iso_r_prefix = "ISO/R" as iso_r_prefix
@@ -143,7 +144,7 @@ grammar PubidIso version "0.3.0" {
 
   ## The ISO identifier root: common-text twin form first, then the
   ## single spine.
-  identifier = nsb_iso_identifier / tc_document / directives_identifiers / jcgm_identifier / iso_r_supplement_identifier / iso_r_identifier / supplement_supplement_supplement_identifier / supplement_supplement_identifier / supplement_identifier / joint_identifier / identifier_copublishers
+  identifier = bare_tc_document / nsb_iso_identifier / tc_document / directives_identifiers / jcgm_identifier / iso_r_supplement_identifier / iso_r_identifier / supplement_supplement_supplement_identifier / supplement_supplement_identifier / supplement_identifier / joint_identifier / identifier_copublishers
 }
 
 entry identifier: identifier
@@ -156,6 +157,7 @@ test {
   accept "ISO/IEC WD TS 25025"
   accept "Guide ISO/CEI 51:1999"
   accept "ISO/IEC DIR 1:2022 + IEC SUP:2022"
+  accept "184/SC 4/WG 12 N10291"
   reject "nonsense"
   example "ISO/IEC WD TS 25025" { publisher: "ISO" }
   example "JCGM 200:2008(F)" { publisher: "JCGM" }
