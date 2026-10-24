@@ -6,7 +6,10 @@ on:
   workflow_dispatch: {}
 
 env:
-  RUBY_REF: b8fde87aa4ac32b3ae6c8a74c7c2013a833e14e3
+  # Post brace-body rule forms (ruby#311) and the advisory lint split:
+  # the compiler must parse brace-form grammars and reproduce the
+  # committed contracts byte-for-byte.
+  RUBY_REF: 6570ab923fbdaf5ac092fae3fb77369321a13064
   RS_REF: main
   TS_REF: main
 
