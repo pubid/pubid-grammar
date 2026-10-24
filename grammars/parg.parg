@@ -1,8 +1,11 @@
 # PG described in PG — the self-description grammar (F10, phase 1).
 # It recognizes the language this file is written in, over raw text:
 # whitespace is threaded explicitly (pq = potential whitespace within a
-# line, nlws = line-breaking whitespace). The reference compiler remains
-# parsanol-ruby (SSOT, TODO 11); this artifact is the validator.
+# line, nlws = line-breaking whitespace, bw = brace-body whitespace: the
+# b* rules thread it so brace-form rule bodies span lines). The
+# reference compiler remains parsanol-ruby (SSOT, TODO 11); this
+# artifact is the validator — and brace_rule below is itself written in
+# the brace form it recognizes.
 
 grammar PgMeta version "1.0.0" {
 
@@ -46,8 +49,21 @@ grammar PgMeta version "1.0.0" {
   dotted_ident = ident *("." ident)
   primary = hex / "(" [pq] choice [pq] ")" / "[" [pq] choice [pq] "]" / table_alt / set_expr / switch_expr / dotted_ident
 
+  # ---- brace-body expressions (bw-threaded: newlines are whitespace) ----
+  bw = *(ws / newline / comment)
+  bchoice = bseq *(bw "/" bw bseq)
+  bseq = belement *(bw belement)
+  belement = bw (rep_prefix bw [bpred / bpostfixed] / bpred / bpostfixed)
+  bpred = ("!" / "&") bpostfixed
+  bprimary = hex / "(" [bw] bchoice [bw] ")" / "[" [bw] bchoice [bw] "]" / table_alt / set_expr / switch_expr / dotted_ident
+  bpostfixed = bprimary [bw "as" bw ident]
+
   # ---- rules and sections ----
   rule = ident pq "=" pq choice
+  brace_rule = {
+    ident pq "=" *(ws / newline) %x7B
+    bchoice bw %x7D
+  }
   entry_section = "entry" pq ident ":" pq ident
   path = ident *(("[" "]") / ("." ident))
   cardinality = 1*(digit / "." / "*")
@@ -58,7 +74,7 @@ grammar PgMeta version "1.0.0" {
   test_line = ("accept" / "reject" / "example") pq dstring [pq "{" *nlws test_pair *nlws "}"]
   test_pair = ident ":" pq (dstring / num / ("true" / "false"))
   test_section = "test" [pq ident] nlws "{" *nlws [test_line *(nlws test_line)] nlws "}"
-  rule_line = rule / entry_section / bindings_section / preprocess_section / test_section / custom_line / state_line / doc_marker / comment
+  rule_line = rule / brace_rule / entry_section / bindings_section / preprocess_section / test_section / custom_line / state_line / doc_marker / comment
   grammar_block = "grammar" pq ident pq "version" pq dstring pq "{" *(nlws rule_line) *nlws "}"
   render_section = "render" pq ident nlws "{" *(nlws render_seg) nlws "}"
   render_seg = ("field" pq ident) / ("literal" pq dstring) / ("cond" pq ident nlws "{" *(nlws render_seg) nlws "}")
@@ -82,6 +98,12 @@ grammar PgMeta version "1.0.0" {
     accept "grammar T version \"1\" { a = (switch block_kind { \"quote\" -> q _ -> never }) }"
     accept "grammar T version \"1\" { a = (set d = (3*4(%x2D)) %x0A) }"
     accept "grammar T version \"1\" { a = (!(state d) %x61-7A) }"
+    accept "grammar T version \"1\" {\n  p = {\n    %i\"iso\" / %i\"ieee\"\n  }\n}"
+    accept "grammar T version \"1\" { q = { a b } }"
+    accept "grammar T version \"1\" {\n  r =\n  {\n    x as y\n  }\n}"
+    accept "grammar T version \"1\" {\n  s = {\n    # a comment is body whitespace\n    !(t / u) 2*v\n  }\n}"
+    reject "grammar T version \"1\" { q = { a }"
+    reject "grammar T version \"1\" { q = { } }"
     reject "nonsense"
     reject "grammar T version \"1\" { = }"
   }
