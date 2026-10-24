@@ -1,1 +1,1 @@
-{"grammar":"iala","artifact_checksum":"sha256:69f6e8a2a70f9c9211fffc2833037eff92ae312cce7d5e45f69dd7e9f7832867","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"G1040","captures":{}},{"input":"GA1040","captures":{}},{"input":"nonsense","captures":{}}]}}}
+{"grammar":"iala","artifact_checksum":"sha256:ea1cd413eb2ddc9b0215509b347dcdd12ceddab5ccc1e5ff413dab01fe69bba1","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"G1040","captures":{}},{"input":"GA1040","captures":{}},{"input":"nonsense","captures":{}}]}}}
