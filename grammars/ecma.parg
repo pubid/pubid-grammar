@@ -3,7 +3,7 @@
 # vs standard alternation relies on the disjoint first character after
 # the prefix (T/M are not digits), as in the source.
 
-grammar PubidEcma version "0.1.0" {
+grammar PubidEcma version "0.1.0" mode "v1" {
   tr = " TR/" (1*digit) as tr_number
   mem = " MEM/" (1*digit) as mem_number
   standard = ("-" / " ") (1*digit) as number [("-" (1*digit) as part)]

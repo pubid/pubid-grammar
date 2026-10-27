@@ -12,7 +12,7 @@
 # empty-alternative captures (:supplement_empty, addendum's str(""))
 # become bracketed optionals.
 
-grammar PubidNist version "0.1.0" {
+grammar PubidNist version "0.1.0" mode "v1" {
   digit = %x30-39
   upper_letter = %x41-5A
   lower_letter = %x61-7A

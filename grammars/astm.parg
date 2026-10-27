@@ -2,7 +2,7 @@
 # (A-G letter codes, dual-unit, 2-digit years with sub-year letters and
 # reapprovals), research reports, TRs, MNL/MONO/DS/WK/ADJ series.
 
-grammar PubidAstm version "0.1.0" {
+grammar PubidAstm version "0.1.0" mode "v1" {
   upper = %x41-5A
   letter = upper / lower
   lower = %x61-7A

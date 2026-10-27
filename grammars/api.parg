@@ -2,7 +2,7 @@
 # with slash-combined second identifiers. The API MPMP normalization
 # stays binder-side.
 
-grammar PubidApi version "0.1.0" {
+grammar PubidApi version "0.1.0" mode "v1" {
   number_with_part = (1*num_letter_char) as number [(dash (1*num_letter_char) as part)]
   num_letter_char = %x30-39 / %x41-5A
   doc_type = ("MPMS" / "BULL" / "SPEC" / "STD" / "RP" / "TR" / "COS" / "PUBL") as type

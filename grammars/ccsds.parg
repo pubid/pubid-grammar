@@ -1,7 +1,7 @@
 # Port of lib/pubid/ccsds/parser.rb:
 # CCSDS <number>[.part][-type][-edition][-suffix]{ Cor. n}[ - <language>]
 
-grammar PubidCcsds version "0.1.0" {
+grammar PubidCcsds version "0.1.0" mode "v1" {
   alnum_char = %x41-5A / %x61-7A / %x30-39
   upper = %x41-5A
   digit_dot_char = %x30-39 / %x2E

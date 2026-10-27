@@ -7,7 +7,7 @@
 
 use cen_cenelec
 
-grammar PubidEvs version "0.3.0" {
+grammar PubidEvs version "0.3.0" mode "v1" {
   identifier = [draft_prefix] "EVS" evs_separator ((cen_cenelec.identifier) as adopted / (evs_intl) as intl / (evs_plain) as plain) [evs_amd] [evs_cor / evs_ac] [evs_na]
 
   draft_prefix = "pr" as draft_prefix

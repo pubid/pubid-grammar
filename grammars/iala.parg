@@ -2,7 +2,7 @@
 # [ Ed X.Y | :edX.Y] [(L)], plus the Annex-to-base form. The annex
 # letter guard (!lower) keeps "Ed 1" from mis-capturing.
 
-grammar PubidIala version "0.1.0" {
+grammar PubidIala version "0.1.0" mode "v1" {
   type_letter = ("GA" / "S" / "R" / "G" / "M" / "C" / "A" / "L" / "X" / "P") as type_letter
   doc_number = (1*digit) as doc_number
   dotted_number = "." 1*digit

@@ -1,7 +1,7 @@
 # Port of lib/pubid/jcgm/parser.rb: JCGM base, meeting, amendment and
 # corrigendum identifiers, and the named GUM/VIM guides.
 
-grammar PubidJcgm version "0.1.0" {
+grammar PubidJcgm version "0.1.0" mode "v1" {
   century = "19" / "20"
   year_digits = century 2*digit !digit
   month_digits = 2*digit

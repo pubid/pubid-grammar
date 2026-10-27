@@ -2,7 +2,7 @@
 # the slug captured verbatim; decomposition is builder-side by design.
 # parslet `any` is approximated byte-wise (%x01-10FFFF; excludes NUL only).
 
-grammar PubidOasis version "0.1.0" {
+grammar PubidOasis version "0.1.0" mode "v1" {
   any_char = %x01-10FFFF
   slug = (1*any_char) as original
   identifier = "OASIS " slug

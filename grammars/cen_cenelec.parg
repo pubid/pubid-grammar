@@ -2,7 +2,7 @@
 # (U+2011/AD dashes, comment stripping, CEN-CLC/GUIDE forms) stays
 # binder-side: the grammar sees normalized input.
 
-grammar PubidCenCenelec version "0.2.0" {
+grammar PubidCenCenelec version "0.2.0" mode "v1" {
   digit = %x30-39
   space = " "
   dash = "-"

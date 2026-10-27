@@ -3,7 +3,7 @@
 # reaffirmed years, (E)/(J) language codes, 規格群 all-parts, AMD/EXPL/
 # CORR supplements, and the SYMBOL clause.
 
-grammar PubidJis version "0.1.0" {
+grammar PubidJis version "0.1.0" mode "v1" {
   dash = ("-" / "ｰ") as dash
   space = (" " / "　")
   colon = (":" / "：")

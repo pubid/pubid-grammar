@@ -18,7 +18,7 @@
 
 use idf
 
-grammar PubidIso version "0.3.0" {
+grammar PubidIso version "0.3.0" mode "v1" {
 
   # ---- lexical (pubid/parser/common_parse_rules.rb + ISO override) ----
   digit = %x30-39

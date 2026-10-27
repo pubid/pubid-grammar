@@ -2,7 +2,7 @@
 # [:year][(languages)]. The number alternatives cover letter-prefixed
 # forms (C37.06.1, N323A) and plain dotted forms (802.1b-1995).
 
-grammar PubidAnsi version "0.1.0" {
+grammar PubidAnsi version "0.1.0" mode "v1" {
   organization = "ISO" / "IEC" / "IEEE" / "SAE" / "ASME" / "ASTM"
   copublisher_item = slash [space] organization as copublisher
   copublishers = (1*copublisher_item) as copublishers

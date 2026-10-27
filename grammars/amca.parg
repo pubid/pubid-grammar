@@ -2,7 +2,7 @@
 # en-dash normalization and trailing punctuation stripping stay
 # binder-side.
 
-grammar PubidAmca version "0.1.0" {
+grammar PubidAmca version "0.1.0" mode "v1" {
   copublisher = (("ANSI" slash "AMCA") / "AMCA") as copublisher
   additional_copublisher = slash 2*10letter space 1*digit [(dash 1*digit)]
   code = (1*digit [(dash letter)] [(dot 1*digit)]) as code
