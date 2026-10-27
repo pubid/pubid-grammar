@@ -9,7 +9,8 @@ env:
   # Post brace-body rule forms (ruby#311) and the advisory lint split:
   # the compiler must parse brace-form grammars and reproduce the
   # committed contracts byte-for-byte.
-  RUBY_REF: 4081a9f57453ba607928fc68d1255f22c6bb4257
+  # ruby#355's head: the trivia-wrap exemption + the emission stamp.
+  RUBY_REF: de8b4eb68917822b5a995d587c2e5f356656c26f
   RS_REF: main
   TS_REF: main
 
