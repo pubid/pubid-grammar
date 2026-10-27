@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.4'
+          ruby-version: '3.4.8'
       - name: Compile every grammar (lint + validity + tests)
         run: |
           git clone https://github.com/parsanol/parsanol-ruby ../parsanol-ruby
