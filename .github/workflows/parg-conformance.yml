@@ -10,7 +10,7 @@ env:
   # the compiler must parse brace-form grammars and reproduce the
   # committed contracts byte-for-byte.
   # ruby#355's head: the trivia-wrap exemption + the emission stamp.
-  RUBY_REF: de8b4eb68917822b5a995d587c2e5f356656c26f
+  RUBY_REF: a71244cea78e86eaf88d48fed10a2eb7a7ce88ce
   RS_REF: main
   TS_REF: main
 
