@@ -1,7 +1,7 @@
 # Port of lib/pubid/calconnect/parser.rb:
 # CC[/<series>] <number>[.<sub>|-$sub>][:<date>]
 
-grammar PubidCalconnect version "0.1.0" {
+grammar PubidCalconnect version "0.1.0" mode "v1" {
   letter = %x41-5A / %x61-7A
   series = (1*letter) as series
   number = (1*digit [("." / "-") 1*digit]) as number

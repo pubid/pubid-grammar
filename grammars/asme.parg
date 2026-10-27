@@ -3,7 +3,7 @@
 # CSA/API/ISO/ASME-ANS joint publishers, draft years (20XX/202X/2ddX),
 # reaffirmations, parenthetical revisions, and bracketed notes.
 
-grammar PubidAsme version "0.1.0" {
+grammar PubidAsme version "0.1.0" mode "v1" {
   upper = %x41-5A
   lower = %x61-7A
   digit = %x30-39

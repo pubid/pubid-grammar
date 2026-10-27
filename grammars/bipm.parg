@@ -3,7 +3,7 @@
 # the SI Brochure family, MEP/Guide reports. Groups and type names come
 # from gem-extracted tables (bipm_*.yaml), longest-first.
 
-grammar PubidBipm version "0.1.0" {
+grammar PubidBipm version "0.1.0" mode "v1" {
   digit = %x30-39
   dot = "."
   alnum = 1*(digit / letter)

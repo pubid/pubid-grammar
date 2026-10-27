@@ -5,7 +5,7 @@
 # grammar via `use aiee`. Deviation: source "Sep"/"Sept" order is
 # lint-forced to longest-first.
 
-grammar PubidAiee version "0.1.0" {
+grammar PubidAiee version "0.1.0" mode "v1" {
   digit = %x30-39
   upper = %x41-5A
   lower = %x61-7A

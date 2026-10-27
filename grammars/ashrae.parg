@@ -8,7 +8,7 @@
 # `str("")` alternatives expressed as bracketed optionals; `space?`
 # inlined as [space].
 
-grammar PubidAshrae version "0.1.0" {
+grammar PubidAshrae version "0.1.0" mode "v1" {
   digit = %x30-39
   letter = %x41-5A / %x61-7A
   digits = 1*digit

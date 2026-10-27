@@ -2,7 +2,7 @@
 # "Adobe Technical Note #5014", ATN5014, bare 5014) and publications
 # (adobe-glyph-list, adobe-japan1-7 with the version split tried first).
 
-grammar PubidAdobe version "0.1.0" {
+grammar PubidAdobe version "0.1.0" mode "v1" {
   tech_note_tn_prefix = "Adobe" space "TN" [space]
   tech_note_long_prefix = "Adobe" space "Technical" space "Note" [[space] ["#"] [space]]
   tech_note_atn_prefix = "ATN" [space]

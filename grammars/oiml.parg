@@ -1,7 +1,7 @@
 # Port of lib/pubid/oiml/parser.rb — OIML identifiers: the base form,
 # drafts, amendments (full/short/+/trailing), annexes, bulletins.
 
-grammar PubidOiml version "0.1.0" {
+grammar PubidOiml version "0.1.0" mode "v1" {
   # The monorepo's doc_type is [BDEGRSV] — X is deliberately absent
   # ("OIML X 99" must be rejected).
   letter_bdegrsvx = %x42 / %x44 / %x45 / %x47 / %x52 / %x53 / %x56

@@ -5,7 +5,7 @@
 # - the IEV → "IEC 60050" input shorthand is pre-parse normalization and
 #   stays binder-side.
 
-grammar PubidIec version "0.1.0" {
+grammar PubidIec version "0.1.0" mode "v1" {
   digit = %x30-39
   upper = %x41-5A
   lower = %x61-7A

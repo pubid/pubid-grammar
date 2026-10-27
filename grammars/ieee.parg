@@ -19,7 +19,7 @@ use aiee
 use ire
 use nesc
 
-grammar PubidIeee version "0.1.0" {
+grammar PubidIeee version "0.1.0" mode "v1" {
   digit = %x30-39
   upper = %x41-5A
   lower = %x61-7A

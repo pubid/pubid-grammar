@@ -3,7 +3,7 @@
 # with (R) marks, editions and variants. Consumed by the ieee grammar
 # via `use nesc`.
 
-grammar PubidNesc version "0.1.0" {
+grammar PubidNesc version "0.1.0" mode "v1" {
   digit = %x30-39
   digits = 1*digit
   space = " "

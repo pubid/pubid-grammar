@@ -1,7 +1,7 @@
 # Port of lib/pubid/etsi/parser.rb: ETSI <one of 15 types> <number>
 # [minor][-parts][/A..|/C..][ V<version> | ed.N] [(YYYY-MM)].
 
-grammar PubidEtsi version "0.1.0" {
+grammar PubidEtsi version "0.1.0" mode "v1" {
   type = ("I-ETS" / "TCRTR" / "GTS" / "ETR" / "ETS" / "TBR" / "NET" / "EN" / "ES" / "EG" / "TS" / "GR" / "GS" / "SR" / "TR") as type
   # The monorepo's number is a single flat string ("300 058", "298") —
   # the inner pieces are structural only, never surfaced as captures.

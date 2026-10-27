@@ -4,7 +4,7 @@
 # The Cyrillic character class uses codepoint ranges (%x0410-042F
 # = А-Я, %x0430-044F = а-я), faithful to the source class.
 
-grammar PubidGost version "0.1.0" {
+grammar PubidGost version "0.1.0" mode "v1" {
   gost_word = ("GOST" / "ГОСТ") as gost_word space
   scope_r = ("R" / "Р") as scope_r space
   prefix_char = %x0410-042F / %x0430-044F / %x2F / %x41-5A / %x61-7A

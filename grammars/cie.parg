@@ -4,7 +4,7 @@
 # conference proceedings (xNNN papers), D-series, joint forms with
 # ISO/ISO-CIE/IEC, the identical-(ISO ...) form, and the IEC dual.
 
-grammar PubidCie version "0.1.0" {
+grammar PubidCie version "0.1.0" mode "v1" {
   digit = %x30-39
   digits = 1*digit
   upper = %x41-5A
