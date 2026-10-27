@@ -155,6 +155,8 @@ entry identifier: identifier
 test {
   accept "ISO 8601-1:2019"
   accept "ISO/IEC WD TS 25025"
+  accept "ISO/WD Study 42010"
+  accept "ISO/WDS 42010"
   accept "Guide ISO/CEI 51:1999"
   accept "ISO/IEC DIR 1:2022 + IEC SUP:2022"
   accept "184/SC 4/WG 12 N10291"
