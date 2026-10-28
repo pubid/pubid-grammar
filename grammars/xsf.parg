@@ -1,11 +1,18 @@
 # Port of lib/pubid/xsf/parser.rb: "XEP NNNN" plus the two named
 # documents (README, xxxx) in SPECIAL_NUMBERS.
-  grammar PubidXsf version "0.1.0" mode "v1" {
+  grammar PubidXsf version "0.1.0" edition "v2" {
   digit = %x30-39
   special_number = "README" / "xxxx"
   number = (1*digit / special_number) as number
   identifier = "XEP " number
   entry identifier: identifier
+
+  # Typed model bindings: every bound capture lands on the
+  # consumer model's field of the same name.
+  bindings identifier {
+    number -> number (string)
+  }
+
 
   test {
     accept "XEP 0001"

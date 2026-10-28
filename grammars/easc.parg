@@ -2,7 +2,7 @@
 # Latin forms: ПМГ/РМГ (PMG/RMG) [В|V] NNN[.N]-YYYY with dash, em-dash
 # or en-dash year separators.
 
-grammar PubidEasc version "0.1.0" mode "v1" {
+grammar PubidEasc version "0.1.0" edition "v2" {
   series_word = ("ПМГ" / "РМГ" / "PMG" / "RMG") as series space
   variant_word = ("В" / "V") as variant space
   number = (1*digit *(dot 1*digit)) as number
@@ -13,6 +13,16 @@ grammar PubidEasc version "0.1.0" mode "v1" {
   dot = "."
   space = " "
   entry identifier: identifier
+
+  # Typed model bindings: every bound capture lands on the
+  # consumer model's field of the same name.
+  bindings identifier {
+    series -> series (string)
+    variant -> variant (string)
+    number -> number (string)
+    year -> year (string)
+  }
+
 
   test {
     accept "ПМГ 4-96"

@@ -1,7 +1,7 @@
 # Port of lib/pubid/ogc/parser.rb: "<yy>-<nnn>[<revision>]" with an
 # optional lenient "OGC " prefix. \s = %x09-0D / %x20.
 
-grammar PubidOgc version "0.1.0" mode "v1" {
+grammar PubidOgc version "0.1.0" edition "v2" {
   ws_char = %x09-0D / %x20
   space = 1*ws_char
   digit = %x30-39
@@ -9,6 +9,15 @@ grammar PubidOgc version "0.1.0" mode "v1" {
   revision = (1*alnum_char) as revision
   identifier = ["OGC" space] (1*digit) as year "-" (1*digit) as number [revision] [*ws_char]
   entry identifier: identifier
+
+  # Typed model bindings: every bound capture lands on the
+  # consumer model's field of the same name.
+  bindings identifier {
+    revision -> revision (string)
+    year -> year (string)
+    number -> number (string)
+  }
+
 
   test {
     accept "OGC 06-121r9"
