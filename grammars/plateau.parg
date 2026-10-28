@@ -2,7 +2,7 @@
 # #NN[-annex][ edition], plus Annex supplements. Japanese canonical
 # edition (第X.Y版) and legacy Latin X.Y both capture the same atom.
 
-grammar PubidPlateau version "0.1.0" edition "v2" {
+grammar PubidPlateau version "0.1.0" mode "v1" {
   doc_type = ("Handbook" / "Technical Report") as type
   number = "#" (1*digit) as number
   annex = (dash / "_") (1*digit) as annex
@@ -20,18 +20,6 @@ grammar PubidPlateau version "0.1.0" edition "v2" {
   space = " "
   dash = "-"
   entry identifier: identifier
-
-  # Typed model bindings: every bound capture lands on the
-  # consumer model's field of the same name.
-  bindings identifier {
-    type -> type (string)
-    number -> number (string)
-    annex -> annex (string)
-    edition -> edition (string)
-    annex_letter -> annex_letter (string)
-    base -> base (string)
-  }
-
 
   test {
     accept "PLATEAU Handbook #3"
