@@ -2,11 +2,18 @@
 # the slug captured verbatim; decomposition is builder-side by design.
 # parslet `any` is approximated byte-wise (%x01-10FFFF; excludes NUL only).
 
-grammar PubidOasis version "0.1.0" mode "v1" {
+grammar PubidOasis version "0.1.0" edition "v2" {
   any_char = %x01-10FFFF
   slug = (1*any_char) as original
   identifier = "OASIS " slug
   entry identifier: identifier
+
+  # Typed model bindings: every bound capture lands on the
+  # consumer model's field of the same name.
+  bindings identifier {
+    original -> original (string)
+  }
+
 
   test {
     accept "OASIS saml-core-2.0-os"

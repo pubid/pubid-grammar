@@ -1,6 +1,6 @@
 # Port of lib/pubid/sae/parser.rb: SAE <AMS|AIR|ARP|AS|J|MA> <number>[:year]
 
-grammar PubidSae version "0.1.0" mode "v1" {
+grammar PubidSae version "0.1.0" edition "v2" {
   doc_type = ("AMS" / "AIR" / "ARP" / "AS" / "J" / "MA") as type
   number = ((1*1letter 1*digit) / (1*digit *1letter)) as number
   year = (4digit) as year
@@ -10,6 +10,16 @@ grammar PubidSae version "0.1.0" mode "v1" {
   space = " "
   colon = ":"
   entry identifier: identifier
+
+  # Typed model bindings: every bound capture lands on the
+  # consumer model's field of the same name.
+  bindings identifier {
+    type -> type (string)
+    number -> number (string)
+    year -> year (string)
+    publisher -> publisher (string)
+  }
+
 
   test {
     accept "SAE J1939"
