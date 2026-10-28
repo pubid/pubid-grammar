@@ -2,13 +2,21 @@
 # code/date boundary is builder-side by design. Token order matters for
 # shared prefixes (CRD before CR, PER before PR, DNOTE before NOTE).
 
-grammar PubidW3c version "0.1.0" mode "v1" {
+grammar PubidW3c version "0.1.0" edition "v2" {
   any_char = %x01-10FFFF
   type_token = "DNOTE" / "NOTE" / "WD" / "CRD" / "CR" / "REC" / "PER" / "PR" / "SPSD" / "OBSL"
   type_part = type_token as type "-"
   rest = (1*any_char) as rest
   identifier = "W3C " [type_part] rest
   entry identifier: identifier
+
+  # Typed model bindings: every bound capture lands on the
+  # consumer model's field of the same name.
+  bindings identifier {
+    type -> type (string)
+    rest -> rest (string)
+  }
+
 
   test {
     accept "W3C REC-html40-19981224"
