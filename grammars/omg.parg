@@ -7,14 +7,14 @@
 # /spec/ALMAS/1.5/Beta1 URL segment) classifies into the version (the
 # 2026-10-19 pubid#548 ruling); a Beta-prefixed part without digits
 # ("BetaWave") still lexes as the part — the boundary guard keeps it.
-  grammar PubidOmg version "0.1.0" mode "v1" {
+  grammar PubidOmg version "0.1.0" edition 2 {
   digit = %x30-39
   acronym_char = %x41-5A / %x61-7A / %x30-39 / %x2B
   acronym_join = %x2D / %x2F
   acronym = (letter 1*acronym_char *(acronym_join 1*acronym_char)) as acronym
   word_boundary = !alnum_char
   beta = (" beta" !alnum_char ([space 1*digit !alnum_char]) / (space "Beta" [1*digit] !alnum_char))
-  version = (1*digit *(dot 1*digit) [beta]) as version
+  version = (1*digit *(dot 1*digit) [(" beta" !alnum_char ([space 1*digit !alnum_char]) / (space "Beta" [1*digit] !alnum_char))]) as version
   part_separator = space / slash
   part = (1*alnum_char) as part
   identifier = "OMG" space acronym [((space version [part_separator part]) / (space part))]
@@ -24,6 +24,13 @@
   slash = "/"
   space = " "
   entry identifier: identifier
+
+  bindings identifier {
+    acronym -> acronym (string)
+    version -> version (string)
+    part -> part (string)
+  }
+
 
   test {
     accept "OMG IDL 4.2"

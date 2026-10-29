@@ -3,17 +3,27 @@
 # vs standard alternation relies on the disjoint first character after
 # the prefix (T/M are not digits), as in the source.
 
-grammar PubidEcma version "0.1.0" mode "v1" {
+grammar PubidEcma version "0.1.0" edition 2 {
   tr = " TR/" (1*digit) as tr_number
   mem = " MEM/" (1*digit) as mem_number
   standard = ("-" / " ") (1*digit) as number [("-" (1*digit) as part)]
   edition_number = 1*digit *(dot 1*digit)
-  edition = " ed" edition_number as edition
+  edition = " ed" (1*digit *(dot 1*digit)) as edition
   volume = " vol" (1*digit) as volume
   identifier = "ECMA" (tr / mem / standard) [edition] [volume]
   digit = %x30-39
   dot = "."
   entry identifier: identifier
+
+  bindings identifier {
+    tr_number -> tr_number (string)
+    mem_number -> mem_number (string)
+    number -> number (string)
+    part -> part (string)
+    edition -> edition (string)
+    volume -> volume (string)
+  }
+
 
   test {
     accept "ECMA-262"
