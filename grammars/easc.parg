@@ -2,7 +2,7 @@
 # Latin forms: ПМГ/РМГ (PMG/RMG) [В|V] NNN[.N]-YYYY with dash, em-dash
 # or en-dash year separators.
 
-grammar PubidEasc version "0.1.0" edition "v2" {
+grammar PubidEasc version "0.1.0" edition 2 {
   series_word = ("ПМГ" / "РМГ" / "PMG" / "RMG") as series space
   variant_word = ("В" / "V") as variant space
   number = (1*digit *(dot 1*digit)) as number
