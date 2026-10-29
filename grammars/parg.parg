@@ -7,7 +7,7 @@
 # artifact is the validator — and brace_rule below is itself written in
 # the brace form it recognizes.
 
-grammar PgMeta version "1.0.0" mode "v1" {
+grammar PgMeta version "1.0.0" edition 1 {
 
   # ---- lexical ----
   digit = %x30-39
@@ -71,11 +71,13 @@ grammar PgMeta version "1.0.0" mode "v1" {
   bindings_section = "bindings" pq ident nlws "{" [nlws] [binding *(nlws binding)] [nlws] "}"
   step = "table_lookup" pq ident pq ident pq "->" pq ident
   preprocess_section = "preprocess" pq ident nlws "{" *nlws step nlws "}"
-  test_line = ("accept" / "reject" / "example") pq dstring [pq "{" *nlws test_pair *nlws "}"]
+  test_line = ("accept" / "reject" / "example") pq dstring [pq "{" *nlws test_pair *nlws "}"] / comment / doc_marker
   test_pair = ident ":" pq (dstring / num / ("true" / "false"))
   test_section = "test" [pq ident] nlws "{" *nlws [test_line *(nlws test_line)] nlws "}"
-  rule_line = rule / brace_rule / entry_section / bindings_section / preprocess_section / test_section / custom_line / state_line / doc_marker / comment
-  grammar_block = "grammar" pq ident pq "version" pq dstring [pq "mode" pq dstring] pq "{" *(nlws rule_line) *nlws "}"
+  rule_line = rule / brace_rule / entry_section / bindings_section / preprocess_section / test_section / custom_line / state_line / glue_line / doc_marker / comment
+  edition_decl = "mode" pq dstring / "edition" pq (num / dstring)
+  glue_line = "glue" pq ident *(pq ident)
+  grammar_block = "grammar" pq ident pq "version" pq dstring [pq edition_decl] pq "{" *(nlws rule_line) *nlws "}"
   render_section = "render" pq ident nlws "{" *(nlws render_seg) nlws "}"
   render_seg = ("field" pq ident) / ("literal" pq dstring) / ("cond" pq ident nlws "{" *(nlws render_seg) nlws "}")
   derive_section = "derive" pq ident pq dstring
@@ -104,6 +106,10 @@ grammar PgMeta version "1.0.0" mode "v1" {
     accept "grammar T version \"1\" {\n  s = {\n    # a comment is body whitespace\n    !(t / u) 2*v\n  }\n}"
     accept "grammar T version \"1\" mode \"v1\" { x = %x30-39 }"
     accept "grammar T version \"1\" mode \"v2\" { x = %x30-39 }"
+    accept "grammar T version \"1\" edition 1 { x = %x30-39 }"
+    accept "grammar T version \"1\" edition 2 { x = %x30-39 }"
+    accept "grammar T version \"1\" edition \"v2\" { x = %x30-39 }"
+    accept "grammar T version \"1\" edition 2 {\n  glue ws comment\n  ws = 1*( %x20 )\n  comment = \"#\" *nonl\n  main = \"a\" ws \"b\"\n}"
     reject "grammar T version \"1\" { q = { a }"
     reject "grammar T version \"1\" { q = { } }"
     reject "nonsense"
