@@ -3,17 +3,17 @@
 # reaffirmed years, (E)/(J) language codes, 規格群 all-parts, AMD/EXPL/
 # CORR supplements, and the SYMBOL clause.
 
-grammar PubidJis version "0.1.0" mode "v1" {
+grammar PubidJis version "0.1.0" edition 2 {
   dash = ("-" / "ｰ") as dash
   space = (" " / "　")
   colon = (":" / "：")
   type_prefix = ("TR" / "TS") as type (space / slash)
-  series = upper as series
+  series = %x41-5A as series
   number = (1*digit) as number
   part = dash (1*digit) as part
   parts = (*part) as parts
   reaffirmed = "R" (*"R")
-  year = colon (1*digit) as year ([reaffirmed]) as reaffirmed
+  year = colon (1*digit) as year (["R" (*"R")]) as reaffirmed
   language = ("(" / "（") ("E" / "J") as language (")" / "）")
   all_parts = (("（" "規格群" "）") / ("(" "規格群" ")")) as all_parts
   amendment = slash ("AMENDMENT" / "AMD") as amd_type space (1*digit) as amd_number colon (1*digit) as amd_year (["R" (*"R")]) as amd_reaffirmed
@@ -28,6 +28,33 @@ grammar PubidJis version "0.1.0" mode "v1" {
   slash = "/"
   entry identifier: identifier
 
+  # Typed model bindings: bound captures land on the consumer
+  # builder's fields of the same name; repeated parts collect under
+  # parts[].part.
+  bindings identifier {
+    type -> type (string)
+    series -> series (string)
+    number -> number (string)
+    part -> parts[].part (string)
+    year -> year (string)
+    reaffirmed -> reaffirmed (string)
+    language -> language (string)
+    all_parts -> all_parts (string)
+    amd_type -> amd_type (string)
+    amd_number -> amd_number (string)
+    amd_year -> amd_year (string)
+    amd_reaffirmed -> amd_reaffirmed (string)
+    expl_type -> expl_type (string)
+    expl_number -> expl_number (string)
+    corr_type -> corr_type (string)
+    corr_number -> corr_number (string)
+    corr_year -> corr_year (string)
+    corr_reaffirmed -> corr_reaffirmed (string)
+    symbol_present -> symbol_present (string)
+    symbol_value -> symbol_value (string)
+  }
+
+  
   test {
     accept "JIS B 0001"
     accept "JIS X 0208:1997"
