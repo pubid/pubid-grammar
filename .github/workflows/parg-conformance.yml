@@ -27,15 +27,8 @@ jobs:
           ruby-version: '3.4.8'
       - name: Compile every grammar (lint + validity + tests)
         run: |
-          git clone https://github.com/parsanol/parsanol-ruby ../parsanol-ruby
-          git -C ../parsanol-ruby checkout "$RUBY_REF"
-          cd ../parsanol-ruby
-          bundle install --path vendor/bundle
-          # The script is not executable in the checkout and its default
-          # PARSANOL_RUBY path does not exist on the runner — run it under
-          # the cloned bundle (whose install built the native extension).
-          bundle exec ruby "$GITHUB_WORKSPACE/scripts/regen-contracts.rb"
-          cd "$GITHUB_WORKSPACE"
+          gem install parsanol -v "$PARSANOL_VERSION"
+          ruby "$GITHUB_WORKSPACE/scripts/regen-contracts.rb"
           # A grammar change must carry its regenerated contracts: the
           # committed schemas/corpora pin artifact checksums and frozen
           # corpus cases, so drift here means the PR forgot the regen
@@ -45,9 +38,8 @@ jobs:
             echo "::error::schemas/ or corpora/ are stale against grammars/ — run rake contracts:regen and commit the output"
             exit 1
           }
-          cd "$GITHUB_WORKSPACE/../parsanol-ruby"
           for f in "$GITHUB_WORKSPACE"/grammars/*.parg; do
-            bundle exec parsanol parg test "$f" || exit 1
+            parsanol parg test "$f" || exit 1
           done
   rust:
     runs-on: ubuntu-latest
