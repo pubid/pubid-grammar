@@ -3,7 +3,7 @@
 # The release excludes "/" and ":" (match["^/:"]), byte-wise here; the
 # mistyped-version guard (!version…!any) is ported literally.
 
-grammar PubidTgpp version "0.1.0" mode "v1" {
+grammar PubidTgpp version "0.1.0" edition 2 {
   release_char = %x01-2E / %x30-39 / %x3B-10FFFF
   any_char = %x01-10FFFF
   type = ("TR" / "TS") as type
@@ -13,7 +13,7 @@ grammar PubidTgpp version "0.1.0" mode "v1" {
   parts = (*part) as parts
   version_core = 1*digit "." 1*digit "." 1*digit
   release = !(version_core !any_char) (1*release_char) as release
-  version = version_core as version
+  version = (1*digit "." 1*digit "." 1*digit) as version
   identifier = ["3GPP "] type space number [suffix] parts [(colon release)] [(slash version)]
   letter = %x41-5A / %x61-7A
   digit = %x30-39
@@ -21,6 +21,16 @@ grammar PubidTgpp version "0.1.0" mode "v1" {
   colon = ":"
   slash = "/"
   entry identifier: identifier
+
+  bindings identifier {
+    type -> type (string)
+    number -> number (string)
+    suffix -> suffix (string)
+    part -> parts[].part (string)
+    release -> release (string)
+    version -> version (string)
+  }
+
 
   test {
     accept "3GPP TS 21.101"

@@ -4,12 +4,12 @@
 # The Cyrillic character class uses codepoint ranges (%x0410-042F
 # = А-Я, %x0430-044F = а-я), faithful to the source class.
 
-grammar PubidGost version "0.1.0" mode "v1" {
+grammar PubidGost version "0.1.0" edition 2 {
   gost_word = ("GOST" / "ГОСТ") as gost_word space
   scope_r = ("R" / "Р") as scope_r space
   prefix_char = %x0410-042F / %x0430-044F / %x2F / %x41-5A / %x61-7A
   prefix_text = (1*prefix_char *(space 1*prefix_char)) as prefix_text space
-  raw_body = (1*digit *((dot / year_sep_core) [space] 1*digit)) as raw
+  raw_body = (1*digit *(("." / "-" / "—" / "–") [space] 1*digit)) as raw
   year_sep_core = dash / "—" / "–"
   adopted_part = [[space]] slash (1*any_noln_char) as adopted_raw
   adopted_reference_part = [[space]] "(" (1*no_rparen_char) as adopted_reference_raw ")"
@@ -22,6 +22,16 @@ grammar PubidGost version "0.1.0" mode "v1" {
   slash = "/"
   space = " "
   entry identifier: identifier
+
+  bindings identifier {
+    gost_word -> gost_word (string)
+    scope_r -> scope_r (string)
+    prefix_text -> prefix_text (string)
+    raw -> raw (string)
+    adopted_raw -> adopted_raw (string)
+    adopted_reference_raw -> adopted_reference_raw (string)
+  }
+
 
   test {
     accept "GOST 12.0.004"
