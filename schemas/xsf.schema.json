@@ -1,1 +1,1 @@
-{"grammar":"xsf","artifact_checksum":"sha256:e561c98f412d027d2fc97b5e01ce5ba143736fdf9f2d1b5d9796d699c2ec671a","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"XEP 0001","captures":{}},{"input":"XEP README","captures":{}},{"input":"nonsense","captures":{}}]}}}
+{"grammar":"xsf","artifact_checksum":"sha256:232d9762124d39532432ceea7791c38b9a3d7f8a5e3dbb9689bf0ce1b02efe28","schema":{"identifier":{"root":"identifier","fields":{},"examples":[{"input":"XEP 0001","captures":{}},{"input":"XEP README","captures":{}},{"input":"nonsense","captures":{}}]}}}
