@@ -2,7 +2,7 @@
 # per ISO 26324. Suffix is printable non-whitespace minus the DOI-reserved
 # exclusions, per the parslet class.
 
-grammar PubidDoi version "0.1.0" edition "v2" {
+grammar PubidDoi version "0.1.0" edition 2 {
   digit = %x30-39
   suffix_char = %x30-39 / %x41-5A / %x61-7A / %x2E / %x5F / %x2D / %x2F / %x28 / %x29
   doi_prefix = "10" "." (2*digit) as prefix

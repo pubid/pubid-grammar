@@ -3,7 +3,7 @@
 # Internet-Drafts (the wide draft tail is safe: the alternation is
 # leading-token keyed).
 
-grammar PubidIetf version "0.1.0" edition "v2" {
+grammar PubidIetf version "0.1.0" edition 2 {
   rfc = "RFC" [space] (1*digit) as number
   subseries = ("BCP" / "STD" / "FYI") as series [space] (1*digit) as number
   draft_rest_char = %x30-39 / %x41-5A / %x61-7A / %x2B / %x5F / %x2E / %x2D
