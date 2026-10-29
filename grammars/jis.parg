@@ -13,7 +13,7 @@ grammar PubidJis version "0.1.0" edition 2 {
   part = dash (1*digit) as part
   parts = (*part) as parts
   reaffirmed = "R" (*"R")
-  year = colon (1*digit) as year (["R" (*"R")]) as reaffirmed
+  year = colon (1*digit) as year [reaffirmed_rule]
   language = ("(" / "（") ("E" / "J") as language (")" / "）")
   all_parts = (("（" "規格群" "）") / ("(" "規格群" ")")) as all_parts
   amendment = slash ("AMENDMENT" / "AMD") as amd_type space (1*digit) as amd_number colon (1*digit) as amd_year (["R" (*"R")]) as amd_reaffirmed
@@ -26,6 +26,7 @@ grammar PubidJis version "0.1.0" edition 2 {
   upper = %x41-5A
   digit = %x30-39
   slash = "/"
+  reaffirmed_rule = "R" (*"R") as reaffirmed
   entry identifier: identifier
 
   # Typed model bindings: bound captures land on the consumer
