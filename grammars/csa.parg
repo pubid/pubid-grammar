@@ -5,14 +5,14 @@
 # - the pre-parse normalization (CONSOLIDATED stripping, (Rnnn) spacing,
 #   CEI→IEC, CAN/CSA prefix handling) stays binder-side.
 
-grammar PubidCsa version "0.1.0" mode "v1" {
+grammar PubidCsa version "0.1.0" edition 2 {
   upper = %x41-5A
   lower = %x61-7A
   digit = %x30-39
   letters = 1*upper
   space = " "
 
-  publisher = "CSA" space ("" as has_publisher)
+  publisher = ("CSA" space) as has_publisher
 
   # code_pattern: four alternatives, source order
   code_a = (1*digit dot 1*digit *1(dash 1*digit) [2*6upper])
@@ -22,19 +22,19 @@ grammar PubidCsa version "0.1.0" mode "v1" {
   code_c = (upper 1*digit *(dot 1*digit) *(dash code_c_tail) [2*6upper])
   code_d = (upper 1*digit [dot 1*digit])
   code_e = (upper 2*digit)
-  code_pattern = (code_a / code_b / code_c / code_d / code_e) as code
+  code_pattern = ((1*digit dot 1*digit *1(dash 1*digit) [2*6upper]) / (1*digit 2*6upper) / (upper 1*digit *(dot 1*digit) *(dash ((digit !digit) / 3*digit / (1*digit 1*letter))) [2*6upper]) / (upper 1*digit [dot 1*digit]) / (upper 2*digit)) as code
 
   no_notation = space ("NO." / "No.") as no_notation space
   no_number = ((1*digit 2*10(dash 1*digit)) / (5*digit dash 1*digit) / (3*4digit dash (one_or_one_follow / 3*digit)) / (1*digit 1*3(dot 1*digit)) / 1*digit) as no_number
-  year_prefix = [("F" / "M")] as year_prefix
+  year_prefix = [("F" / "M") as year_prefix]
   year_2digit = 2*digit
   year_4digit = 4*digit
-  colon_year = ("" as colon_format) colon ((year_prefix ((year_4digit / year_2digit) as year)) / ((year_4digit / year_2digit) as year))
-  dash_year = ("" as dash_format) dash ((year_prefix ((year_4digit / year_2digit) as year)) / ((year_4digit / year_2digit) as year))
+  colon_year = colon as colon_format ((year_prefix ((4digit) / (2digit)) as year)) / (((4digit) / (2digit)) as year)
+  dash_year = dash as dash_format ((year_prefix ((4digit) / (2digit)) as year)) / (((4digit) / (2digit)) as year)
   reaffirmation = space "(R" ((4digit) as reaffirmation_4digit / (2digit) as reaffirmation_2digit) ")"
   amendment_slash = slash ["Amd " ] ["A"] (1*digit) as amendment_number [(colon (2digit) as amendment_year)]
   package_keyword = "Code" / "Handbook" / "Training Package" / "Package"
-  package_portion = space package_keyword *((", " package_keyword) / (space "& " package_keyword))
+  package_portion = space ("Code" / "Handbook" / "Training Package" / "Package") *((", " ("Code" / "Handbook" / "Training Package" / "Package")) / (space "& " ("Code" / "Handbook" / "Training Package" / "Package")))
   series_prefix = (2*3upper) as series_prefix
   series_keyword = "SERIES"
 
@@ -51,11 +51,29 @@ grammar PubidCsa version "0.1.0" mode "v1" {
   base_csa_code = publisher code_pattern [trailing_block]
   continuation_code = [publisher] code_pattern [trailing_block] [amendment_slash]
   bundled_portion = code_pattern ((no_notation no_number [colon_year / dash_year]) / [colon_year / dash_year])
-  bundled_identifier = (csa_code as base) " + " (bundled_portion as bundled_first) ((*(" + " bundled_portion)) as bundled_rest) [reaffirmation]
-  combined_slash = ((base_csa_code as first) slash (continuation_code as second) [(slash continuation_code as third)] [reaffirmation] [package_portion])
-  combined_comma = ((csa_code as first) comma ("" as comma_separator) space (csa_code as second) [reaffirmation] [(space "& " package_portion / package_portion) as package_portion])
-  single_identifier = csa_code [reaffirmation] [package_portion as package_portion]
+  bundled_identifier = csa_code_first (" + ") as plus_separator bundled_portion_first (*(" + " bundled_portion_first)) [reaffirmation]
+  combined_slash = csa_code_first 1*(slash csa_code_part) [reaffirmation] [package_portion]
+  combined_comma = csa_code_first ("," as comma_separator) space csa_code_part [reaffirmation] [(space "& " space ("Code" / "Handbook" / "Training Package" / "Package") *((", " ("Code" / "Handbook" / "Training Package" / "Package")) / (space "& " ("Code" / "Handbook" / "Training Package" / "Package"))) / space ("Code" / "Handbook" / "Training Package" / "Package") *((", " ("Code" / "Handbook" / "Training Package" / "Package")) / (space "& " ("Code" / "Handbook" / "Training Package" / "Package")))) as package_portion]
+  single_identifier = csa_code [reaffirmation] [space ("Code" / "Handbook" / "Training Package" / "Package") *((", " ("Code" / "Handbook" / "Training Package" / "Package")) / (space "& " ("Code" / "Handbook" / "Training Package" / "Package"))) as package_portion]
   code_only_identifier = code_pattern ((space series_prefix space "SERIES" as series (colon_year / dash_year)) / (space "SERIES" as series (colon_year / dash_year)) / (colon_year / dash_year)) [(space "PACKAGE") as package_portion]
+
+  # Combined and bundled identifiers: every position captures the same
+  # part_* fields, so one csa_code_part[] array group pairs them by
+  # occurrence index; the builder dispatches on plus_separator /
+  # comma_separator. Each part_ capture wraps a kept 1* repetition so
+  # the binding-path validator sees it repeated.
+  csa_code_first = publisher_first 1*(code_pattern_part) [trailing_block_part]
+  csa_code_part = [publisher_first] 1*(code_pattern_part) [trailing_block_part] [amendment_slash]
+  publisher_first = 1*(("CSA" space) as part_has_publisher)
+  code_pattern_part = 1*((1*digit dot 1*digit *1(dash 1*digit) [2*6upper]) / (1*digit 2*6upper) / (upper 1*digit *(dot 1*digit) *(dash ((digit !digit) / 3*digit / (1*digit 1*letter))) [2*6upper]) / (upper 1*digit [dot 1*digit]) / (upper 2*digit)) as part_code
+  trailing_block_part = ((part_no_notation part_no_number (part_colon_year / part_dash_year)) / (space part_series_prefix space 1*("SERIES" as part_series) (part_colon_year / part_dash_year)) / (space 1*("SERIES" as part_series) (part_colon_year / part_dash_year)) / (part_colon_year / part_dash_year))
+  part_no_notation = space 1*(("NO." / "No.") as part_no_notation) space
+  part_no_number = 1*((1*digit 2*10(dash 1*digit)) / (5*digit dash 1*digit) / (3*4digit dash ((digit !digit) / 3*digit)) / (1*digit 1*3(dot 1*digit)) / 1*digit) as part_no_number
+  part_series_prefix = 1*((2*6upper) as part_series_prefix)
+  part_colon_year = 1*(colon) as part_colon_format ((part_year_prefix (4digit) as part_year) / (part_year_prefix (2digit) as part_year) / (4digit) as part_year / (2digit) as part_year)
+  part_dash_year = 1*(dash) as part_dash_format ((part_year_prefix (4digit) as part_year) / (part_year_prefix (2digit) as part_year) / (4digit) as part_year / (2digit) as part_year)
+  part_year_prefix = 1*(("F" / "M") as part_year_prefix)
+  bundled_portion_first = 1*(code_pattern_part) ((part_no_notation part_no_number [(part_colon_year / part_dash_year)]) / [(part_colon_year / part_dash_year)])
 
   identifier = iso_iec_adoption / series_identifier / cec_identifier / bundled_identifier / combined_slash / combined_comma / single_identifier / code_only_identifier
 
@@ -67,6 +85,48 @@ grammar PubidCsa version "0.1.0" mode "v1" {
   ampersand = "&"
   letter = upper / lower
   entry identifier: identifier
+
+  bindings identifier {
+    has_publisher -> has_publisher (string)
+    code -> code (string)
+    no_notation -> no_notation (string)
+    no_number -> no_number (string)
+    year_prefix -> year_prefix (string)
+    colon_format -> colon_format (string)
+    year -> year (string)
+    dash_format -> dash_format (string)
+    amendment_number -> amendment_number (string)
+    amendment_year -> amendment_year (string)
+    series_prefix -> series_prefix (string)
+    series_type -> series_type (string)
+    cec_part -> cec_part (string)
+    adoption_pub -> adoption_pub (string)
+    adoption_org -> adoption_org (string)
+    iso_type -> iso_type (string)
+    adoption_number -> adoption_number (string)
+    adoption_org_with_type -> adoption_org_with_type (string)
+    adoption_year_sep -> adoption_year_sep (string)
+    adoption_year -> adoption_year (string)
+    adoption_amendment -> adoption_amendment (string)
+    adoption_amendment_year -> adoption_amendment_year (string)
+    series -> series (string)
+    plus_separator -> plus_separator (string)
+    reaffirmation_4digit -> reaffirmation_4digit (string)
+    reaffirmation_2digit -> reaffirmation_2digit (string)
+    comma_separator -> comma_separator (string)
+    package_portion -> package_portion (string)
+    part_code -> csa_code_part[].part_code (string)
+    part_year -> csa_code_part[].part_year (string)
+    part_colon_format -> csa_code_part[].part_colon_format (string)
+    part_dash_format -> csa_code_part[].part_dash_format (string)
+    part_year_prefix -> csa_code_part[].part_year_prefix (string)
+    part_no_notation -> csa_code_part[].part_no_notation (string)
+    part_no_number -> csa_code_part[].part_no_number (string)
+    part_series -> part_series (string)
+    part_series_prefix -> part_series_prefix (string)
+    part_has_publisher -> csa_code_part[].part_has_publisher (string)
+  }
+
 
   test {
     accept "CSA Z259.1-05"
