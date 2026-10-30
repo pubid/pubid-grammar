@@ -4,8 +4,13 @@
 #   slots back into the root ahead of identifier_copublishers.
 # - the IEV → "IEC 60050" input shorthand is pre-parse normalization and
 #   stays binder-side.
+# - Supplement layers capture into position-scoped names (supp_* on the
+#   first supplement, supp2_* on the second): the base's and the
+#   supplements' second_parts carry the same shapes, and captures are
+#   collected globally by name, so shared names would collapse the
+#   supplement's number/date onto the base's.
 
-grammar PubidIec version "0.1.0" mode "v1" {
+grammar PubidIec version "0.1.0" edition 2 {
   digit = %x30-39
   upper = %x41-5A
   lower = %x61-7A
@@ -28,76 +33,411 @@ grammar PubidIec version "0.1.0" mode "v1" {
   ## the bare "IEC".
   # CEI is IEC's French spelling (pubid#488): French-language IEC
   # documents print "CEI ..." identifiers; it parses as the IEC publisher.
-  prefix_sole_publisher = ("IECQ OD" / "IECQ CS" / "IEC CAB" / "IEC CA" / "IECRE" / "CISPR" / "IECEE" / "IECEx" / "IECQ" / "IEC" / "ISO" / "CEI") as publisher
-  organization = "IEC" / "ISO" / "IEEE" / "CIW" / "SAE" / "CIE" / "ASME" / "ASTM" / "OECD" / "HL7" / "CEI" / "UNDP"
+  prefix_sole_publisher = {
+    (
+      "IECQ OD" / "IECQ CS" / "IEC CAB" / "IEC CA" / "IECRE"
+      / "CISPR" / "IECEE" / "IECEx" / "IECQ" / "IEC" / "ISO" / "CEI"
+    ) as publisher
+  }
+  organization = {
+    "IEC" / "ISO" / "IEEE" / "CIW" / "SAE" / "CIE" / "ASME" / "ASTM"
+    / "OECD" / "HL7" / "CEI" / "UNDP"
+  }
   copublishers_item = slash [space] organization as copublisher
-  copublishers = (*copublishers_item) as copublishers
+  copublishers = *copublishers_item
   prefix_with_copublishers = prefix_sole_publisher [space] [copublishers]
 
   tc_type = "JTC" / "JPC" / "TC" / "SC" / "PC"
-  tc_body = "CISPR" / ("CIS" slash upper) / (tc_type space digits [*upper])
   sc_body = "SC" space digits [*upper]
-  technical_group_with_publisher = (prefix_sole_publisher [copublishers] space tc_body as technical_committee [((slash [space] sc_body) as subcommittee)])
-  technical_group_bare = (tc_body as technical_committee [((slash [space] sc_body) as subcommittee)])
+  technical_group_with_publisher = {
+    prefix_sole_publisher [copublishers] space
+    (
+      (
+        "CISPR" / ("CIS" slash upper)
+        / (tc_type space (1*digit) [*upper])
+      ) as technical_committee
+      [
+        (
+          (slash [space] ("SC" space (1*digit) [*upper]))
+          as subcommittee
+        )
+      ]
+    )
+  }
+  technical_group_bare = {
+    (
+      (
+        "CISPR" / ("CIS" slash upper)
+        / (tc_type space (1*digit) [*upper])
+      ) as technical_committee
+      [
+        (
+          (slash [space] ("SC" space (1*digit) [*upper]))
+          as subcommittee
+        )
+      ]
+    )
+  }
   technical_group = technical_group_with_publisher / technical_group_bare
 
   wp_type = (("TR" / "TS" / "SRD") space) as wp_type
-  wp_number = ((1*letter *alnum_char [(dash 1*digit)]) as number_with_part) / number_with_part
-  working_programme = (("PWI" / "PNW") as wp_stage space [wp_type] wp_number [(space edition)])
+  wp_number = {
+    (
+      (
+        (1*(upper / lower))
+        (*(upper / lower / digit))
+        [(dash 1*digit)]
+      ) as number_with_part
+    ) / number_with_part
+  }
+  working_programme = {
+    ("PWI" / "PNW") as wp_stage
+    space [wp_type] wp_number [(space edition)]
+  }
 
-  working_document = ((("JTC1-SC" 1*digit) / (1*upper slash 1*upper) / 1*alnum_char) as technical_committee slash (1*alnum_char) as wd_number [("(" upper as wd_language ")")] [(slash (1*upper) as wd_stage)])
+  working_document = {
+    (
+      ( "JTC1-SC" 1*digit )
+      / ( 1*upper slash 1*upper )
+      / 1*(upper / lower / digit)
+    ) as technical_committee
+    slash
+    ( 1*(upper / lower / digit) ) as wd_number
+    [ ( "(" upper as wd_language ")" ) ]
+    [ ( slash (1*upper) as wd_stage ) ]
+  }
 
-  number = (("DIR" *(space 1*upper_digit)) / "VIM" / "SYMBOL" / (1*6digit "v" 1*digit *letter [("_" 1*letter)]) / (2*4upper [(dash 1*digit)] *upper_digit) / (1*6digit [*1letter [("_" 1*letter)]]))
+  number = {
+    (
+      ("DIR" *(space 1*upper_digit))
+      / "VIM"
+      / "SYMBOL"
+      / (1*6digit "v" 1*digit *letter [("_" 1*letter)])
+      / (2*4upper [(dash 1*digit)] *upper_digit)
+      / (1*6digit [*1letter [("_" 1*letter)]])
+    )
+  }
   upper_digit = upper / digit
-  part_and_subpart = (dash / comma) [space] 1*word_ext_char *((dash / comma) 1*word_ext_char)
-  number_with_part = (number [part_and_subpart]) as number_with_part
+  part_and_subpart = {
+    (dash / comma) [space]
+    1*word_ext_char
+    *((dash / comma) 1*word_ext_char)
+  }
+  # number and part_and_subpart are inlined fully to raw terms at every
+  # capture site: a capture wrapping a bare rule ref expands to a list
+  # of element hashes, while the inlined body binds as one scalar
+  # string.
+  number_with_part = {
+    (
+      (
+        ("DIR" *(space 1*(upper / digit)))
+        / "VIM"
+        / "SYMBOL"
+        / ( 1*6digit "v" 1*digit *(upper / lower) [("_" 1*(upper / lower))] )
+        / ( 2*4upper [(dash 1*digit)] *(upper / digit) )
+        / ( 1*6digit [*1(upper / lower) [("_" 1*(upper / lower))]] )
+      )
+      [
+        (
+          (dash / comma) [space]
+          1*((upper / lower / digit) / %x5F / %x26 / %x2C)
+          *( (dash / comma) 1*((upper / lower / digit) / %x5F / %x26 / %x2C) )
+        )
+      ]
+    ) as number_with_part
+  }
   trf_org_number = ("CISPR" space) as trf_org number_with_part
   stage_iteration = dot digit as stage_iteration
 
   undated = "--" / "—"
-  full_date = (year_digits [(dash month_digits)] [(dash day_digits)]) as date
+  # year_digits is inlined ("19" / "20" 2*digit !digit) at every capture
+  # site for the same expansion reason as number_with_part.
+  full_date = {
+    (
+      ("19" / "20") 2*digit !digit
+      [(dash 2*digit)]
+      [(dash 2*digit)]
+    ) as date
+  }
   date_body = undated as undated_marker / full_date
   date = (colon / dash) date_body
 
   vap_code = "CSV" / "CMV" / "RLV" / "SER" / "EXV" / "PAC" / "PRV"
-  vap_suffix = space (vap_code *(dash vap_code)) as vap_suffix
+  vap_suffix = {
+    space
+    (
+      ( 1*( ( vap_code ) ( *( dash ( vap_code ) ) ) ) as vap_suffix )
+    )
+  }
   database_suffix = space "DB" as database
-  consolidated_supplement = "+" ("AMD" / "COR") as supplement_type (1*digit) as supplement_number [(colon year_digits as supplement_year)]
-  consolidated_supplements = (1*consolidated_supplement) as consolidated_supplements
-  second_part = (trf_org_number / number_with_part) [stage_iteration] [[space] date] [consolidated_supplements] [vap_suffix / database_suffix]
+  consolidated_supplement = {
+    "+"
+    ("AMD" / "COR") as supplement_type
+    (
+      # Refs adjacent to a capture must be parenthesized: a bare ref's
+      # named node makes the neighbouring capture drop from the tree.
+      ( (1*digit) as supplement_number (colon) ( ("19" / "20") 2*digit !digit ) as supplement_year )
+      / ( (1*digit) as supplement_number )
+    )
+  }
+  consolidated_supplements = 1*consolidated_supplement
+  second_part = {
+    (trf_org_number / number_with_part)
+    [stage_iteration]
+    [[space] date]
+    [consolidated_supplements]
+    [vap_suffix / database_suffix]
+  }
 
   edition_str = "Edition" / "Ed." / "ED" / "Ed"
   edition = edition_str [space] (1*digit [(dot 1*digit)]) as edition
 
+  # Supplement-side second_part: same shapes as second_part, captured
+  # under supp_* names so the supplement's number/date/edition never
+  # collapse onto the base's.
+  supplement_second_part = {
+    (
+      trf_org_number
+      / (
+        (
+          (
+            ("DIR" *(space 1*(upper / digit)))
+            / "VIM"
+            / "SYMBOL"
+            / ( 1*6digit "v" 1*digit *(upper / lower) [("_" 1*(upper / lower))] )
+            / ( 2*4upper [(dash 1*digit)] *(upper / digit) )
+            / ( 1*6digit [*1(upper / lower) [("_" 1*(upper / lower))]] )
+          )
+          [
+            (
+              (dash / comma) [space]
+              1*((upper / lower / digit) / %x5F / %x26 / %x2C)
+              *( (dash / comma) 1*((upper / lower / digit) / %x5F / %x26 / %x2C) )
+            )
+          ]
+        ) as supp_number_with_part
+      )
+    )
+    [ dot digit as supp_stage_iteration ]
+    [
+      [space] (
+        (colon / dash) (
+          (
+            ("19" / "20") 2*digit !digit
+            [(dash 2*digit)]
+            [(dash 2*digit)]
+          ) as supp_date
+          / "--" as supp_undated_marker
+          / "—" as supp_undated_marker
+        )
+      )
+    ]
+    [consolidated_supplements]
+    [vap_suffix / database_suffix]
+  }
+
+  supp_edition_str = "Edition" / "Ed." / "ED" / "Ed"
+  supp_edition_rule = supp_edition_str [space] (1*digit [(dot 1*digit)]) as supp_edition
+
+  # Second-supplement layer (/AMD1:2018/COR1:2019): supp2_* names.
+  supp2_type_with_stage = {
+    (
+      alt from_table "iec_typed_stages" column "abbr" / "FRAGC" / "FRAG"
+    ) as supp2_type_with_stage
+  }
+  supplement_second_part2 = {
+    (
+      trf_org_number
+      / (
+        (
+          (
+            ("DIR" *(space 1*(upper / digit)))
+            / "VIM"
+            / "SYMBOL"
+            / ( 1*6digit "v" 1*digit *(upper / lower) [("_" 1*(upper / lower))] )
+            / ( 2*4upper [(dash 1*digit)] *(upper / digit) )
+            / ( 1*6digit [*1(upper / lower) [("_" 1*(upper / lower))]] )
+          )
+          [
+            (
+              (dash / comma) [space]
+              1*((upper / lower / digit) / %x5F / %x26 / %x2C)
+              *( (dash / comma) 1*((upper / lower / digit) / %x5F / %x26 / %x2C) )
+            )
+          ]
+        ) as supp2_number_with_part
+      )
+    )
+    [ dot digit as supp2_stage_iteration ]
+    [
+      [space] (
+        (colon / dash) (
+          (
+            ("19" / "20") 2*digit !digit
+            [(dash 2*digit)]
+            [(dash 2*digit)]
+          ) as supp2_date
+          / "--" as supp2_undated_marker
+          / "—" as supp2_undated_marker
+        )
+      )
+    ]
+    [consolidated_supplements]
+    [vap_suffix / database_suffix]
+  }
+
   one_of_efards = %x45 / %x46 / %x41 / %x52 / %x44 / %x53
   lower_char = lower
   # The house-style separator is "-" (pubid#491); "," stays accepted.
-  languages = (*(1*lower_char [("," / "-")] / (one_of_efards [slash]))) as languages
+  languages = {
+    (
+      *( 1*(lower) [("," / "-")] / (one_of_efards [slash]) )
+    ) as languages
+  }
   language = "(" languages ")"
-  all_parts = "(all parts)"
-  fragment_notation = slash ("FRAGC" / "FRAG") as fragment_type (1*digit) as fragment_number
+  all_parts = "(all parts)" as all_parts
+  fragment_notation = {
+    slash
+    ("FRAGC" / "FRAG") as fragment_type
+    (1*digit) as fragment_number
+  }
   third_part_edition = [space] [edition]
   third_part = third_part_edition [language] [fragment_notation] [all_parts]
+  supplement_third_part_edition = [space] [supp_edition_rule]
+  supplement_third_part = {
+    supplement_third_part_edition
+    [language]
+    [fragment_notation]
+    [all_parts]
+  }
+  supplement_third_part2_edition = {
+    [space]
+    [ ( supp_edition_str [space] (1*digit [(dot 1*digit)]) as supp2_edition ) ]
+  }
+  supplement_third_part2 = {
+    supplement_third_part2_edition
+    [language]
+    [fragment_notation]
+    [all_parts]
+  }
 
-  type_with_stage = alt from_table "iec_typed_stages" column "abbr" as type_with_stage [digit as stage_iteration space]
-  supplement_type_with_stage = (alt from_table "iec_typed_stages" column "abbr" / "FRAGC" / "FRAG") as type_with_stage
+  type_with_stage = {
+    (
+      alt from_table "iec_typed_stages" column "abbr"
+    ) as type_with_stage
+    [digit as stage_iteration space]
+  }
+  supplement_type_with_stage = {
+    (
+      alt from_table "iec_typed_stages" column "abbr" / "FRAGC" / "FRAG"
+    ) as supp_type_with_stage
+  }
 
   guide_prefix = "Guide" / "GUIDE"
-  identifier_copublishers_no_third = [guide_prefix as type_with_stage_fr space] [prefix_with_copublishers] [space] [slash] (type_with_stage / "" as type_with_stage) [space] second_part third_part_edition
+  identifier_copublishers_no_third = {
+    [ ( guide_prefix as type_with_stage_fr space ) ]
+    [prefix_with_copublishers]
+    [space]
+    [slash]
+    [type_with_stage]
+    [space]
+    second_part
+    third_part_edition
+  }
   identifier_copublishers = identifier_copublishers_no_third third_part
 
-  sheet_notation = slash (1*digit) as sheet_number colon year_digits as sheet_year
+  sheet_notation = {
+    (slash)
+    (1*digit) as sheet_number
+    (colon) ( ("19" / "20") 2*digit !digit ) as sheet_year
+  }
   sheet_notation_no_year = slash (1*digit) as sheet_number
-  sheet_identifier = (identifier_copublishers_no_third as base) (sheet_notation / sheet_notation_no_year)
-  sheet_supplement_identifier = (identifier_copublishers_no_third as base) sheet_notation slash supplement_type_with_stage [space] second_part third_part
-  standalone_supplement = prefix_with_copublishers slash supplement_type_with_stage space second_part third_part
-  supplement_identifier_no_third = (identifier_copublishers_no_third as base) slash supplement_type_with_stage [space] second_part
-  supplement_identifier = supplement_identifier_no_third third_part
-  supplement_supplement_identifier = (supplement_identifier_no_third as base) slash supplement_type_with_stage [space] second_part third_part
+  sheet_identifier = {
+    identifier_copublishers_no_third
+    (sheet_notation / sheet_notation_no_year)
+  }
+  sheet_supplement_identifier = {
+    identifier_copublishers_no_third
+    sheet_notation
+    slash supplement_type_with_stage
+    [space] supplement_second_part
+    supplement_third_part
+  }
+  standalone_supplement = {
+    prefix_with_copublishers
+    slash supplement_type_with_stage
+    space supplement_second_part
+    supplement_third_part
+  }
+  supplement_identifier_no_third = {
+    identifier_copublishers_no_third
+    slash supplement_type_with_stage
+    [space] supplement_second_part
+  }
+  supplement_identifier = supplement_identifier_no_third supplement_third_part
+  supplement_supplement_identifier = {
+    supplement_identifier_no_third
+    slash supp2_type_with_stage
+    [space] supplement_second_part2
+    supplement_third_part2
+  }
 
-  identifier = working_programme / technical_group / working_document / sheet_supplement_identifier / sheet_identifier / supplement_supplement_identifier / standalone_supplement / supplement_identifier / identifier_copublishers
+  identifier = {
+      working_programme
+    / technical_group
+    / working_document
+    / sheet_supplement_identifier
+    / sheet_identifier
+    / supplement_supplement_identifier
+    / standalone_supplement
+    / supplement_identifier
+    / identifier_copublishers
+  }
 
   entry identifier: identifier
+
+  bindings identifier {
+    publisher -> publisher (string)
+    technical_committee -> technical_committee (string)
+    subcommittee -> subcommittee (string)
+    wd_number -> wd_number (string)
+    wd_language -> wd_language (string)
+    wd_stage -> wd_stage (string)
+    wp_stage -> wp_stage (string)
+    wp_type -> wp_type (string)
+    number_with_part -> number_with_part (string)
+    supp_number_with_part -> supp_number_with_part (string)
+    supp2_number_with_part -> supp2_number_with_part (string)
+    trf_org -> trf_org (string)
+    stage_iteration -> stage_iteration (string)
+    supp_stage_iteration -> supp_stage_iteration (string)
+    supp2_stage_iteration -> supp2_stage_iteration (string)
+    undated_marker -> undated_marker (string)
+    supp_undated_marker -> supp_undated_marker (string)
+    supp2_undated_marker -> supp2_undated_marker (string)
+    date -> date (string)
+    supp_date -> supp_date (string)
+    supp2_date -> supp2_date (string)
+    edition -> edition (string)
+    supp_edition -> supp_edition (string)
+    supp2_edition -> supp2_edition (string)
+    supplement_type -> consolidated_supplements[].supplement_type (string)
+    supplement_number -> consolidated_supplements[].supplement_number (string)
+    supplement_year -> consolidated_supplements[].supplement_year (string)
+    vap_suffix -> vap_suffix (string)
+    database -> database (string)
+    type_with_stage -> type_with_stage (string)
+    supp_type_with_stage -> supp_type_with_stage (string)
+    supp2_type_with_stage -> supp2_type_with_stage (string)
+    type_with_stage_fr -> type_with_stage_fr (string)
+    fragment_type -> fragment_type (string)
+    fragment_number -> fragment_number (string)
+    sheet_number -> sheet_number (string)
+    sheet_year -> sheet_year (string)
+    all_parts -> all_parts (string)
+    languages -> languages (string)
+    copublisher -> copublishers[].copublisher (string)
+  }
 
   test {
     accept "IEC 60050"
