@@ -1,0 +1,48 @@
+# Port of lib/pubid/iho/parser.rb — IHO identifiers: letter series
+# (S/P/M/B/C), a number with an optional suffix, and appendix, part,
+# annex, supplement and version tails.
+
+grammar PubidIho version "0.1.0" edition 1 {
+  digit = %x30-39
+  upper = %x41-5A
+  lower = %x61-7A
+  letter = upper / lower
+  space = " "
+  dash = "-"
+  dot = "."
+
+  series = ("S" / "P" / "M" / "B" / "C") as type
+  number_suffix = ((":" 1*digit) / ("/" 1*digit) / (dash 1*digit) / upper)
+  number = (1*digit [number_suffix]) as number
+  appendix = {
+    space ("Appendix" / "Ap.") space
+    ((upper dash 1*digit) / (1*digit) / upper) as appendix
+  }
+  part = {
+    space "Part" space
+    ((1*digit *letter) / upper) as part
+  }
+  annex = space "Annex" space upper as annex
+  supplement = space "Suppl" space (1*digit) as supplement
+  version = space (1*digit dot 1*digit dot 1*digit) as version
+
+  identifier = {
+    [("IHO" space)]
+    series
+    dash
+    number
+    [appendix]
+    [part]
+    [annex]
+    [supplement]
+    [version]
+  }
+
+  entry identifier: identifier
+
+  test {
+    accept "S-5"
+    accept "IHO S-5 Appendix 2"
+    reject "nonsense"
+  }
+}
