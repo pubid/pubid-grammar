@@ -13,7 +13,11 @@
 grammar PubidCenCenelec version "0.2.0" edition 2 {
   space = " "
   slash = "/"
-  publisher = (("CWA" / "HD" / "ES" / "CR" / "ENV") as publisher) / (("EN" / "CEN") as publisher [copublishers]) / ("CLC" as publisher [copublishers])
+  publisher = {
+    ("CWA" / "HD" / "ES" / "CR" / "ENV") as publisher
+    / (("EN" / "CEN") as publisher [copublishers])
+    / ("CLC" as publisher [copublishers])
+  }
   copublishers = (1*copublisher) as copublishers
   copublisher = ("/" ("CLC" / "ETSI") as copublisher)
   stage_prefix = ("FprEN" / "prEN") as type_with_stage
@@ -22,7 +26,12 @@ grammar PubidCenCenelec version "0.2.0" edition 2 {
   version = (" " "V" (1*%x30-39) "." (1*%x30-39) "." (1*%x30-39)) as version
   part = "-" (1*(%x30-39 / "-")) as part
   parts = (*part) as parts
-  month_digits = ("01" / "02" / "03" / "04" / "05" / "06" / "07" / "08" / "09" / "10" / "11" / "12") as month
+  month_digits = {
+    (
+      "01" / "02" / "03" / "04" / "05" / "06"
+      / "07" / "08" / "09" / "10" / "11" / "12"
+    ) as month
+  }
   year = ":" (4*4%x30-39) as year
   year_with_month = ":" (4*4%x30-39) as year "-" month_digits
   date = year_with_month / year
@@ -38,17 +47,35 @@ grammar PubidCenCenelec version "0.2.0" edition 2 {
   supplement = (amendment / corrigendum) as supplement
   supplements = (*supplement) as supplements
   edition = " " "ED" (1*%x30-39) as edition
-  adopted_string = (("ISO" / "IEC" / "CISPR") *((!(supplement) !(edition) (%x01-09 / %x0B-10FFFF)))) as adopted_string
+  adopted_string = {
+    (
+      ("ISO" / "IEC" / "CISPR")
+      *((!(supplement) !(edition) (%x01-09 / %x0B-10FFFF)))
+    ) as adopted_string
+  }
   fragment_identifier = {
     (
-      ( (stage_prefix / publisher) " " number parts " " "AMD" (1*%x30-39) as amendment_number
+      ( (stage_prefix / publisher) " " number parts " " "AMD"
+        (1*%x30-39) as amendment_number
         " " "FRAG" (1*%x30-39) as fragment_number )
       /
-      ( (stage_prefix / publisher) " " number parts [year] ("+" / "/") "A" (1*%x30-39) as amendment_number
-        [(":" (4*4%x30-39) as amendment_year)] " " "FRAG" (1*%x30-39) as fragment_number )
+      ( (stage_prefix / publisher) " " number parts [year] ("+" / "/") "A"
+        (1*%x30-39) as amendment_number
+        [(":" (4*4%x30-39) as amendment_year)]
+        " " "FRAG" (1*%x30-39) as fragment_number )
     )
   }
-  identifier = fragment_identifier / ((stage_prefix / publisher) [(space adopted_string)] [(space type / slash type)] [(space number parts [version] [year])] supplements [edition])
+  identifier = {
+    fragment_identifier
+    / (
+      (stage_prefix / publisher)
+      [(space adopted_string)]
+      [(space type / slash type)]
+      [(space number parts [version] [year])]
+      supplements
+      [edition]
+    )
+  }
 
   entry identifier: identifier
 
