@@ -66,24 +66,26 @@ grammar PubidCenCenelec version "0.2.0" edition 2 {
   }
 
   bindings identifier {
+    # Shape-faithful to the v1 tree the builder reads: copublishers/parts
+    # bind as one-level arrays (cast(:copublishers) maps member
+    # [:copublisher], cast(:parts) reads member [:part]); the supplements
+    # bind uncast as the [{supplement: {...}}] array extract_supplements and
+    # build_standalone_supplement walk. The supplement-internal captures
+    # (amd_sep_*, amd_number, amd_year, cor_number, the corrigendum year)
+    # are reached only through that array — no flat bindings for them.
     publisher -> publisher (string)
-    copublisher -> copublisher (string)
+    copublisher -> copublishers[].copublisher (string)
     type_with_stage -> type_with_stage (string)
     type -> type (string)
     number -> number (string)
     version -> version (string)
-    part -> part (string)
-    month -> month (string)
+    part -> parts[].part (string)
     year -> year (string)
-    amd_sep_plus -> amd_sep_plus (string)
-    amd_sep_slash -> amd_sep_slash (string)
-    amd_number -> amd_number (string)
-    amd_year -> amd_year (string)
-    cor_number -> cor_number (string)
     adopted_string -> adopted_string (string)
     edition -> edition (string)
     amendment_number -> amendment_number (string)
     amendment_year -> amendment_year (string)
     fragment_number -> fragment_number (string)
+    supplement -> supplements[].supplement (raw)
   }
 }

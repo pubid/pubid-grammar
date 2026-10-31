@@ -89,22 +89,19 @@ grammar PubidEvs version "0.3.0" edition 2 {
   }
 
   bindings identifier {
+    # The builder dispatches on the branch and supplement wrappers and
+    # reads every leaf from inside them (evs/builder.rb: data[:adopted] is
+    # rebuilt by the CEN builder, data[:intl]/data[:plain]/data[:na] are
+    # read member-wise) — so all six wrappers bind uncast, the v1 nested
+    # shape. Only the two flat spine fields the builder reads directly stay
+    # scalar; the branch leaves are nested-only and bind no flat copies.
     draft_prefix -> draft_prefix (string)
     evs_separator -> evs_separator (string)
-    intl_org -> intl_org (string)
-    evs_type -> evs_type (string)
-    number -> number (string)
-    part -> part (string)
-    year -> year (string)
-    supp_plus -> supp_plus (string)
-    supp_slash -> supp_slash (string)
-    supp_space -> supp_space (string)
-    amd_kind -> amd_kind (string)
-    amd_number -> amd_number (string)
-    amd_year -> amd_year (string)
-    cor_kind -> cor_kind (string)
-    cor_number -> cor_number (string)
-    cor_year -> cor_year (string)
-    na_year -> na_year (string)
+    adopted -> adopted (raw)
+    intl -> intl (raw)
+    plain -> plain (raw)
+    evs_amd -> evs_amd (raw)
+    evs_cor -> evs_cor (raw)
+    na -> na (raw)
   }
 }

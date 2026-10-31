@@ -30,6 +30,10 @@ grammar PubidPlateau version "0.1.0" edition 2 {
   }
 
   bindings identifier {
+    # The builder dispatches on base && annex_letter and RE-parses the base
+    # subtree recursively (build_annex calls build(parsed[:base])), so base
+    # binds uncast — the nested {type, number, annex, edition} hash.
+    base -> base (raw)
     type -> type (string)
     number -> number (string)
     annex -> annex (string)

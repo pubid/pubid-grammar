@@ -25,7 +25,10 @@ grammar PubidAdobe version "0.1.0" edition 2 {
       [("." (1*(%x41-5A / %x61-7A / %x30-39 / %x5F)) as slug)]
     ) as tech_note
   }
-  bare_number = ((1*%x30-39) as number) as tech_note_bare
+  # The bare form captures the digit run as one span: the builder
+  # stringifies the :tech_note_bare value AS the number (no nested read),
+  # so an inner capture here would render the hash, not the digits.
+  bare_number = (1*%x30-39) as tech_note_bare
   # Slug text: a lower-case lead segment, then dash-joined segments.
   publication_with_version = {
     (
@@ -53,6 +56,13 @@ grammar PubidAdobe version "0.1.0" edition 2 {
   }
 
   bindings identifier {
+    # The builder dispatches on the wrapper keys and reads the leaves from
+    # inside them (adobe/builder.rb build_tech_note / build_publication_version),
+    # so the wrappers bind uncast — the nested hash the builder expects. The
+    # scalar bindings carry the same leaves flat for typed consumers.
+    tech_note -> tech_note (raw)
+    tech_note_bare -> tech_note_bare (string)
+    publication_version -> publication_version (raw)
     number -> number (string)
     slug -> slug (string)
     version -> version (string)
