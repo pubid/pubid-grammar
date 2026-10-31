@@ -124,9 +124,24 @@ grammar PubidAsme version "0.1.0" edition 2 {
   }
   designator = {
     (
-      ((bpvc_subdivision))
-      / (multi_char_code / "ISO" / "CSA" / "API" / "ANS" / (1*upper))
-    ) as designator
+      # The BPVC composite forms keep the v1 nested shape (the builder
+      # walks bpvc_code/special/subdivision inside it), so this branch
+      # binds (raw) under its own capture name. The plain branch binds
+      # (string) over an inlined pure-literal alternation: a (raw) bare
+      # span serializes as a span object on native but a plain string on
+      # wasm (parsanol-ruby#383/#394 family) — only typed-scalar
+      # bindings agree across engines.
+      ( ((bpvc_subdivision)) ) as designator_code
+      / (
+        "PVHO" / "PASE" / "PTC" / "PTB" / "PDS" / "PCC" / "V&V" / "V V"
+        / "VVUQ" / "TDP" / "RTP" / "RT" / "RA-S" / "RA" / "QME" / "QAI"
+        / "QEI" / "NUM" / "NQA" / "NML" / "OM" / "HST" / "HRT" / "FFS"
+        / "TES" / "TR" / "STS" / "CSD" / "CA" / "BTH" / "BPE" / "ANDE"
+        / "AED" / "AG" / "NM" / "EA"
+        / "ISO" / "CSA" / "API" / "ANS"
+        / (1*upper)
+      ) as designator
+    )
   }
 
   trailing_year = dash ("20XX" / "202X" / ("20" digit "X") / 4digit) !num_letter_dot
@@ -261,7 +276,8 @@ grammar PubidAsme version "0.1.0" edition 2 {
   entry identifier: identifier
 
   bindings identifier {
-    designator -> designator (raw)
+    designator -> designator (string)
+    designator_code -> designator_code (raw)
     reaffirmation -> reaffirmation (raw)
     number -> number (string)
     ptc_suffix -> ptc_suffix (string)
