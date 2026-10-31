@@ -44,16 +44,43 @@ grammar PubidCie version "0.1.0" edition 2 {
   date = current_date / legacy_date
 
   code_with_iteration = ((1*digit)) as number dot ((1*digit)) as iteration
-  code_with_part_and_iteration_slash = ((1*digit)) as number slash ((1*digit)) as part dot ((1*digit)) as iteration
-  code_with_part_and_iteration_dash = (((1*digit)) as number dash ((1*digit)) as part dot ((1*digit)) as iteration) !dash
-  code_with_part_dash = ((((1*digit)) as number dash as dash_sep ((1*3digit)) as part)) (!(century)) (!(dot / dash))
-  code_with_part_slash = ((((1*digit)) as number slash as slash_sep ((1*digit)) as part)) !dot
+  code_with_part_and_iteration_slash = {
+    ((1*digit)) as number
+    slash
+    ((1*digit)) as part
+    dot
+    ((1*digit)) as iteration
+  }
+  code_with_part_and_iteration_dash = {
+    ( ((1*digit)) as number dash ((1*digit)) as part dot ((1*digit)) as iteration )
+    !dash
+  }
+  code_with_part_dash = {
+    ( ((1*digit)) as number dash as dash_sep ((1*3digit)) as part )
+    (!(century))
+    (!(dot / dash))
+  }
+  code_with_part_slash = {
+    ( ((1*digit)) as number slash as slash_sep ((1*digit)) as part )
+    !dot
+  }
   code_simple = ((1*digit)) as number
-  code = code_with_part_and_iteration_slash / code_with_part_and_iteration_dash / code_with_iteration / code_with_part_slash / code_with_part_dash / code_simple
+  code = {
+    code_with_part_and_iteration_slash
+    / code_with_part_and_iteration_dash
+    / code_with_iteration
+    / code_with_part_slash
+    / code_with_part_dash
+    / code_simple
+  }
 
   language_slash = ((slash (upper) as lang_code)) as language_slash
   language_paren = ((lparen ((1*3(upper / lower))) as lang_code rparen)) as language_paren
-  language_paren_year = ((([space]) lparen ((2*upper)) as lang_code dash (century 2*digit !digit) as trans_year rparen)) as language_paren_year
+  language_paren_year = {
+    (
+      ( ([space]) lparen ((2*upper)) as lang_code dash (century 2*digit !digit) as trans_year rparen )
+    ) as language_paren_year
+  }
   language = language_paren_year / language_paren / language_slash
 
   x_prefix = "x"
@@ -64,26 +91,238 @@ grammar PubidCie version "0.1.0" edition 2 {
   conf_proceedings = "CIE" space "x" ((1*digit)) as conf_number dash paper_code ((1*digit)) as paper_number
   standalone_proceedings = "CIE" space paper_code ((1*digit)) as paper_number space (((1*digit) dash (1*digit))) as page_range
   d_series_identifier = "CIE" space "D" as d_prefix ((1*digit)) as number date
-  standard_with_slash_year = "CIE" space ([("FDIS" / "DIS" / "DS") space]) as stage ([("S" space)]) as s_prefix (((1*digit)) as number [(dot ((1*digit)) as iteration)]) slash ((century 2*digit !digit)) as slash_year
-  dis_with_supplement = "CIE" space (("FDIS" / "DIS" / "DS") space) as stage [("S" space) as s_prefix] ((1*digit)) as base_number dash "SP" ((1*digit)) as supplement_number [(dot ((1*digit)) as supplement_part)] slash (upper) as lang_code (colon) as lang_colon (century 2*digit !digit) as year
-  standard_identifier = "CIE" space ([("FDIS" / "DIS" / "DS") space]) as stage ([("S" space)]) as s_prefix code [((language date)) as lang_before / ((date [language])) as date_then_lang / date]
-  standard_with_language_year = "CIE" space ([("FDIS" / "DIS" / "DS") space]) as stage ([("S" space)]) as s_prefix code slash (upper) as lang_code (colon) as lang_colon (century 2*digit !digit) as year
+  standard_with_slash_year = {
+    "CIE" space
+    [ (("FDIS" / "DIS" / "DS") space) as stage ]
+    [ ("S" space) as s_prefix ]
+    ((1*digit)) as number
+    [ (dot ((1*digit)) as iteration) ]
+    slash
+    ((century 2*digit !digit)) as slash_year
+  }
+  dis_with_supplement = {
+    "CIE" space
+    (("FDIS" / "DIS" / "DS") space) as stage
+    [ ("S" space) as s_prefix ]
+    ((1*digit)) as base_number
+    dash "SP"
+    ((1*digit)) as supplement_number
+    [ (dot ((1*digit)) as supplement_part) ]
+    slash
+    (upper) as lang_code
+    (colon) as lang_colon
+    (century 2*digit !digit) as year
+  }
+  standard_identifier = {
+    "CIE" space
+    [ (("FDIS" / "DIS" / "DS") space) as stage ]
+    [ ("S" space) as s_prefix ]
+    code
+    [
+      ( ((language date)) as lang_before
+      / ((date [language])) as date_then_lang
+      / date
+      )
+    ]
+  }
+  standard_with_language_year = {
+    "CIE" space
+    [ (("FDIS" / "DIS" / "DS") space) as stage ]
+    [ ("S" space) as s_prefix ]
+    code
+    slash
+    (upper) as lang_code
+    (colon) as lang_colon
+    (century 2*digit !digit) as year
+  }
   conference_identifier = "CIE" space x_prefix as conference ((1*digit)) as conf_number date [(space "Amendment" space ((1*digit)) as amd_number)] [variant_slug]
-  joint_with_iso = ("CIE" space "ISO" as copublisher !slash space [((doc_type) space) as doc_type] [ (("FDIS" / "DIS" / "DS") space) as stage ] ((1*digit)) as number [(dash ((1*digit)) as part)] [((colon (century 2*digit !digit) as year) / (dash (century 2*digit !digit) as year))] [language])
-  joint_with_iso_cie = ("CIE" space "ISO/CIE" as copublisher space [((doc_type) space) as doc_type] ((1*digit)) as number [(colon (century 2*digit !digit) as year)] [language])
-  joint_with_iec = ("CIE" space "IEC" as copublisher space ((1*digit)) as number dot ((1*digit)) as part dash (century 2*digit !digit) as year)
-  identical_with_iso = ("CIE" space [("S" space) as s_prefix] ((1*digit)) as number [((dot ((1*digit)) as iteration)) / (dash ((1*digit)) as part)] [(slash ((((upper)) as lang_code (colon) as lang_colon (century 2*digit !digit) as year) / (((upper)) as lang_code (century 2*digit !digit) as year) / ((century 2*digit !digit)) as slash_year))] space "(ISO" space ((((1*(digit / upper / colon / slash / dot / dash))) [(lparen 1*upper rparen)])) as iso_reference rparen)
-  dual_with_iec = ("CIE" space [("S" space) as s_prefix] ((1*digit)) as number colon (century 2*digit !digit) as year slash "IEC" space ((1*nonrparen_nl)) as iec_identifier)
-  supplement_identifier = ("CIE" space ((1*digit)) as base_number dash "SP" ((1*digit)) as supplement_number [(dot ((1*digit)) as supplement_part)] [(colon (century 2*digit !digit) as year)] [language_portion])
-  corrigendum_identifier = ("CIE" space ((1*digit)) as base_number [(dash "SP" ((1*digit)) as base_supplement [(dot ((1*digit)) as base_supplement_part)])] colon (century 2*digit !digit) as base_year slash "Cor" ((1*digit)) as cor_number colon (century 2*digit !digit) as cor_year)
-  bundle_identifier = ("CIE" space ((1*digit)) as first_number dash "SP" ((1*digit)) dot ((1*digit)) colon (century 2*digit !digit) (1*("," (((1*digit)) as next_number dash "SP" ((1*digit)) dot ((1*digit)) colon (century 2*digit !digit)))) as bundle_items)
+  joint_with_iso = {
+    (
+      "CIE" space
+      "ISO" as copublisher
+      !slash space
+      [ ((doc_type) space) as doc_type ]
+      [ (("FDIS" / "DIS" / "DS") space) as stage ]
+      ((1*digit)) as number
+      [ (dash ((1*digit)) as part) ]
+      [
+        ( (colon (century 2*digit !digit) as year)
+        / (dash (century 2*digit !digit) as year)
+        )
+      ]
+      [language]
+    )
+  }
+  joint_with_iso_cie = {
+    (
+      "CIE" space
+      "ISO/CIE" as copublisher
+      space
+      [ ((doc_type) space) as doc_type ]
+      ((1*digit)) as number
+      [ (colon (century 2*digit !digit) as year) ]
+      [language]
+    )
+  }
+  joint_with_iec = {
+    (
+      "CIE" space
+      "IEC" as copublisher
+      space
+      ((1*digit)) as number
+      dot
+      ((1*digit)) as part
+      dash
+      (century 2*digit !digit) as year
+    )
+  }
+  identical_with_iso = {
+    (
+      "CIE" space
+      [ ("S" space) as s_prefix ]
+      ((1*digit)) as number
+      [
+        ( (dot ((1*digit)) as iteration)
+        / (dash ((1*digit)) as part)
+        )
+      ]
+      [
+        (
+          slash
+          (
+            (((upper)) as lang_code (colon) as lang_colon (century 2*digit !digit) as year)
+            / (((upper)) as lang_code (century 2*digit !digit) as year)
+            / (((century 2*digit !digit)) as slash_year)
+          )
+        )
+      ]
+      space "(ISO" space
+      (
+        (
+          ((1*(digit / upper / colon / slash / dot / dash)))
+          [ (lparen 1*upper rparen) ]
+        )
+      ) as iso_reference
+      rparen
+    )
+  }
+  dual_with_iec = {
+    (
+      "CIE" space
+      [ ("S" space) as s_prefix ]
+      ((1*digit)) as number
+      colon
+      (century 2*digit !digit) as year
+      slash "IEC" space
+      ((1*nonrparen_nl)) as iec_identifier
+    )
+  }
+  supplement_identifier = {
+    (
+      "CIE" space
+      ((1*digit)) as base_number
+      dash "SP"
+      ((1*digit)) as supplement_number
+      [ (dot ((1*digit)) as supplement_part) ]
+      [ (colon (century 2*digit !digit) as year) ]
+      [language_portion]
+    )
+  }
+  corrigendum_identifier = {
+    (
+      "CIE" space
+      ((1*digit)) as base_number
+      [
+        (
+          dash "SP" ((1*digit)) as base_supplement
+          [ (dot ((1*digit)) as base_supplement_part) ]
+        )
+      ]
+      colon
+      (century 2*digit !digit) as base_year
+      slash "Cor"
+      ((1*digit)) as cor_number
+      colon
+      (century 2*digit !digit) as cor_year
+    )
+  }
+  bundle_identifier = {
+    (
+      "CIE" space
+      ((1*digit)) as first_number
+      dash "SP" ((1*digit)) dot ((1*digit))
+      colon
+      (century 2*digit !digit)
+      (
+        1*(
+          ","
+          (
+            ((1*digit)) as next_number
+            dash "SP" ((1*digit)) dot ((1*digit))
+            colon
+            (century 2*digit !digit)
+          )
+        )
+      ) as bundle_items
+    )
+  }
   tutorial_bundle = "CIE Tutorials Bundle" space ((1*digit)) as bundle_number
-  identifier = tutorial_bundle / bundle_identifier / joint_with_iso_cie / joint_with_iso / joint_with_iec / identical_with_iso / dis_with_supplement / dual_with_iec / corrigendum_identifier / supplement_identifier / standard_with_language_year / standard_with_slash_year / d_series_identifier / conf_proceedings / standalone_proceedings / legacy_code_with_year / conference_identifier / annex_letter_identifier / annex_identifier / standard_identifier
-  legacy_code_with_year = "CIE" space ((1*digit)) as number dash (century 2*digit !digit) as year [((language_paren_year))] as trailing_lang
+  identifier = {
+    tutorial_bundle
+    / bundle_identifier
+    / joint_with_iso_cie
+    / joint_with_iso
+    / joint_with_iec
+    / identical_with_iso
+    / dis_with_supplement
+    / dual_with_iec
+    / corrigendum_identifier
+    / supplement_identifier
+    / standard_with_language_year
+    / standard_with_slash_year
+    / d_series_identifier
+    / conf_proceedings
+    / standalone_proceedings
+    / legacy_code_with_year
+    / conference_identifier
+    / annex_letter_identifier
+    / annex_identifier
+    / standard_identifier
+  }
+  legacy_code_with_year = {
+    "CIE" space
+    ((1*digit)) as number
+    dash
+    (century 2*digit !digit) as year
+    [ ((language_paren_year)) ] as trailing_lang
+  }
 
   # Annex forms (rule bodies per source)
-  annex_identifier = (base_without_language) space "Annexes" as annex_marker [(((space (edition_text) as edition_format space (century 2*digit !digit) as year)) / (colon (century 2*digit !digit) as year))] [language_portion]
-  annex_letter_identifier = (base_without_language) space "Annex" space (((upper) [(dash upper)])) as annex_letter [(((space edition_text space (century 2*digit !digit) as year)) / (colon (century 2*digit !digit) as year))] [language_portion]
+  annex_identifier = {
+    (base_without_language)
+    space "Annexes" as annex_marker
+    [
+      (
+        ( (space (edition_text) as edition_format space (century 2*digit !digit) as year)
+        / (colon (century 2*digit !digit) as year)
+        )
+      )
+    ]
+    [language_portion]
+  }
+  annex_letter_identifier = {
+    (base_without_language)
+    space "Annex" space
+    ( (upper) [ (dash upper) ] ) as annex_letter
+    [
+      (
+        ( (space edition_text space (century 2*digit !digit) as year)
+        / (colon (century 2*digit !digit) as year)
+        )
+      )
+    ]
+    [language_portion]
+  }
   base_without_language = "CIE" space ((upper)) as type space full_number_cie [date] [draft_stage_cie]
   draft_stage_cie = space [stage_iteration_cie] ("WD" / "CD") as stage
   stage_iteration_cie = ((((1*digit) dot (1*digit))) / (1*digit)) as iteration
