@@ -127,7 +127,7 @@ grammar PubidIeee version "0.1.0" edition 2 {
   rev_bare = (([ ("-" / "&#x2013;" / "–" / "_" / "." / " " / "/") as rev_sep ]) (rev_word) as rev_bare)
   rev_inline = ((rev_numbered) / (rev_lettered) / (rev_bare))
   draft_version = {
-    (!(("R" dash)) [("D" !("IS"))] ((((1*2digit dot 1*2digit dot 1*2digit))) / ((((1*2digit dot 1*2digit [lower]))) / ((dot (!(("19" / "20") 2digit 0*2lower !(1*digit))) (1*((digit / upper / lower) / dot)))) / (((1*digit "+" 1*digit))) / (((1*digit [dot] "e" 1*digit))) / ((((dash) (!(("19" / "20") 2digit 0*2lower !(1*digit))) (1*(digit / upper / lower)) [(("-d") / (("_") *(digit / upper / lower)))])) / (((dash) (("19" / "20") 2digit 0*2lower !(1*digit)) as draft_version_dash_year [dash (month_numeric) as draft_version_dash_month]))) / (((1*(digit / upper / lower)) [(("-d") / (("_") *(digit / upper / lower)))]))) as draft_version))
+    (!(("R" dash)) [("D" !("IS"))] ((((1*2digit dot 1*2digit dot 1*2digit))) / ((((1*2digit dot 1*2digit [lower]))) / ((dot (!(("19" / "20") 2digit 0*2lower !(1*digit))) (1*((digit / upper / lower) / dot)))) / (((1*digit "+" 1*digit))) / (((1*digit [dot] "e" 1*digit))) / ((((dash) (!(("19" / "20") 2digit 0*2lower !(1*digit))) (1*(digit / upper / lower)) [(("-d") / (("_") *(digit / upper / lower)))])) / (((dash) (("19" / "20") 2digit 0*2lower !(1*digit)) as draft_version_dash_year [dash (month_numeric) as draft_version_dash_month]))) / (((1*(digit / upper / lower)) [(("-d") / (("_") *(digit / upper / lower)))]))) as draft_version_composite))
   }
   # A draft date may comma-join its month and year (", Feb, 2011")
   # - the canonical forced-comma render (IEEE publisher, dated draft).
@@ -385,7 +385,7 @@ grammar PubidIeee version "0.1.0" edition 2 {
     printed_month_year -> printed_month_year (string)
     printed_dash_year -> printed_dash_year (string)
     iec_label_dash -> iec_label_dash (string)
-    draft_version -> draft_version (raw)
+    draft_version_composite -> draft_version_composite (raw)
     draft_version_scalar -> draft_version_scalar (string)
     draft -> draft (raw)
     digit_draft -> digit_draft (raw)
