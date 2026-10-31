@@ -1,14 +1,35 @@
 # Port of lib/pubid/oiml/parser.rb — OIML identifiers: the base form,
 # drafts, amendments (full/short/+/trailing), annexes, bulletins.
+#
+# Edition-2 conversion. The builder dispatches on the supplement
+# wrappers (parsed_hash[:base] -> build_supplement recursing into the
+# nested hash; parsed_hash[:base_code] on the short amendment), so both
+# keep their v1 shape and bind uncast with (raw). Because the flat
+# binding layer is global by capture name, the base's number (nested
+# key :number, read by the recursive build) is a different capture from
+# the two spellings the TOP-LEVEL :number must carry: the plain
+# document's number (doc_number) and the trailing supplement's own
+# ordinal (supplement_number) — both bind to the output key :number,
+# and the branches are disjoint so they never collide. Zero-width
+# markers: ("" as space_suffix) is re-spelled as a real-token capture
+# of the space it flagged (`space as space_suffix` — the key stays
+# present exactly when the "Brochure" suffix matched, so the builder's
+# .key? check and the space-separated rendering are unchanged);
+# ("" as space_before_lang) likewise becomes `space as space_before_lang`.
+# The composite edition_format wrapper becomes a real-token capture of
+# the "Edition"/"edition" word (truthiness and the long-format flag are
+# preserved; the builder re-reads year/edition flat). Pure-raw rule
+# bodies are inlined at capture sites (digits, alnum, lang_multi,
+# year_digits) so every capture binds one span.
 
-grammar PubidOiml version "0.1.0" mode "v1" {
+grammar PubidOiml version "0.1.0" edition 2 {
   # The monorepo's doc_type is [BDEGRSV] — X is deliberately absent
   # ("OIML X 99" must be rejected).
   letter_bdegrsvx = %x42 / %x44 / %x45 / %x47 / %x52 / %x53 / %x56
   digit = %x30-39
   letter = %x41-5A / %x61-7A
-  digits = 1*digit
-  two_digits = 2*digit
+  upper = %x41-5A
+  lower = %x61-7A
   space = " "
   dash = "-"
   colon = ":"
@@ -22,59 +43,101 @@ grammar PubidOiml version "0.1.0" mode "v1" {
 
   publisher = "OIML" as publisher space
   doc_type = letter_bdegrsvx as type space
-  two_digits_c = two_digits
 
-  bulletin_date = space year_digits as year [(dash two_digits as issue)] [(dash two_digits as sequence)]
+  bulletin_date = space (century 2*digit !digit) as doc_year [(dash (2*digit) as issue)] [(dash (2*digit) as sequence)]
   roman_numeral = 1*%x49 / 1*(%x49 / %x56 / %x58 / %x4C / %x43 / %x44 / %x4D)
   roman = (1*(%x49 / %x56 / %x58 / %x4C / %x43 / %x44 / %x4D)) as volume_roman
-  bulletin_citation = space roman lparen (1*digit) as issue_arabic rparen space (8digit) as article_id
-  bulletin_identifier = "OIML" as publisher space "Bulletin" as type [bulletin_citation / bulletin_date] [language_portion as language]
+  bulletin_citation = space roman lparen ((1*digit)) as issue_arabic rparen space ((8*digit)) as article_id
+  bulletin_identifier = "OIML" as publisher space "Bulletin" as type [bulletin_citation / bulletin_date] [language_portion]
 
-  number_only = digits as number
-  part_number = dash (digits *(slash dash digits)) as part
-  subpart_number = dash digits as subpart
-  named_suffix_gum = dash ("GUM" space digits / (1*letter *((["_"] digits)))) as code_suffix
-  named_suffix_brochure = space "Brochure" as code_suffix ("" as space_suffix)
+  number_only = ((1*digit)) as number
+  part_number = dash (((1*digit) *((slash dash (1*digit)))) as part)
+  subpart_number = dash ((1*digit)) as subpart
+  named_suffix_gum = dash ("GUM" space (1*digit) / ((1*letter) *((["_"] (1*digit))))) as code_suffix
+  named_suffix_brochure = (space) as space_suffix "Brochure" as code_suffix
   named_suffix = named_suffix_gum / named_suffix_brochure
-  full_number = (number_only part_number subpart_number [named_suffix]) / (number_only part_number [named_suffix]) / (number_only [named_suffix])
+  full_number = (((number_only) part_number subpart_number [named_suffix]) / ((number_only) part_number [named_suffix]) / ((number_only) [named_suffix]))
+  doc_number_only = ((1*digit)) as doc_number
+  full_number_plain = (((doc_number_only) part_number subpart_number [named_suffix]) / ((doc_number_only) part_number [named_suffix]) / ((doc_number_only) [named_suffix]))
 
-  edition_number = ("6th" / "5th" / "4th" / "3rd" / "2nd" / "1st" / (digits ("th" / "nd" / "rd" / "st"))) as edition
+  edition_number = ("6th" / "5th" / "4th" / "3rd" / "2nd" / "1st" / ((1*digit) ("th" / "nd" / "rd" / "st"))) as edition
   edition_text = "Edition" / "edition"
-  edition_portion = ((", " / space) [edition_number] [space] edition_text [space] year_digits as year) as edition_format
-  date = edition_portion / ([space] colon [space] year_digits as year) / ([space] lparen year_digits as year rparen)
-  stage_iteration = ((digits dot digits) / digits) as iteration
+  edition_portion = ((", " / space) [(edition_number)] [space] (edition_text) as edition_format [space] (century 2*digit !digit) as year)
+  date = edition_portion / ([space] colon [space] (century 2*digit !digit) as year) / ([space] lparen (century 2*digit !digit) as year rparen)
+  edition_portion_plain = ((", " / space) [(edition_number)] [space] (edition_text) as doc_edition_format [space] (century 2*digit !digit) as doc_year)
+  date_plain = edition_portion_plain / ([space] colon [space] (century 2*digit !digit) as doc_year) / ([space] lparen (century 2*digit !digit) as doc_year rparen)
+  stage_iteration = ((((1*digit) dot (1*digit))) / (1*digit)) as iteration
   stage_abbr = ("WD" / "CD") as stage
   draft_stage = space [stage_iteration] stage_abbr
 
   lang_single = %x45 / %x46 / %x52 / %x58 / %x44 / %x53 / %x43 / %x41 / %x55
   lang_multi_oiml = "PO" / "PT" / "PE" / "SR"
-  lang_multi = 2*2lower
-  lower = %x61-7A
-  language_code = ((lang_single slash lang_single) / lang_multi_oiml / (upper 2*2lower) / lang_single / lang_multi) as language
-  language_with_space = space lparen language_code rparen ("" as space_before_lang)
+  language_code = ((((lang_single) slash (lang_single)) / lang_multi_oiml / ((upper) 2*2lower) / (lang_single) / (2*2lower)) as language)
+  language_with_space = (space) as space_before_lang lparen language_code rparen
   language_without_space = lparen language_code rparen
   language_portion = language_with_space / language_without_space
 
-  amendment_identifier = "Amendment" space lparen year_digits as year rparen space "to" space (base_without_language as base) [language_portion as language]
-  amendment_short = publisher doc_type (full_number as base_code) space "Amendment" as amd_marker ((space edition_text [space] year_digits as year) as edition_format / (colon [space] year_digits as year)) [language_portion as language]
-  trailing_supplement_identifier = (base_without_language as base) space ("Amendment" / "Errata") as trailing_marker [space ((1*digit)) as number] [language_portion as language]
-  plus_supplement_identifier = (base_without_language as base) plus ("Amendment" / "Errata") as plus_marker [(colon year_digits as year)] [language_portion as language]
-  annex_identifier = (base_without_language as base) space "Annexes" as annex_marker [((space edition_text space year_digits as year) as edition_format / (colon year_digits as year))] [language_portion as language]
-  annex_letter_value = (upper [(dash upper)]) as annex_letter
-  annex_letter_identifier = (base_without_language as base) space "Annex" space annex_letter_value [((space edition_text space year_digits as year) / (colon year_digits as year))] [language_portion as language]
+  amendment_identifier = "Amendment" space lparen (century 2*digit !digit) as supplement_year rparen space "to" space ((base_without_language)) as base [language_portion]
+  amendment_short = publisher doc_type ((full_number)) as base_code space "Amendment" as amd_marker (((space (edition_text) as supplement_edition_format [space] (century 2*digit !digit) as supplement_year)) / (colon [space] (century 2*digit !digit) as supplement_year)) [language_portion]
+  trailing_supplement_identifier = ((base_without_language)) as base space ("Amendment" / "Errata") as trailing_marker [space ((1*digit)) as supplement_number] [language_portion]
+  plus_supplement_identifier = ((base_without_language)) as base plus ("Amendment" / "Errata") as plus_marker [(colon (century 2*digit !digit) as supplement_year)] [language_portion]
+  annex_identifier = ((base_without_language)) as base space "Annexes" as annex_marker [(((space (edition_text) as supplement_edition_format space (century 2*digit !digit) as supplement_year)) / (colon (century 2*digit !digit) as supplement_year))] [language_portion]
+  annex_letter_value = (((upper) [(dash upper)])) as annex_letter
+  annex_letter_identifier = ((base_without_language)) as base space "Annex" space annex_letter_value [(((space edition_text space (century 2*digit !digit) as supplement_year)) / (colon (century 2*digit !digit) as supplement_year))] [language_portion]
   base_without_language = publisher doc_type full_number [date] [draft_stage]
-  base = publisher doc_type full_number [date] [draft_stage] [language_portion]
+  base = publisher doc_type full_number_plain [date_plain] [draft_stage] [language_portion]
 
-  cs_identifier = ("OIML" as publisher (dash / space) "CS" as cs_series space ("PD" / "OD" / "CID") as cs_family (dash / space) as cs_separator (1*digit) as number space "Edition" space (1*digit) as edition [(space lparen "Amendment" space (1*digit) as cs_amendment rparen)])
+  cs_identifier = ("OIML" as publisher (dash / space) "CS" as cs_series space ("PD" / "OD" / "CID") as cs_family (dash / space) as cs_separator ((1*digit)) as doc_number space "Edition" space ((1*digit)) as edition [(space lparen "Amendment" space ((1*digit)) as cs_amendment rparen)])
   identifier = cs_identifier / amendment_identifier / amendment_short / annex_letter_identifier / annex_identifier / plus_supplement_identifier / trailing_supplement_identifier / bulletin_identifier / base
 
-  upper = %x41-5A
   entry identifier: identifier
+
+  bindings identifier {
+    base -> base (raw)
+    base_code -> base_code (raw)
+    doc_number -> number (string)
+    supplement_number -> number (string)
+    part -> part (string)
+    subpart -> subpart (string)
+    code_suffix -> code_suffix (string)
+    space_suffix -> space_suffix (string)
+    publisher -> publisher (string)
+    type -> type (string)
+    doc_year -> year (string)
+    supplement_year -> year (string)
+    issue -> issue (string)
+    sequence -> sequence (string)
+    volume_roman -> volume_roman (string)
+    issue_arabic -> issue_arabic (string)
+    article_id -> article_id (string)
+    language -> language (string)
+    space_before_lang -> space_before_lang (string)
+    edition -> edition (string)
+    iteration -> iteration (string)
+    stage -> stage (string)
+    amd_marker -> amd_marker (string)
+    doc_edition_format -> edition_format (string)
+    supplement_edition_format -> edition_format (string)
+    trailing_marker -> trailing_marker (string)
+    plus_marker -> plus_marker (string)
+    annex_marker -> annex_marker (string)
+    annex_letter -> annex_letter (string)
+    cs_series -> cs_series (string)
+    cs_family -> cs_family (string)
+    cs_separator -> cs_separator (string)
+    cs_amendment -> cs_amendment (string)
+  }
 
   test {
     accept "OIML V 2 Edition 2007"
     accept "OIML R 137-1:2012"
     accept "OIML D 11"
+    accept "OIML D 11 Brochure"
+    accept "OIML R 126:2015 Errata (E)"
+    accept "OIML B 20 Annexes"
+    accept "OIML V 2 (E)"
+    accept "OIML-CS PD-05 Edition 6 (Amendment 1)"
+    accept "OIML R 138:2009 Amendment 1"
     reject "nonsense"
   }
 }

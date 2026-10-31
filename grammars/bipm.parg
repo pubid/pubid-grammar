@@ -2,19 +2,28 @@
 # (short/long EN/FR, meetings incl. French <sup>e</sup>), Metrologia,
 # the SI Brochure family, MEP/Guide reports. Groups and type names come
 # from gem-extracted tables (bipm_*.yaml), longest-first.
+#
+# Edition-2 conversion. The builder dispatches on the branch-wrapper
+# keys (committee_short, committee_long_en, committee_long_fr,
+# committee_bare, meeting_en, meeting_fr, metrologia, si_brochure,
+# si_brochure_variant, si_brochure_section, mep, guide), so every
+# wrapper is kept as a v1-shaped capture whose value is the inner-leaf
+# hash (or the bare scalar for the journal-level Metrologia record) and
+# binds uncast with the (raw) type; the leaves additionally bind flat.
+# Pure-raw rule bodies are inlined at capture sites (digits, alnum) so
+# every capture subtree carries only its own named leaves.
 
-grammar PubidBipm version "0.1.0" mode "v1" {
+grammar PubidBipm version "0.1.0" edition 2 {
   digit = %x30-39
   dot = "."
-  alnum = 1*(digit / letter)
   letter = %x41-5A / %x61-7A
-  digits = 1*digit
   space = " "
   dash = "-"
   slash = "/"
   colon = ":"
   lparen = "("
   rparen = ")"
+
   number = (1*digit *(dash 1*digit)) as number
   year = (4digit) as year
   lang = ("EN" / "FR" / %x45 / %x46) as language
@@ -27,39 +36,82 @@ grammar PubidBipm version "0.1.0" mode "v1" {
   connective = "de la" / "du"
   ordinal = "st" / "nd" / "rd" / "th"
   meeting_word_fr = "Réunion" / "réunion"
+
   committee_short = ((group space type_abbrev [(space number)] [(space year_paren)]) as committee_short)
   committee_long_en = ((group space type_name_en [(space number)] [(space year_paren_nolang)]) as committee_long_en)
   committee_long_fr = ((type_name_fr [(space number)] space connective space group [(space year_paren_nolang)]) as committee_long_fr)
   committee_group_fr = ((group space type_name_fr [(space number)] [(space year_paren_nolang)]) as committee_long_fr)
   committee_bare = ((group space number [(space year_paren)]) as committee_bare)
+
   meeting_en = (((group space number ordinal space "Meeting" [(space year_paren)]) / (group space "Meeting" space number [(space year_paren)])) as meeting_en)
   meeting_fr = (((group space number "<sup>e</sup>" space "réunion" [(space year_paren)]) / (group space number "e" space meeting_word_fr [(space year_paren)]) / (group space meeting_word_fr space number [(space year_paren)])) as meeting_fr)
-  metrologia = ("Metrologia" [(space digits as volume [(space alnum as issue [(space alnum as article)])])]) as metrologia
-  edition = (digits "e") as edition
+
+  metrologia = ("Metrologia" [(space (1*digit) as volume [(space (1*(digit / letter)) as issue [(space (1*(digit / letter)) as article)])])]) as metrologia
+
+  edition = ((1*digit) "e") as edition
   version = ("v" 1*(digit / dot)) as version
-  years = (digits [(slash digits)]) as years
+  years = ((1*digit) [(slash (1*digit))]) as years
   si_brochure = (("BIPM SI Brochure" / "SI Brochure") space ["sur le SI" space] edition space version space "(" years ", " lang ")") as si_brochure
-  brochure_variant = (("Appendix" space digits) / "Concise" / "FAQ") as variant
+  brochure_variant = (("Appendix" space (1*digit)) / "Concise" / "FAQ") as variant
   si_brochure_variant = (("BIPM SI Brochure" / "SI Brochure") space brochure_variant) as si_brochure_variant
-  si_brochure_section = (("BIPM SI Brochure" / "SI Brochure") [(space "Part" space digits as part)]) as si_brochure_section
-  appendix_part = "Appendix" space digits as appendix [(space "Annex" space digits as annex)] space "Part" space (digits [(dot digits)]) as part
+  si_brochure_section = (("BIPM SI Brochure" / "SI Brochure") [(space "Part" space (1*digit) as part)]) as si_brochure_section
+
+  appendix_part = "Appendix" space (1*digit) as appendix [(space "Annex" space (1*digit) as annex)] space "Part" space (((1*digit) [(dot (1*digit))]) as part)
   mep_code = (1*(digit / letter)) as mep_code
-  report_code = ("BIPM-" digits slash digits) as report_code
+  report_code = ("BIPM-" (1*digit) slash (1*digit)) as report_code
   mep_body = (("SI MEP" space mep_code) / ("Rapport" space report_code))
   mep = (("BIPM" space mep_body space appendix_part) / mep_body) as mep
   guide_kind = ("MeP" / "RSI") as guide_kind
-  guide_body = group "-GD-" guide_kind dash digits as number
+  guide_body = group "-GD-" guide_kind dash (1*digit) as number
   guide = (("BIPM" space guide_body space appendix_part) / guide_body) as guide
+
   group_leading = meeting_en / meeting_fr / committee_short / committee_long_en / committee_group_fr / committee_bare
   identifier = metrologia / si_brochure / si_brochure_variant / si_brochure_section / mep / guide / committee_long_fr / group_leading
 
   entry identifier: identifier
+
+  bindings identifier {
+    committee_short -> committee_short (raw)
+    committee_long_en -> committee_long_en (raw)
+    committee_long_fr -> committee_long_fr (raw)
+    committee_bare -> committee_bare (raw)
+    meeting_en -> meeting_en (raw)
+    meeting_fr -> meeting_fr (raw)
+    metrologia -> metrologia (raw)
+    si_brochure -> si_brochure (raw)
+    si_brochure_variant -> si_brochure_variant (raw)
+    si_brochure_section -> si_brochure_section (raw)
+    mep -> mep (raw)
+    guide -> guide (raw)
+    group -> group (string)
+    type_word -> type_word (string)
+    number -> number (string)
+    year -> year (string)
+    language -> language (string)
+    volume -> volume (string)
+    issue -> issue (string)
+    article -> article (string)
+    edition -> edition (string)
+    version -> version (string)
+    years -> years (string)
+    variant -> variant (string)
+    part -> part (string)
+    appendix -> appendix (string)
+    annex -> annex (string)
+    mep_code -> mep_code (string)
+    report_code -> report_code (string)
+    guide_kind -> guide_kind (string)
+  }
 
   test {
     accept "SI Brochure 9e v3.0 (2019, EN)"
     accept "SI MEP 10"
     accept "CGPM 26th Meeting (2018)"
     accept "Metrologia 24 3"
+    accept "CGPM 12"
+    accept "CCTF REC 2"
+    accept "BIPM SI Brochure Appendix 2"
+    accept "SI Brochure Part 1"
     reject "nonsense"
   }
 }
