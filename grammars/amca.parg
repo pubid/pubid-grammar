@@ -1,28 +1,57 @@
 # Port of lib/pubid/amca/parser.rb. Pre-parse whitespace collapsing,
 # en-dash normalization and trailing punctuation stripping stay
 # binder-side.
+#
+# Edition 2: every reference inside a captured body is inlined to raw
+# terms (a rule reference materializes as a named node in the edition-2
+# tree, so only a raw capture binds a scalar span); references to rules
+# that themselves capture (copublisher, code, reaffirmation) float their
+# captures unchanged. The type wrappers (interpretation, publication,
+# standard) keep the v1 tree shape and the bindings name the scalar
+# leaves.
 
-grammar PubidAmca version "0.1.0" mode "v1" {
-  copublisher = (("ANSI" slash "AMCA") / "AMCA") as copublisher
-  additional_copublisher = slash 2*10letter space 1*digit [(dash 1*digit)]
-  code = (1*digit [(dash letter)] [(dot 1*digit)]) as code
-  type = "Standard" / "Publication"
-  reaffirmation = "(" "R" (1*digit) as reaffirmed ")"
-  suffix = "R" / "P"
-  revision = "(" "Rev" [dot] space (1*digit dash 1*digit) as revision ")"
-  interpretation_code = (2*letter / 1*digit) as interpretation_code
-  interp_keyword = space "Interp"
-  interpretation_identifier = (([copublisher] space code space ((interpretation_code interp_keyword) / (("–" / dash) 1*digit as interpretation_year [interp_keyword]))) as interpretation) / (([copublisher] space code interp_keyword) as interpretation)
-  publication_identifier = (([copublisher] space "Publication" as publication_keyword space code [(dash year_digits as year)] [(space revision)] [(space reaffirmation)]) as publication)
-  standard_identifier = (([copublisher] space [type as type] [space] code [(dash year_digits as year)] [(space additional_copublisher)] [suffix] [(space reaffirmation)]) as standard)
+grammar PubidAmca version "0.1.0" edition 2 {
+  copublisher = (("ANSI" "/" "AMCA") / "AMCA") as copublisher
+  code = {
+    ( 1*%x30-39
+      [("-" (%x41-5A / %x61-7A))]
+      [("." 1*%x30-39)] ) as code
+  }
+  reaffirmation = "(" "R" (1*%x30-39) as reaffirmed ")"
+  revision = "(" "Rev" ["."] " " (1*%x30-39 "-" 1*%x30-39) as revision ")"
+  interpretation_code = (2*(%x41-5A / %x61-7A) / 1*%x30-39) as interpretation_code
+
+  interpretation_identifier = {
+    (
+      ( [copublisher] " " code " "
+        ( (interpretation_code " " "Interp")
+          / (("–" / "-") (1*%x30-39) as interpretation_year [" " "Interp"]) )
+      ) as interpretation
+    )
+    /
+    (
+      ( [copublisher] " " code " " "Interp" ) as interpretation
+    )
+  }
+  publication_identifier = {
+    (
+      ( [copublisher] " " "Publication" as publication_keyword " " code
+        [("-" ((("19" / "20") 2*%x30-39) / (2*%x30-39)) as year)]
+        [(" " revision)]
+        [(" " reaffirmation)] ) as publication
+    )
+  }
+  standard_identifier = {
+    (
+      ( [copublisher] " " [("Standard" / "Publication") as type] [" "] code
+        [("-" ((("19" / "20") 2*%x30-39) / (2*%x30-39)) as year)]
+        [(" " "/" 2*10(%x41-5A / %x61-7A) " " 1*%x30-39 [("-" 1*%x30-39)])]
+        [("R" / "P")]
+        [(" " reaffirmation)] ) as standard
+    )
+  }
   identifier = interpretation_identifier / publication_identifier / standard_identifier
-  year_digits = (("19" / "20") 2*digit / 2*digit)
-  letter = %x41-5A / %x61-7A
-  digit = %x30-39
-  dash = "-"
-  dot = "."
-  slash = "/"
-  space = " "
+
   entry identifier: identifier
 
   test {
@@ -30,5 +59,17 @@ grammar PubidAmca version "0.1.0" mode "v1" {
     accept "AMCA Standard 210"
     accept "ANSI/AMCA 210"
     reject "nonsense"
+  }
+
+  bindings identifier {
+    copublisher -> copublisher (string)
+    code -> code (string)
+    type -> type (string)
+    reaffirmed -> reaffirmed (string)
+    revision -> revision (string)
+    interpretation_code -> interpretation_code (string)
+    interpretation_year -> interpretation_year (string)
+    publication_keyword -> publication_keyword (string)
+    year -> year (string)
   }
 }

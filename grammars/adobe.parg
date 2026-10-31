@@ -1,32 +1,48 @@
 # Port of lib/pubid/adobe/parser.rb: tech notes (Adobe TN 5014, legacy
 # "Adobe Technical Note #5014", ATN5014, bare 5014) and publications
 # (adobe-glyph-list, adobe-japan1-7 with the version split tried first).
+#
+# Edition 2: every reference inside a captured body is inlined to raw
+# terms (a rule reference materializes as a named node in the edition-2
+# tree, so only a raw capture binds a scalar span). The prefix spellings
+# and slug shapes live inline below; the wrapper captures (tech_note,
+# tech_note_bare, publication_version) keep the v1 tree shape and the
+# bindings name their scalar leaves.
 
-grammar PubidAdobe version "0.1.0" mode "v1" {
-  tech_note_tn_prefix = "Adobe" space "TN" [space]
-  tech_note_long_prefix = "Adobe" space "Technical" space "Note" [[space] ["#"] [space]]
-  tech_note_atn_prefix = "ATN" [space]
-  tech_note_prefix = tech_note_tn_prefix / tech_note_long_prefix / tech_note_atn_prefix
+grammar PubidAdobe version "0.1.0" edition 2 {
+
   # Capture precedence: (*rep) as name wraps the whole repetition, so a
   # digit run joins to one string instead of re-keying every character;
   # slug is captured exactly once (the bare form) or as a sibling of
-  # version inside the publication_version capture.
-  tech_note = (tech_note_prefix (1*digit) as number [(dot (1*slug_char) as slug)]) as tech_note
-  bare_number = ((1*digit) as number) as tech_note_bare
-  slug_segment = 1*lower1 *lowerd
-  slug_text = slug_segment *(dash slug_segment)
-  slug_inner = (slug_text) as slug
-  publication_with_version = ((slug_text) as slug dash (1*digit) as version) as publication_version
+  # version inside the publication_version capture. The three prefix
+  # spellings are inlined longest-first (ordered choice is decisive).
+  tech_note = {
+    (
+      ( "Adobe" " " "TN" [" "]
+        / "Adobe" " " "Technical" " " "Note" [[" "] ["#"] [" "]]
+        / "ATN" [" "] )
+      (1*%x30-39) as number
+      [("." (1*(%x41-5A / %x61-7A / %x30-39 / %x5F)) as slug)]
+    ) as tech_note
+  }
+  bare_number = ((1*%x30-39) as number) as tech_note_bare
+  # Slug text: a lower-case lead segment, then dash-joined segments.
+  publication_with_version = {
+    (
+      ( 1*%x61-7A *(%x61-7A / %x30-39)
+        *("-" 1*%x61-7A *(%x61-7A / %x30-39)) ) as slug
+      "-"
+      (1*%x30-39) as version
+    ) as publication_version
+  }
+  slug_inner = {
+    ( 1*%x61-7A *(%x61-7A / %x30-39)
+      *("-" 1*%x61-7A *(%x61-7A / %x30-39)) ) as slug
+  }
   publication_slug_or_version = publication_with_version / slug_inner
   publication = ["Adobe Publication "] publication_slug_or_version
   identifier = tech_note / bare_number / publication
-  slug_char = %x41-5A / %x61-7A / %x30-39 / %x5F
-  lower1 = %x61-7A
-  lowerd = %x61-7A / %x30-39
-  digit = %x30-39
-  space = " "
-  dot = "."
-  dash = "-"
+
   entry identifier: identifier
 
   test {
@@ -34,5 +50,11 @@ grammar PubidAdobe version "0.1.0" mode "v1" {
     accept "ATN 30"
     accept "Adobe Technical Note #12"
     reject "###"
+  }
+
+  bindings identifier {
+    number -> number (string)
+    slug -> slug (string)
+    version -> version (string)
   }
 }

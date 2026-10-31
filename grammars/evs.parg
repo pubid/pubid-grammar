@@ -4,39 +4,69 @@
 # and the language code. The CEN spine is IMPORTED via `use` (TODO 11/C6
 # imports): rules are namespaced cen_cenelec.* while captures keep their
 # contract names.
+#
+# Edition 2: every reference inside a captured body is inlined to raw
+# terms (a rule reference materializes as a named node in the edition-2
+# tree, so only a raw capture binds a scalar span). The branch wrappers
+# (adopted, intl, plain) and the supplement wrappers (evs_amd, evs_cor,
+# na) keep the v1 tree shape and the bindings name the scalar leaves.
 
 use cen_cenelec
 
-grammar PubidEvs version "0.3.0" mode "v1" {
+grammar PubidEvs version "0.3.0" edition 2 {
   identifier = [draft_prefix] "EVS" evs_separator ((cen_cenelec.identifier) as adopted / (evs_intl) as intl / (evs_plain) as plain) [evs_amd] [evs_cor / evs_ac] [evs_na]
 
   draft_prefix = "pr" as draft_prefix
-  evs_separator = (dash / space) as evs_separator
+  evs_separator = ("-" / " ") as evs_separator
 
   # "EVS-ISO 9001:2015", "EVS-IEC 62368-1:2020" (+ their amendments)
-  evs_intl = (((("ISO" / "IEC") as intl_org) space (1*digit) as number) [(dash (1*digit) as part)] [(colon (4digit) as year)])
+  evs_intl = {
+    (
+      ((("ISO" / "IEC") as intl_org) " " (1*%x30-39) as number)
+      [("-" (1*%x30-39) as part)]
+      [(":" (4*4%x30-39) as year)]
+    )
+  }
   # "EVS 921:2019", "EVS-TS 1:2019", "EVS-TR 1:2019"
-  evs_plain = [(("TS" / "TR") as evs_type) space] (1*digit) as number [(colon (4digit) as year)]
+  evs_plain = {
+    ([(("TS" / "TR") as evs_type) " "]) (1*%x30-39) as number [(":" (4*4%x30-39) as year)]
+  }
 
   # " AMD1:2014" / "+AMD1" — the AMD amendment spelling; the separator is
   # semantic (list: "+A full standard plus the amendment", "/A only amendment")
-  evs_amd = (((plus as supp_plus / slash as supp_slash / space as supp_space) ("AMD" as amd_kind)) (1*digit) as amd_number [(colon (4digit) as amd_year)]) as evs_amd
+  evs_amd = {
+    (
+      (("+" as supp_plus / "/" as supp_slash / " " as supp_space) ("AMD" as amd_kind))
+      (1*%x30-39) as amd_number
+      [(":" (4*4%x30-39) as amd_year)]
+    ) as evs_amd
+  }
   # "+COR:2015" / "/COR" — the COR spelling (the CEN spine consumes +AC itself)
-  evs_cor = (((plus as supp_plus / slash as supp_slash) ("COR" as cor_kind)) [(1*digit) as cor_number] [(colon (4digit) as cor_year)]) as evs_cor
+  evs_cor = {
+    (
+      (("+" as supp_plus / "/" as supp_slash) ("COR" as cor_kind))
+      [(1*%x30-39) as cor_number]
+      [(":" (4*4%x30-39) as cor_year)]
+    ) as evs_cor
+  }
   # " AC:2015" — the space-separated AC spelling
-  evs_ac = ((space as supp_space) ("AC" as cor_kind) [(1*digit) as cor_number] [(colon (4digit) as cor_year)]) as evs_cor
+  evs_ac = {
+    (
+      (" " as supp_space) ("AC" as cor_kind)
+      [(1*%x30-39) as cor_number]
+      [(":" (4*4%x30-39) as cor_year)]
+    ) as evs_cor
+  }
   # "+NA:2010" / "/NA" — the national annex
-  evs_na = (((plus as supp_plus / slash as supp_slash) "NA") [(colon (4digit) as na_year)]) as na
+  evs_na = {
+    (
+      (("+" as supp_plus / "/" as supp_slash) "NA")
+      [(":" (4*4%x30-39) as na_year)]
+    ) as na
+  }
   # The trailing language code (" et" / " en" / " et-en") is extracted by
   # the parse wrapper (Pubid::Evs.parse) BEFORE the grammar runs — the
   # CEN adopted_string is greedy over plain text and would swallow it.
-
-  digit = %x30-39
-  dash = "-"
-  space = " "
-  plus = "+"
-  slash = "/"
-  colon = ":"
 
   entry identifier: identifier
 
@@ -56,5 +86,25 @@ grammar PubidEvs version "0.3.0" mode "v1" {
     accept "EVS-EN 71-1:2011 AMD1:2014"
     accept "prEVS-EN 100:2026"
     reject "nonsense"
+  }
+
+  bindings identifier {
+    draft_prefix -> draft_prefix (string)
+    evs_separator -> evs_separator (string)
+    intl_org -> intl_org (string)
+    evs_type -> evs_type (string)
+    number -> number (string)
+    part -> part (string)
+    year -> year (string)
+    supp_plus -> supp_plus (string)
+    supp_slash -> supp_slash (string)
+    supp_space -> supp_space (string)
+    amd_kind -> amd_kind (string)
+    amd_number -> amd_number (string)
+    amd_year -> amd_year (string)
+    cor_kind -> cor_kind (string)
+    cor_number -> cor_number (string)
+    cor_year -> cor_year (string)
+    na_year -> na_year (string)
   }
 }

@@ -1,36 +1,53 @@
 # Port of lib/pubid/cen_cenelec/parser.rb. Pre-parse normalization
 # (U+2011/AD dashes, comment stripping, CEN-CLC/GUIDE forms) stays
 # binder-side: the grammar sees normalized input.
+#
+# Edition 2: every reference inside a captured body is inlined to raw
+# terms (a rule reference materializes as a named node in the edition-2
+# tree, so only a raw capture binds a scalar span); references to rules
+# that themselves capture (copublisher, part, month_digits,
+# year_with_month, supplement) float their captures unchanged. The
+# repetition wrappers (copublishers, parts, supplements) keep the v1
+# tree shape and the bindings name the scalar leaves.
 
-grammar PubidCenCenelec version "0.2.0" mode "v1" {
-  digit = %x30-39
+grammar PubidCenCenelec version "0.2.0" edition 2 {
   space = " "
-  dash = "-"
   slash = "/"
-  plus = "+"
-  colon = ":"
   publisher = (("CWA" / "HD" / "ES" / "CR" / "ENV") as publisher) / (("EN" / "CEN") as publisher [copublishers]) / ("CLC" as publisher [copublishers])
   copublishers = (1*copublisher) as copublishers
-  copublisher = (slash ("CLC" / "ETSI") as copublisher)
+  copublisher = ("/" ("CLC" / "ETSI") as copublisher)
   stage_prefix = ("FprEN" / "prEN") as type_with_stage
   type = ("Guide" / "GUIDE" / "TR" / "TS") as type
-  number = ((1*digit) (*(space (1*digit)))) as number
-  version = (space "V" (1*digit) "." (1*digit) "." (1*digit)) as version
-  part = dash (1*(digit / dash)) as part
+  number = ((1*%x30-39) (*(" " (1*%x30-39)))) as number
+  version = (" " "V" (1*%x30-39) "." (1*%x30-39) "." (1*%x30-39)) as version
+  part = "-" (1*(%x30-39 / "-")) as part
   parts = (*part) as parts
   month_digits = ("01" / "02" / "03" / "04" / "05" / "06" / "07" / "08" / "09" / "10" / "11" / "12") as month
-  year = colon (4digit) as year
-  year_with_month = colon (4digit) as year dash month_digits
+  year = ":" (4*4%x30-39) as year
+  year_with_month = ":" (4*4%x30-39) as year "-" month_digits
   date = year_with_month / year
-  amendment = (plus as amd_sep_plus / slash as amd_sep_slash) "A" (1*digit) as amd_number [(colon (4digit) as amd_year)]
-  corrigendum = (plus as amd_sep_plus / slash as amd_sep_slash) "AC" [(digit (*digit)) as cor_number] [(year_with_month / (colon (4digit) as year))]
+  amendment = {
+    (("+" as amd_sep_plus / "/" as amd_sep_slash) "A" (1*%x30-39) as amd_number
+     [(":" (4*4%x30-39) as amd_year)])
+  }
+  corrigendum = {
+    (("+" as amd_sep_plus / "/" as amd_sep_slash) "AC"
+     [(%x30-39 (*%x30-39)) as cor_number]
+     [(year_with_month / (":" (4*4%x30-39) as year))])
+  }
   supplement = (amendment / corrigendum) as supplement
   supplements = (*supplement) as supplements
-  edition = space "ED" (1*digit) as edition
-  adopted_org_prefix = "ISO" / "IEC" / "CISPR"
-  adopted_string = (adopted_org_prefix *(!supplement !edition any_noln_char)) as adopted_string
-  any_noln_char = %x01-09 / %x0B-10FFFF
-  fragment_identifier = ((stage_prefix / publisher) space number parts space "AMD" (1*digit) as amendment_number space "FRAG" (1*digit) as fragment_number) / ((stage_prefix / publisher) space number parts [year] (plus / slash) "A" (1*digit) as amendment_number [(colon (4digit) as amendment_year)] space "FRAG" (1*digit) as fragment_number)
+  edition = " " "ED" (1*%x30-39) as edition
+  adopted_string = (("ISO" / "IEC" / "CISPR") *((!(supplement) !(edition) (%x01-09 / %x0B-10FFFF)))) as adopted_string
+  fragment_identifier = {
+    (
+      ( (stage_prefix / publisher) " " number parts " " "AMD" (1*%x30-39) as amendment_number
+        " " "FRAG" (1*%x30-39) as fragment_number )
+      /
+      ( (stage_prefix / publisher) " " number parts [year] ("+" / "/") "A" (1*%x30-39) as amendment_number
+        [(":" (4*4%x30-39) as amendment_year)] " " "FRAG" (1*%x30-39) as fragment_number )
+    )
+  }
   identifier = fragment_identifier / ((stage_prefix / publisher) [(space adopted_string)] [(space type / slash type)] [(space number parts [version] [year])] supplements [edition])
 
   entry identifier: identifier
@@ -46,5 +63,27 @@ grammar PubidCenCenelec version "0.2.0" mode "v1" {
     accept "EN 302 326 V2.2.1:2026"
     accept "EN 302:2026"
     reject "nonsense"
+  }
+
+  bindings identifier {
+    publisher -> publisher (string)
+    copublisher -> copublisher (string)
+    type_with_stage -> type_with_stage (string)
+    type -> type (string)
+    number -> number (string)
+    version -> version (string)
+    part -> part (string)
+    month -> month (string)
+    year -> year (string)
+    amd_sep_plus -> amd_sep_plus (string)
+    amd_sep_slash -> amd_sep_slash (string)
+    amd_number -> amd_number (string)
+    amd_year -> amd_year (string)
+    cor_number -> cor_number (string)
+    adopted_string -> adopted_string (string)
+    edition -> edition (string)
+    amendment_number -> amendment_number (string)
+    amendment_year -> amendment_year (string)
+    fragment_number -> fragment_number (string)
   }
 }
