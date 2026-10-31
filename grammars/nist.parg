@@ -12,21 +12,39 @@
 # empty-alternative captures (:supplement_empty, addendum's str(""))
 # become bracketed optionals.
 #
-# Edition-2 typed-bindings surface. The caster (lib/pubid/nist/caster.rb)
-# dispatches on the edition-1 wrapper-capture keys, so every wrapper is
-# RE-ADDED at its original site with its body inlined to raw terms, and
-# bound with the passthrough type (any): a capture whose body contains
-# further captures materializes the inner-capture hash (a (string) bind
-# rejects it), which is exactly the Hash shape the caster's composite
-# branches read (stage -> {stage_id, stage_type}, edition_e ->
-# {edition_id}, revision -> {revision_prefix, revision_id}, ...).
-# Wrappers over pure raw content bind as (string) spans. Rule refs
-# wrapped by a capture are inlined (1*%x30-39 for the digits family,
-# upper_letter / lower_letter or raw hex for letter): a capture wrapping
-# a bare rule ref materializes element hashes. Bare rule refs adjacent
-# to a capture are parenthesized so the capture cannot drop.
-# supplement_empty stays deleted: zero-width marker, the bare
-# "NBS.CIRC.sup" form routes on circ_series.
+# Edition-2 typed-bindings surface, (any)-free. The caster (lib/pubid/
+# nist/caster.rb) dispatches on the edition-1 wrapper-capture keys, so
+# every wrapper is RE-ADDED at its original site with its body inlined
+# to raw terms. Only the two cross-engine-stable scalar/wrapper
+# vocabularies are used (the asme/bsi/itu conversions):
+# - (string) over pure-raw content: the capture body is inlined so it
+#   lowers to one scalar span (a capture wrapping a rule ref would
+#   materialize element hashes, which cannot bind (string)).
+# - (raw) over composite content: the raw pass-through delivers the
+#   inner-capture Hash exactly as the Parslet tree did, both engines
+#   keeping node form inside raw wrappers; the caster reads the leaves
+#   with to_s. The caster consumes every raw interior with to_s.
+# - POLYMORPHIC captures split per branch under two names, asme's
+#   designator/designator_code pattern: first_number (string) on the
+#   bare branches and first_number_composite (raw) on the branches
+#   carrying inner captures (second_number/second_number_composite
+#   alike). The PEG alternation order is untouched — only the capture
+#   name per branch changes. The caster maps the composite keys back
+#   onto the first_number/second_number dispatch.
+# - revision_letter keeps its capture name at both sites (the bare
+#   letter inside base_portion, the composite inside
+#   second_number_composite) but is deliberately UNBOUND: both
+#   occurrences ride inside (raw) interiors, and no caster branch
+#   dispatches on it.
+# - addendum captures its marker (addendum_marker) so the (raw)
+#   wrapper ALWAYS holds a hash: with the number optional absent the
+#   marker-less wrapper would lower to a bare span, whose top-level
+#   (raw) passthrough diverges per engine (span node vs plain string).
+#   A capture over the optional itself is likewise forbidden (#394:
+#   wasm emits "" when absent) — the optional wraps the capture.
+# Bare rule refs adjacent to a capture are parenthesized so the capture
+# cannot drop. supplement_empty stays deleted: zero-width marker, the
+# bare "NBS.CIRC.sup" form routes on circ_series.
 
 grammar PubidNist version "0.1.0" edition 2 {
   digit = %x30-39
@@ -114,15 +132,19 @@ grammar PubidNist version "0.1.0" edition 2 {
   # the accept-set equal to the edition-1 grammar. Wrapper captures
   # restored at their edition-1 sites (first_number outer + the
   # owmwp_date_number / number_with_volume / number_with_rev_year /
-  # number_with_letter_revision composites).
+  # number_with_letter_revision composites). The polymorphic wrapper is
+  # split per branch — first_number_composite (raw) on the branches
+  # carrying inner captures, first_number (string) on the bare ones —
+  # with the alternation order untouched.
   first_number = {
       (
         (
-          ( (2%x30-39) as owmwp_month "-" (2%x30-39) as owmwp_day "-"
-            (4%x30-39) as owmwp_year ) as owmwp_date_number
+          ( ( (2%x30-39) as owmwp_month "-" (2%x30-39) as owmwp_day "-"
+              (4%x30-39) as owmwp_year ) as owmwp_date_number
+          ) as first_number_composite
         )
-        / ( "ADHOC" )
-        / ( "div" 1*%x30-39 )
+        / ( "ADHOC" ) as first_number
+        / ( "div" 1*%x30-39 ) as first_number
         / (
             ( "January" / "February" / "September" / "November" / "December"
             / "October" / "August" / "June" / "March" / "April" / "July"
@@ -134,96 +156,107 @@ grammar PubidNist version "0.1.0" edition 2 {
             / "May" / "Jan" / "Feb" / "Mar" / "Apr" / "Jun" / "Jul" / "Aug"
             / "Sep" / "Oct" / "Nov" / "Dec" )
             1*%x30-39
-          )
+          ) as first_number
         / (
-            ( ( (1*%x30-39) as number ( "v" (1*%x30-39) as volume_suffix ) )
-              as number_with_volume )
+            ( ( ( (1*%x30-39) as number ( "v" (1*%x30-39) as volume_suffix ) )
+                as number_with_volume ) as first_number_composite )
           )
         / ( 1*%x30-39 "-"
             ( "VIII" / "VII" / "VI" / "III" / "II" / "IX" / "IV" / "X" / "V"
               / "I" )
-            "-" 1*%x30-39 [( "." 1*%x30-39 )] )
-        / ( 1*%x30-39 "GB" "-" 1*%x30-39 [%x41-5A] )
-        / ( 1*%x30-39 %x41-5A "-" 1*%x30-39 )
-        / ( ( "v" (1*%x30-39) as volume_number )
-            ( "n" (1*%x30-39) as issue_number ) )
-        / ( 1*%x30-39 "supprev" )
-        / ( 1*%x30-39 "e" 1*%x30-39 "rev" 1*%x30-39 )
+            "-" 1*%x30-39 [( "." 1*%x30-39 )] ) as first_number
+        / ( 1*%x30-39 "GB" "-" 1*%x30-39 [%x41-5A] ) as first_number
+        / ( 1*%x30-39 %x41-5A "-" 1*%x30-39 ) as first_number
         / (
-            ( ( (1*%x30-39) as number ( "rv" (1*%x30-39) as revision_year ) )
-              as number_with_rev_year )
+            ( ( "v" (1*%x30-39) as volume_number )
+              ( "n" (1*%x30-39) as issue_number ) ) as first_number_composite
+          )
+        / ( 1*%x30-39 "supprev" ) as first_number
+        / ( 1*%x30-39 "e" 1*%x30-39 "rev" 1*%x30-39 ) as first_number
+        / (
+            ( ( ( (1*%x30-39) as number ( "rv" (1*%x30-39) as revision_year ) )
+                as number_with_rev_year ) as first_number_composite )
           )
         / ( 1*%x30-39 "e" 1*%x30-39 "rev"
             ( "January" / "February" / "September" / "November" / "December"
             / "October" / "August" / "June" / "March" / "April" / "July"
             / "May" / "Jan" / "Feb" / "Mar" / "Apr" / "Jun" / "Jul" / "Aug"
             / "Sep" / "Oct" / "Nov" / "Dec" )
-            1*%x30-39 )
-        / ( 1*%x30-39 "e" 1*%x30-39 "supp" [1*%x30-39] )
+            1*%x30-39 ) as first_number
+        / ( 1*%x30-39 "e" 1*%x30-39 "supp" [1*%x30-39] ) as first_number
         / ( "e" 1*%x30-39 "rev"
             ( "January" / "February" / "September" / "November" / "December"
             / "October" / "August" / "June" / "March" / "April" / "July"
             / "May" / "Jan" / "Feb" / "Mar" / "Apr" / "Jun" / "Jul" / "Aug"
             / "Sep" / "Oct" / "Nov" / "Dec" )
-            1*%x30-39 )
-        / ( "e" 1*%x30-39 "supp" [1*%x30-39] )
-        / ( 1*%x30-39 "e" 1*%x30-39 )
-        / ( "e" 1*%x30-39 !("-" 1*%x30-39) )
-        / ( %x61-7A 1*%x30-39 )
+            1*%x30-39 ) as first_number
+        / ( "e" 1*%x30-39 "supp" [1*%x30-39] ) as first_number
+        / ( 1*%x30-39 "e" 1*%x30-39 ) as first_number
+        / ( "e" 1*%x30-39 !("-" 1*%x30-39) ) as first_number
+        / ( %x61-7A 1*%x30-39 ) as first_number
         / ( 1*%x30-39 "supp"
             ( "January" / "February" / "September" / "November" / "December"
             / "October" / "August" / "June" / "March" / "April" / "July"
             / "May" / "Jan" / "Feb" / "Mar" / "Apr" / "Jun" / "Jul" / "Aug"
             / "Sep" / "Oct" / "Nov" / "Dec" )
-            1*%x30-39 )
-        / ( 1*%x30-39 "supp" [1*%x30-39] )
+            1*%x30-39 ) as first_number
+        / ( 1*%x30-39 "supp" [1*%x30-39] ) as first_number
         / ( 1*%x30-39 "sup"
             ( "January" / "February" / "September" / "November" / "December"
             / "October" / "August" / "June" / "March" / "April" / "July"
             / "May" / "Jan" / "Feb" / "Mar" / "Apr" / "Jun" / "Jul" / "Aug"
             / "Sep" / "Oct" / "Nov" / "Dec" )
-            1*%x30-39 )
-        / ( 1*%x30-39 "sup" )
+            1*%x30-39 ) as first_number
+        / ( 1*%x30-39 "sup" ) as first_number
         / (
-            (1*%x30-39) as number
-            ( ("sp" / "pt" / "es" / "SP" / "PT" / "ES") as language_code )
-            ( !%x41-5A !%x30-39 !(%x41-5A / %x61-7A) !("-") !(".") )
-          )
-        / (
-            (1*%x30-39) as number
-            ( "pt" (1*%x30-39) as part_number )
-            ( "e" (1*%x30-39) as edition_year )
-          )
-        / (
-            (1*%x30-39) as number
-            ( "(" ( ("SP" / "PT" / "ES") as language_code ) ")" )
+            ( ( (1*%x30-39) as number
+                ( ("sp" / "pt" / "es" / "SP" / "PT" / "ES") as language_code )
+                ( !%x41-5A !%x30-39 !(%x41-5A / %x61-7A) !("-") !(".") ) )
+              as first_number_composite )
           )
         / (
             ( ( (1*%x30-39) as number
-                ( %x41-5A ) as letter_suffix
-                ( "r" (1*%x30-39) as revision_id ) )
-              as number_with_letter_revision )
+                ( "pt" (1*%x30-39) as part_number )
+                ( "e" (1*%x30-39) as edition_year ) )
+              as first_number_composite )
           )
         / (
-            1*%x30-39
-            [ (
-                ( ( "U" %x61-7A )
-                  / (
-                    ( !("r" %x30-39) (%x41-5A / %x61-7A) !(%x41-5A)
-                      !("ec" / "ndex" / "ndx" / "nsert" / "rrata" / "raft"
-                        / "pp" / "s" / "t" / "hi" / "iet" / "ort" / "r"
-                        / "p") )
-                    [1*%x30-39]
-                  ) )
-                !%x30-39
-              ) ]
+            ( ( (1*%x30-39) as number
+                ( "(" ( ("SP" / "PT" / "ES") as language_code ) ")" ) )
+              as first_number_composite )
           )
-      ) as first_number
+        / (
+            ( ( ( (1*%x30-39) as number
+                  ( %x41-5A ) as letter_suffix
+                  ( "r" (1*%x30-39) as revision_id ) )
+                as number_with_letter_revision ) as first_number_composite )
+          )
+        / (
+            ( 1*%x30-39
+              [ (
+                  ( ( "U" %x61-7A )
+                    / (
+                      ( !("r" %x30-39) (%x41-5A / %x61-7A) !(%x41-5A)
+                        !("ec" / "ndex" / "ndx" / "nsert" / "rrata" / "raft"
+                          / "pp" / "s" / "t" / "hi" / "iet" / "ort" / "r"
+                          / "p") )
+                      [1*%x30-39]
+                    ) )
+                  !%x30-39
+                ) ]
+            ) as first_number
+          )
+      )
   }
 
+  # The polymorphic wrapper is split per branch —
+  # second_number_composite (raw) on the branches carrying inner
+  # captures (revision_letter, number_only+edition_id, revision_simple),
+  # second_number (string) on the bare ones — with the alternation
+  # order untouched.
   second_number = {
       (
-          ( !( "January" / "February" / "September" / "November" / "December"
+          ( ( !( "January" / "February" / "September" / "November" / "December"
                / "October" / "August" / "June" / "March" / "April" / "July"
                / "May" / "Jan" / "Feb" / "Mar" / "Apr" / "Jun" / "Jul" / "Aug"
                / "Sep" / "Oct" / "Nov" / "Dec" )
@@ -231,30 +264,34 @@ grammar PubidNist version "0.1.0" edition 2 {
             ( ( ( (1*%x30-39) as number_only "r"
                   ( %x41-5A / %x61-7A ) as letter )
                 as revision_letter ) ) )
+            as second_number_composite )
         / ( 1*%x30-39 ( ("supp" / "sup") )
-            ( !%x30-39 !(%x41-5A / %x61-7A) ) )
-        / ( 1*%x30-39 ("r") 1*%x30-39 ( "U" %x61-7A ) )
-        / ( 1*%x30-39 ("r") 1*%x30-39 (%x41-5A / %x61-7A) )
-        / ( (1*%x30-39) as number_only
-            ( "r" ( (1*%x30-39 ["." 1*%x30-39]) as edition_id ) ) )
-        / ( 1*%x30-39 ("_") 1*%x30-39 "-" 1*%x30-39 [%x41-5A] )
-        / ( %x61-7A "-" 1*%x30-39 )
-        / ( 1*%x30-39 ("pt") 1*%x30-39 !("-") )
-        / ( 1*%x30-39 %x41-5A )
+            ( !%x30-39 !(%x41-5A / %x61-7A) ) ) as second_number
+        / ( 1*%x30-39 ("r") 1*%x30-39 ( "U" %x61-7A ) ) as second_number
+        / ( 1*%x30-39 ("r") 1*%x30-39 (%x41-5A / %x61-7A) ) as second_number
         / (
-            ( ( ( (1*%x30-39) as number_only ) ("r")
-                (%x41-5A / %x61-7A) )
-              as revision_letter )
+            ( ( (1*%x30-39) as number_only
+                ( "r" ( (1*%x30-39 ["." 1*%x30-39]) as edition_id ) ) )
+              as second_number_composite )
+          )
+        / ( 1*%x30-39 ("_") 1*%x30-39 "-" 1*%x30-39 [%x41-5A] ) as second_number
+        / ( %x61-7A "-" 1*%x30-39 ) as second_number
+        / ( 1*%x30-39 ("pt") 1*%x30-39 !("-") ) as second_number
+        / ( 1*%x30-39 %x41-5A ) as second_number
+        / (
+            ( ( ( ( (1*%x30-39) as number_only ) ("r")
+                  (%x41-5A / %x61-7A) )
+                as revision_letter ) as second_number_composite )
           )
         / ( "r" (%x41-5A / %x61-7A) ) as revision_letter_suffix
         / (
-            ( ( "r" ( (1*%x30-39 ["." 1*%x30-39]) as edition_id ) )
-              as revision_simple )
+            ( ( ( "r" ( (1*%x30-39 ["." 1*%x30-39]) as edition_id ) )
+                as revision_simple ) as second_number_composite )
           )
-        / ( "NCNR" )
-        / ( "PERMIS" )
-        / ( "BFRL" )
-        / ( 1*3%x41-5A !(%x61-7A) )
+        / ( "NCNR" ) as second_number
+        / ( "PERMIS" ) as second_number
+        / ( "BFRL" ) as second_number
+        / ( 1*3%x41-5A !(%x61-7A) ) as second_number
         / (
             ( ( 1*%x30-39
                 [ (
@@ -275,9 +312,9 @@ grammar PubidNist version "0.1.0" edition 2 {
                     / "Apr" / "Jun" / "Jul" / "Aug" / "Sep" / "Oct" / "Nov"
                     / "Dec" )
                     1*%x30-39 "/" ) ) )
-            / ( %x61-7A !%x30-39 )
-          )
-      ) ) as second_number
+            / ( %x61-7A !%x30-39 ) )
+          ) as second_number
+      )
   }
 
   # Wrapper captures restored per alternative, as in edition 1.
@@ -484,9 +521,9 @@ grammar PubidNist version "0.1.0" edition 2 {
     )
   }
   addendum = {
-    ( ( ( ( "-add" / ".add" / " Add." ) ) )
+    ( ( ( ( "-add" / ".add" / " Add." ) ) as addendum_marker )
       [( " " / "-" )]
-      ( [ (1*%x30-39) ] as addendum_number )
+      ( [ ( (1*%x30-39) ) as addendum_number ] )
     ) as addendum
   }
   supplement = {
@@ -731,6 +768,7 @@ grammar PubidNist version "0.1.0" edition 2 {
     update_number -> update_number (string)
     update_year -> update_year (string)
     update_month -> update_month (string)
+    addendum_marker -> addendum_marker (string)
     addendum_number -> addendum_number (string)
     supplement_with_rev -> supplement_with_rev (string)
     supp_month_start -> supp_month_start (string)
@@ -760,43 +798,48 @@ grammar PubidNist version "0.1.0" edition 2 {
     appendix -> appendix (string)
     n_letter_part -> n_letter_part (string)
 
-    # Wrapper captures (caster dispatch keys): their values are the
-    # inner-capture hashes the caster's composite branches read, so
-    # they bind with the passthrough type (any) — a (string) bind
-    # rejects Hash captures.
-    first_number -> first_number (any)
-    second_number -> second_number (any)
-    stage -> stage (any)
-    owmwp_date_number -> owmwp_date_number (any)
-    number_with_volume -> number_with_volume (any)
-    number_with_rev_year -> number_with_rev_year (any)
-    number_with_letter_revision -> number_with_letter_revision (any)
-    revision_letter -> revision_letter (any)
-    revision_simple -> revision_simple (any)
-    edition_e -> edition_e (any)
-    edition_r_with_space_letter -> edition_r_with_space_letter (any)
-    edition_r_with_space -> edition_r_with_space (any)
-    edition_r_no_space_letter -> edition_r_no_space_letter (any)
-    edition_r_no_space -> edition_r_no_space (any)
-    edition_rev -> edition_rev (any)
-    edition_historical -> edition_historical (any)
-    edition_dash_year -> edition_dash_year (any)
-    date -> date (any)
-    dated_date -> dated_date (any)
-    decimal_number -> decimal_number (any)
-    letter_number -> letter_number (any)
-    second_number_edition_year -> second_number_edition_year (any)
-    fips_month_year_after_part -> fips_month_year_after_part (any)
-    revision -> revision (any)
-    update -> update (any)
-    addendum -> addendum (any)
-    supplement_date_range -> supplement_date_range (any)
-    supplement_date -> supplement_date (any)
-    supplement_slash_year -> supplement_slash_year (any)
-    supplement_dash_slash_year -> supplement_dash_slash_year (any)
-    base_portion -> base_portion (any)
-    circ_series -> circ_series (any)
-    implicit_supplement -> implicit_supplement (any)
+    # Composite wrapper captures (caster dispatch keys): their values
+    # are the inner-capture hashes the caster's composite branches read,
+    # so they bind with the cross-engine-stable (raw) pass-through — the
+    # caster reads the interior leaves with to_s. The polymorphic
+    # number wrappers split per branch: first_number/second_number
+    # (string) over the bare branches, *_composite (raw) over the
+    # branches carrying inner captures. revision_letter is deliberately
+    # unbound: both its occurrences ride inside (raw) interiors.
+    first_number -> first_number (string)
+    first_number_composite -> first_number_composite (raw)
+    second_number -> second_number (string)
+    second_number_composite -> second_number_composite (raw)
+    stage -> stage (raw)
+    owmwp_date_number -> owmwp_date_number (raw)
+    number_with_volume -> number_with_volume (raw)
+    number_with_rev_year -> number_with_rev_year (raw)
+    number_with_letter_revision -> number_with_letter_revision (raw)
+    revision_simple -> revision_simple (raw)
+    edition_e -> edition_e (raw)
+    edition_r_with_space_letter -> edition_r_with_space_letter (raw)
+    edition_r_with_space -> edition_r_with_space (raw)
+    edition_r_no_space_letter -> edition_r_no_space_letter (raw)
+    edition_r_no_space -> edition_r_no_space (raw)
+    edition_rev -> edition_rev (raw)
+    edition_historical -> edition_historical (raw)
+    edition_dash_year -> edition_dash_year (raw)
+    date -> date (raw)
+    dated_date -> dated_date (raw)
+    decimal_number -> decimal_number (raw)
+    letter_number -> letter_number (raw)
+    second_number_edition_year -> second_number_edition_year (raw)
+    fips_month_year_after_part -> fips_month_year_after_part (raw)
+    revision -> revision (raw)
+    update -> update (raw)
+    addendum -> addendum (raw)
+    supplement_date_range -> supplement_date_range (raw)
+    supplement_date -> supplement_date (raw)
+    supplement_slash_year -> supplement_slash_year (raw)
+    supplement_dash_slash_year -> supplement_dash_slash_year (raw)
+    base_portion -> base_portion (raw)
+    circ_series -> circ_series (raw)
+    implicit_supplement -> implicit_supplement (raw)
   }
 
   test {
@@ -807,6 +850,29 @@ grammar PubidNist version "0.1.0" edition 2 {
     accept "NBS CIRC 25e"
     accept "NIST NCSTAR 1nA"
     accept "NBS HR 1-1nA"
+    # (raw) wrapper + split-wrapper coverage: every composite branch
+    # family rides a corpus case so the cross-engine gate replays it.
+    accept "NIST CSWP 27 ipd"
+    accept "NBS CIRC 467v1"
+    accept "NIST IR 8278Ar1 ipd"
+    accept "NIST SP 260-126rev2013"
+    accept "NBS HB 44e2-1955"
+    accept "NIST SP 800-63A-4"
+    accept "NBS FIPS 100-1-1991"
+    accept "NBS LCIRC 118supp3/1926"
+    accept "NIST HB 135e2022/Upd1-202205"
+    accept "NIST SP 800-38a-add"
+    accept "NBS CIRC 101e2sup"
+    accept "NBS LCIRC 145r11/1925"
+    accept "NIST OWMWP 06-13e2018"
+    accept "NIST SP 800-101 Rev. 1"
+    accept "NIST SP 800-56A"
+    accept "NIST SP 801-errata"
+    accept "NIST SP 800-53 r5"
+    accept "NIST SP 800-53r5A"
+    accept "NIST SP 800-38A Add."
+    accept "NIST.FIPS.197-upd"
+    accept "NBS TN 467pt1 Add."
     reject "nonsense"
   }
 }
