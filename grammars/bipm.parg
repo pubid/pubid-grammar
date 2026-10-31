@@ -37,26 +37,131 @@ grammar PubidBipm version "0.1.0" edition 2 {
   ordinal = "st" / "nd" / "rd" / "th"
   meeting_word_fr = "Réunion" / "réunion"
 
-  committee_short = ((group space type_abbrev [(space number)] [(space year_paren)]) as committee_short)
-  committee_long_en = ((group space type_name_en [(space number)] [(space year_paren_nolang)]) as committee_long_en)
-  committee_long_fr = ((type_name_fr [(space number)] space connective space group [(space year_paren_nolang)]) as committee_long_fr)
-  committee_group_fr = ((group space type_name_fr [(space number)] [(space year_paren_nolang)]) as committee_long_fr)
+  committee_short = {
+    (
+      (
+        group
+        space
+        type_abbrev
+        [(space number)]
+        [(space year_paren)]
+      ) as committee_short
+    )
+  }
+  committee_long_en = {
+    (
+      (
+        group
+        space
+        type_name_en
+        [(space number)]
+        [(space year_paren_nolang)]
+      ) as committee_long_en
+    )
+  }
+  committee_long_fr = {
+    (
+      (
+        type_name_fr
+        [(space number)]
+        space
+        connective
+        space
+        group
+        [(space year_paren_nolang)]
+      ) as committee_long_fr
+    )
+  }
+  committee_group_fr = {
+    (
+      (
+        group
+        space
+        type_name_fr
+        [(space number)]
+        [(space year_paren_nolang)]
+      ) as committee_long_fr
+    )
+  }
   committee_bare = ((group space number [(space year_paren)]) as committee_bare)
 
-  meeting_en = (((group space number ordinal space "Meeting" [(space year_paren)]) / (group space "Meeting" space number [(space year_paren)])) as meeting_en)
-  meeting_fr = (((group space number "<sup>e</sup>" space "réunion" [(space year_paren)]) / (group space number "e" space meeting_word_fr [(space year_paren)]) / (group space meeting_word_fr space number [(space year_paren)])) as meeting_fr)
+  meeting_en = {
+    (
+      (
+        (group space number ordinal space "Meeting" [(space year_paren)])
+        / (group space "Meeting" space number [(space year_paren)])
+      ) as meeting_en
+    )
+  }
+  meeting_fr = {
+    (
+      (
+        (group space number "<sup>e</sup>" space "réunion" [(space year_paren)])
+        / (group space number "e" space meeting_word_fr [(space year_paren)])
+        / (group space meeting_word_fr space number [(space year_paren)])
+      ) as meeting_fr
+    )
+  }
 
-  metrologia = ("Metrologia" [(space (1*digit) as volume [(space (1*(digit / letter)) as issue [(space (1*(digit / letter)) as article)])])]) as metrologia
+  metrologia = {
+    (
+      "Metrologia"
+      [
+        (
+          space (1*digit) as volume
+          [
+            (
+              space (1*(digit / letter)) as issue
+              [
+                (space (1*(digit / letter)) as article)
+              ]
+            )
+          ]
+        )
+      ]
+    ) as metrologia
+  }
 
   edition = ((1*digit) "e") as edition
   version = ("v" 1*(digit / dot)) as version
   years = ((1*digit) [(slash (1*digit))]) as years
-  si_brochure = (("BIPM SI Brochure" / "SI Brochure") space ["sur le SI" space] edition space version space "(" years ", " lang ")") as si_brochure
+  si_brochure = {
+    (
+      ("BIPM SI Brochure" / "SI Brochure")
+      space
+      ["sur le SI" space]
+      edition
+      space
+      version
+      space
+      "(" years ", " lang ")"
+    ) as si_brochure
+  }
   brochure_variant = (("Appendix" space (1*digit)) / "Concise" / "FAQ") as variant
-  si_brochure_variant = (("BIPM SI Brochure" / "SI Brochure") space brochure_variant) as si_brochure_variant
-  si_brochure_section = (("BIPM SI Brochure" / "SI Brochure") [(space "Part" space (1*digit) as part)]) as si_brochure_section
+  si_brochure_variant = {
+    (
+      ("BIPM SI Brochure" / "SI Brochure")
+      space
+      brochure_variant
+    ) as si_brochure_variant
+  }
+  si_brochure_section = {
+    (
+      ("BIPM SI Brochure" / "SI Brochure")
+      [(space "Part" space (1*digit) as part)]
+    ) as si_brochure_section
+  }
 
-  appendix_part = "Appendix" space (1*digit) as appendix [(space "Annex" space (1*digit) as annex)] space "Part" space (((1*digit) [(dot (1*digit))]) as part)
+  appendix_part = {
+    "Appendix"
+    space
+    (1*digit) as appendix
+    [(space "Annex" space (1*digit) as annex)]
+    space
+    "Part"
+    space
+    (((1*digit) [(dot (1*digit))]) as part)
+  }
   mep_code = (1*(digit / letter)) as mep_code
   report_code = ("BIPM-" (1*digit) slash (1*digit)) as report_code
   mep_body = (("SI MEP" space mep_code) / ("Rapport" space report_code))
@@ -65,8 +170,24 @@ grammar PubidBipm version "0.1.0" edition 2 {
   guide_body = group "-GD-" guide_kind dash (1*digit) as number
   guide = (("BIPM" space guide_body space appendix_part) / guide_body) as guide
 
-  group_leading = meeting_en / meeting_fr / committee_short / committee_long_en / committee_group_fr / committee_bare
-  identifier = metrologia / si_brochure / si_brochure_variant / si_brochure_section / mep / guide / committee_long_fr / group_leading
+  group_leading = {
+    meeting_en
+    / meeting_fr
+    / committee_short
+    / committee_long_en
+    / committee_group_fr
+    / committee_bare
+  }
+  identifier = {
+    metrologia
+    / si_brochure
+    / si_brochure_variant
+    / si_brochure_section
+    / mep
+    / guide
+    / committee_long_fr
+    / group_leading
+  }
 
   entry identifier: identifier
 
