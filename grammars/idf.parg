@@ -1,8 +1,18 @@
 # Port of lib/pubid/idf/parser.rb: IDF identifiers and their
 # supplements. The ISO joint form (ISO 5537|IDF 26) inlines these rules
 # as idf_* in iso.pg.
+#
+# Edition-2 notes: number_with_part inlines the number and
+# part_and_subpart bodies fully to raw terms at the capture site (a
+# capture wrapping rule refs expands to element hashes, while the
+# inlined body binds as one scalar string). The supplement base wrapper
+# capture drops (the bindings cannot nest); within a supplement the base
+# portion captures under base_* names so the supplement layer keeps the
+# canonical number_with_part/date/type_with_stage captures — the values
+# the builder read at top level — mirroring the csa part_* per-position
+# convention.
 
-grammar PubidIdf version "0.1.0" mode "v1" {
+grammar PubidIdf version "0.1.0" edition 2 {
   digit = %x30-39
   word_char = %x30-39 / %x41-5A / %x61-7A / %x5F
   dash = "-" / "‑" / "‐"
@@ -17,23 +27,96 @@ grammar PubidIdf version "0.1.0" mode "v1" {
   month_digits = 2*digit
   day_digits = 2*digit
   publisher = "IDF" as publisher
-  number = 1*5word_char
-  part_and_subpart = dash [space] 1*word_char *1(dash 1*word_char)
-  number_with_part = (number [part_and_subpart]) as number_with_part
-  date = (year_digits [(dash month_digits)] [(dash day_digits)]) as date
-  stage_iteration = dot digit as stage_iteration
-  second_part = number_with_part [stage_iteration] [space] [(colon date)]
+  number_with_part = {
+    (
+      1*5(%x30-39 / %x41-5A / %x61-7A / %x5F)
+      [
+        dash [" "]
+        1*(%x30-39 / %x41-5A / %x61-7A / %x5F)
+        *1( dash 1*(%x30-39 / %x41-5A / %x61-7A / %x5F) )
+      ]
+    ) as number_with_part
+  }
+  date = {
+    (
+      ("19" / "20") 2*digit !digit
+      [(dash 2*digit)]
+      [(dash 2*digit)]
+    ) as date
+  }
+  stage_iteration = "." digit as stage_iteration
+  second_part = number_with_part [stage_iteration] [" "] [( ":" date )]
   all_parts = "(all parts)" as all_parts
-  language = "(" *(1*lower [","] / (one_of_efards [slash])) as languages ")"
+  language = "(" ( *( 1*lower [","] / ( one_of_efards [slash] ) ) ) as languages ")"
   one_of_efards = %x45 / %x46 / %x41 / %x52 / %x44 / %x53
-  third_part = [space] [language] [all_parts]
-  identifier_publisher_no_third = publisher [space] [slash] [type_with_stage] [space] second_part
+  third_part = [" "] [language] [all_parts]
+  identifier_publisher_no_third = {
+    publisher [" "] ["/"] [type_with_stage] [" "] second_part
+  }
   identifier_publisher = identifier_publisher_no_third third_part
-  type_with_stage = alt from_table "idf_typed_stages" column "abbr" as type_with_stage [digit as stage_iteration space]
-  supplement_type_with_stage = alt from_table "idf_typed_stages_supplements" column "abbr" as type_with_stage
-  supplement_identifier_no_third = (identifier_publisher_no_third as base) [space] slash [space] supplement_type_with_stage [space] second_part
+  type_with_stage = {
+    (
+      alt from_table "idf_typed_stages" column "abbr"
+    ) as type_with_stage
+    [digit as stage_iteration " "]
+  }
+  # Supplement side: the supplement layer keeps the canonical
+  # type_with_stage/number_with_part/date captures (what the builder
+  # read at top level); its base portion captures under base_* names so
+  # the two layers never collapse onto each other.
+  supplement_type_with_stage = {
+    (
+      alt from_table "idf_typed_stages_supplements" column "abbr"
+    ) as type_with_stage
+  }
+  base_number_with_part = {
+    (
+      1*5(%x30-39 / %x41-5A / %x61-7A / %x5F)
+      [
+        dash [" "]
+        1*(%x30-39 / %x41-5A / %x61-7A / %x5F)
+        *1( dash 1*(%x30-39 / %x41-5A / %x61-7A / %x5F) )
+      ]
+    ) as base_number_with_part
+  }
+  base_date = {
+    (
+      ("19" / "20") 2*digit !digit
+      [(dash 2*digit)]
+      [(dash 2*digit)]
+    ) as base_date
+  }
+  base_stage_iteration = "." digit as base_stage_iteration
+  base_second_part = base_number_with_part [base_stage_iteration] [" "] [( ":" base_date )]
+  base_type_with_stage = {
+    (
+      alt from_table "idf_typed_stages" column "abbr"
+    ) as base_type_with_stage
+    [digit as base_stage_iteration " "]
+  }
+  supplement_base_no_third = {
+    publisher [" "] ["/"] [base_type_with_stage] [" "] base_second_part
+  }
+  supplement_second_part = number_with_part [stage_iteration] [" "] [( ":" date )]
+  supplement_identifier_no_third = {
+    supplement_base_no_third [" "] "/" [" "] supplement_type_with_stage [" "] supplement_second_part
+  }
   supplement_identifier = supplement_identifier_no_third third_part
   identifier = supplement_identifier / identifier_publisher
 
   entry identifier: identifier
+
+  bindings identifier {
+    publisher -> publisher (string)
+    number_with_part -> number_with_part (string)
+    base_number_with_part -> base_number_with_part (string)
+    date -> date (string)
+    base_date -> base_date (string)
+    stage_iteration -> stage_iteration (string)
+    base_stage_iteration -> base_stage_iteration (string)
+    type_with_stage -> type_with_stage (string)
+    base_type_with_stage -> base_type_with_stage (string)
+    all_parts -> all_parts (string)
+    languages -> languages (string)
+  }
 }

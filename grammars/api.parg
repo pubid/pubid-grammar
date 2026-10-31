@@ -1,24 +1,69 @@
 # Port of lib/pubid/api/parser.rb: API MPMS/typed/typeless identifiers
 # with slash-combined second identifiers. The API MPMP normalization
 # stays binder-side.
+#
+# Edition-2 notes: the combined form drops its first/second wrapper
+# captures (a wrapper over rule refs expands to element hashes, and the
+# bindings cannot nest); the second identifier's fields capture under
+# second_* names so they never collapse onto the first's, mirroring the
+# csa part_* / iec supp_* position-scoped conventions.
 
-grammar PubidApi version "0.1.0" mode "v1" {
-  number_with_part = (1*num_letter_char) as number [(dash (1*num_letter_char) as part)]
+grammar PubidApi version "0.1.0" edition 2 {
   num_letter_char = %x30-39 / %x41-5A
   doc_type = ("MPMS" / "BULL" / "SPEC" / "STD" / "RP" / "TR" / "COS" / "PUBL") as type
-  chapter_notation = space "CH" space (1*digit) as chapter
-  digits_with_letter = (1*digit [*upper])
-  year = (4digit) as year
-  date_dash = dash year
-  date_colon = colon year
-  reaffirmation = space "(R" year ")"
-  part_notation = ", Part " (1*digit) as part_number
-  mpms_identifier = "API " "MPMS" as type chapter_notation [(dot digits_with_letter as section)] [(dot digits_with_letter as subsection)] [(date_dash / date_colon)]
-  typed_identifier = "API " doc_type space number_with_part [part_notation] [(date_dash / date_colon)] [reaffirmation]
-  typeless_identifier = "API " number_with_part [part_notation] [(date_dash / date_colon)] [reaffirmation]
-  second_identifier = doc_type space number_with_part [part_notation] [(date_dash / date_colon)]
-  combined_identifier = ((mpms_identifier / typed_identifier / typeless_identifier) as first) slash (second_identifier as second) [edition_notation]
-  edition_notation = ", " (1*digit) as edition_number ("st" / "nd" / "rd" / "th") " edition"
+  second_doc_type = ("MPMS" / "BULL" / "SPEC" / "STD" / "RP" / "TR" / "COS" / "PUBL") as second_type
+  chapter_notation = " CH " ( 1*digit ) as chapter
+  year = ( 4digit ) as year
+  second_year = ( 4digit ) as second_year
+  date_dash = "-" year
+  date_colon = ":" year
+  second_date_dash = "-" second_year
+  second_date_colon = ":" second_year
+  reaffirmation = " (R" year ")"
+  part_notation = ", Part " ( 1*digit ) as part_number
+  second_part_notation = ", Part " ( 1*digit ) as second_part_number
+  number_with_part = {
+    (
+      ( 1*(%x30-39 / %x41-5A) ) as number
+      [ "-" ( 1*(%x30-39 / %x41-5A) ) as part ]
+    )
+  }
+  second_number_with_part = {
+    (
+      ( 1*(%x30-39 / %x41-5A) ) as second_number
+      [ "-" ( 1*(%x30-39 / %x41-5A) ) as second_part ]
+    )
+  }
+  mpms_identifier = {
+    "API " "MPMS" as type chapter_notation
+    [ ( "." ( 1*digit [*upper] ) as section ) ]
+    [ ( "." ( 1*digit [*upper] ) as subsection ) ]
+    [(date_dash / date_colon)]
+  }
+  typed_identifier = {
+    "API " doc_type " " number_with_part
+    [part_notation]
+    [(date_dash / date_colon)]
+    [reaffirmation]
+  }
+  typeless_identifier = {
+    "API " number_with_part
+    [part_notation]
+    [(date_dash / date_colon)]
+    [reaffirmation]
+  }
+  second_identifier = {
+    second_doc_type " " second_number_with_part
+    [second_part_notation]
+    [(second_date_dash / second_date_colon)]
+  }
+  edition_notation = ", " ( 1*digit ) as edition_number ("st" / "nd" / "rd" / "th") " edition"
+  combined_identifier = {
+    ( mpms_identifier / typed_identifier / typeless_identifier )
+    "/"
+    second_identifier
+    [edition_notation]
+  }
   identifier = combined_identifier / mpms_identifier / typed_identifier / typeless_identifier
   upper = %x41-5A
   digit = %x30-39
@@ -28,6 +73,23 @@ grammar PubidApi version "0.1.0" mode "v1" {
   dot = "."
   space = " "
   entry identifier: identifier
+
+  bindings identifier {
+    type -> type (string)
+    second_type -> second_type (string)
+    chapter -> chapter (string)
+    section -> section (string)
+    subsection -> subsection (string)
+    year -> year (string)
+    second_year -> second_year (string)
+    number -> number (string)
+    part -> part (string)
+    second_number -> second_number (string)
+    second_part -> second_part (string)
+    part_number -> part_number (string)
+    second_part_number -> second_part_number (string)
+    edition_number -> edition_number (string)
+  }
 
   test {
     accept "API RP 1632-1987"

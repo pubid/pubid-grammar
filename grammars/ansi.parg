@@ -1,21 +1,36 @@
 # Port of lib/pubid/ansi/parser.rb: ANSI [copublishers] [Std] number
 # [:year][(languages)]. The number alternatives cover letter-prefixed
 # forms (C37.06.1, N323A) and plain dotted forms (802.1b-1995).
+#
+# Edition-2 notes: letter_head_part / plain_part / year_digits bodies are
+# inlined at the capture sites (a capture wrapping a rule ref expands to
+# element hashes, while the inlined body binds as one scalar string).
+# The copublishers wrapper stays a capture so the tree keeps the
+# {copublishers: [...]} shape the builder reads; the repeats collect by
+# occurrence under copublishers[].copublisher.
 
-grammar PubidAnsi version "0.1.0" mode "v1" {
+grammar PubidAnsi version "0.1.0" edition 2 {
   organization = "ISO" / "IEC" / "IEEE" / "SAE" / "ASME" / "ASTM"
-  copublisher_item = slash [space] organization as copublisher
-  copublishers = (1*copublisher_item) as copublishers
+  # The copublisher body is inlined to raw terms: bare rule refs next to
+  # a capture drop the capture or materialize stray {slash:} nodes.
+  copublisher_item = "/" [" "] ( "ISO" / "IEC" / "IEEE" / "SAE" / "ASME" / "ASTM" ) as copublisher
+  copublishers = ( 1*copublisher_item ) as copublishers
   std_keyword = ["Std "]
-  letter_head_part = 1*upper 1*digit *3(dot 1*digit) [*1upper] [(dash 1*digit)]
-  plain_part = 1*digit *2(dot 1*digit [*1lower]) [(dash 1*digit)]
-  number_with_part = (letter_head_part / plain_part) as number_with_part
-  date = colon year_digits as date
-  year_digits = ("19" / "20") 2*digit !digit
-  languages = (*(2*lower [","])) as languages
+  number_with_part = {
+    (
+      ( 1*(%x41-5A) 1*(%x30-39) *3("." 1*(%x30-39)) [*1(%x41-5A)] [("-" 1*(%x30-39))] )
+      / ( 1*(%x30-39) *2("." 1*(%x30-39) [*1(%x61-7A)]) [("-" 1*(%x30-39))] )
+    ) as number_with_part
+  }
+  date = ":" ( ("19" / "20") 2*(%x30-39) !(%x30-39) ) as date
+  languages = ( *( 2*(%x61-7A) [","] ) ) as languages
   language = "(" languages ")"
-  identifier_with_copublishers = "ANSI" as publisher copublishers space std_keyword number_with_part [date] [language]
-  identifier_sole = "ANSI" as publisher space std_keyword number_with_part [date] [language]
+  identifier_with_copublishers = {
+    "ANSI" as publisher copublishers " " ["Std "] number_with_part [date] [language]
+  }
+  identifier_sole = {
+    "ANSI" as publisher " " ["Std "] number_with_part [date] [language]
+  }
   identifier = identifier_with_copublishers / identifier_sole
   upper = %x41-5A
   lower = %x61-7A
@@ -26,6 +41,14 @@ grammar PubidAnsi version "0.1.0" mode "v1" {
   slash = "/"
   space = " "
   entry identifier: identifier
+
+  bindings identifier {
+    publisher -> publisher (string)
+    copublisher -> copublishers[].copublisher (string)
+    number_with_part -> number_with_part (string)
+    date -> date (string)
+    languages -> languages (string)
+  }
 
   test {
     accept "ANSI C63.4"
