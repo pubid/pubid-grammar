@@ -8,23 +8,48 @@
 # and title portions. The Aiee/Ire/Nesc sub-parsers are `use`d. The
 # huge parse() normalization pipeline (rev/relaton/joint-stage
 # spellings, entity decoding, paren balancing) is Tier-3 preprocessing
-# outside the grammar. Source deviations: empty-marker captures
-# (:iso_published, :part_dash, :printed_dash_year, :printed_month_year,
-# :iec_label_dash) become bracketed optionals (which optional branch
-# matched is derivable, so no information is lost); the duplicated
+# outside the grammar. Source deviations: the duplicated
 # combined_aiee_identifier branch is emitted once; "Sept"/"Sep"
 # (and dotted-month) orders are lint-forced longest-first.
+#
+# Edition-2 conversion. The builder reads flat scalars with
+# extract_value and dispatches on wrapper hashes, so leaf captures bind
+# (string) and branch/wrapper captures bind (raw):
+# - the zero-width markers are re-spelled as real-token captures (the
+#   cie separator precedent): printed_dash_year / printed_month_year
+#   capture their branch's leading separator (presence is what every
+#   builder read checks), iec_label_dash captures the dash it marked,
+#   the dead stage_embedded marker is dropped (nothing read it), and
+#   iso_published captures the joint head choice (raw) — every read of
+#   it sits behind a nil-iso_stage gate or the iso_stage elsif, so the
+#   wider presence set is inert exactly where v1's was narrow.
+# - the ([dash]) as draft_dash / ([rev_sep] as rev_sep) /
+#   ([...] as suffix) capture-over-OPTIONAL landmines are re-spelled
+#   [ (x) as y ] (parsanol-ruby#394: when the optional does not
+#   participate, ruby/native omit the key but wasm emits "").
+# - year_digits / digits / yearish / type_word bodies inline at every
+#   capture site (a capture over a sequence/repetition rule ref expands
+#   to node lists); pure literal/class alternation refs (month_name,
+#   publisher, organization, dash, rev_sep...) stay refs and bind as
+#   spans.
+# - nested-only captures that collide with a top-level name rename with
+#   the builder (a bound leak would surface the nested value where v1
+#   kept the key absent): draft_date's month/year/day/dash_* ->
+#   draft_date_*, the draft_version rule's dash_* -> draft_version_*,
+#   fdraft's month/year -> fdraft_*, reaffirmed's year ->
+#   reaffirmed_year. The builder reads the renamed keys at their nested
+#   sites only.
 
 use aiee
 use ire
 use nesc
 
-grammar PubidIeee version "0.1.0" mode "v1" {
+grammar PubidIeee version "0.1.0" edition 2 {
   digit = %x30-39
   upper = %x41-5A
   lower = %x61-7A
-  letter = upper / lower
-  digits = 1*digit
+  letter = %x41-5A / %x61-7A
+  digits = 1*%x30-39
   space = " "
   dash = "-" / "&#x2013;" / "–"
   dot = "."
@@ -36,34 +61,54 @@ grammar PubidIeee version "0.1.0" mode "v1" {
   non_rbracket = %x01-5C / %x5E-10FFFF
   non_comma_rparen = %x01-28 / %x2A-2B / %x2D-10FFFF
   non_digit_nl = %x01-09 / %x0B-2F / %x3A-10FFFF
-  alnum_char = digit / upper / lower
+  alnum_char = %x30-39 / %x41-5A / %x61-7A
 
-  year_digits = (("19" / "20") 2digit 0*2lower !digits)
+  year_digits = (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39))
   month_numeric = (("0" %x31-39)) / (("1" %x30-32))
-  month_name = "Sept." / "Oct." / "Nov." / "Dec." / "Jan." / "Feb." / "Mar." / "Apr." / "Jun." / "Jul." / "Aug." / "September" / "November" / "December" / "February" / "August" / "June" / "January" / "March" / "April" / "October" / "July" / "May" / "Sept" / "Jan" / "Feb" / "Mar" / "Apr" / "Jun" / "Jul" / "Aug" / "Sep" / "Oct" / "Nov" / "Dec"
+  month_name = {
+    "Sept." / "Oct." / "Nov." / "Dec." / "Jan." / "Feb." / "Mar." / "Apr." / "Jun." / "Jul." / "Aug." / "September" / "November" / "December" / "February" / "August" / "June" / "January" / "March" / "April" / "October" / "July" / "May" / "Sept" / "Jan" / "Feb" / "Mar" / "Apr" / "Jun" / "Jul" / "Aug" / "Sep" / "Oct" / "Nov" / "Dec"
+  }
 
-  date_with_month_text = ((month_name) as month [space] ((year_digits)) as year)
-  date_with_month_numeric = (((year_digits)) as year dash (month_numeric) as month)
-  date_year_only = (((year_digits)) as year)
+  date_with_month_text = ((month_name) as month [space] (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as year)
+  date_with_month_numeric = ((((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as year dash (month_numeric) as month)
+  date_year_only = ((((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as year)
   date_standalone = (date_with_month_text / date_with_month_numeric / date_year_only)
-  organization = "IEEE" / "AIEE" / "ANSI" / "ASA" / "ANS" / "IEC" / "ISO" / "ASTM" / "CSA" / "ASME" / "NACE" / "NSF" / "ASHRAE" / "NCTA" / "AESC" / "EIA" / "USEMCSC" / "AMPP" / "USAS" / "EAB" / "MPAI"
+  organization = {
+    "IEEE" / "AIEE" / "ANSI" / "ASA" / "ANS" / "IEC" / "ISO" / "ASTM" / "CSA" / "ASME" / "NACE" / "NSF" / "ASHRAE" / "NCTA" / "AESC" / "EIA" / "USEMCSC" / "AMPP" / "USAS" / "EAB" / "MPAI"
+  }
   complex_org_prefix = "ANSI/IEEE-ANS" / "ANSI/IEEE" / "ANSI"
-  characteristic_ieee_number = (("C" 2digit dot digits *lower)) / (("802" dot digits *lower)) / (("P" 1*digits))
+  characteristic_ieee_number = (("C" 2%x30-39 dot 1*%x30-39 *%x61-7A)) / (("802" dot 1*%x30-39 *%x61-7A)) / (("P" 1*%x30-39))
   publisher = ((complex_org_prefix)) as publisher / ((organization)) as publisher
-  copublisher = (("/ISO/IEC")) as copublisher / (("/IEC/ISO")) as copublisher / ((slash [space] ((organization)) as copublisher))
-  conformance = (((([space] slash "Conformance" ((1*digit)) as conf_number ([space] dash [space]) ((year_digits)) as conf_year)))) as conformance
-  ashrae_copub = ((((slash "ASHRAE" space [("Guideline" space)] ((digits)) as ashrae_number [(([space] dash [space]) ((year_digits)) as ashrae_year)]))) as ashrae_copub)
-  ieee_crossref = ((((slash "C" digits dot digits dot digits ([space] dash [space]) ((year_digits))))) as ieee_crossref)
-  ipcea_copub = ((((slash "IPCEA" space (1*(letter / digit / "." / dash))))) as ipcea_copub)
-  s_designation = ([(publisher space)] [(((type_word)) as type [space])] (("S" dash digits)) as s_number [ipcea_copub] [parenthetical])
+  copublisher = {
+    (("/ISO/IEC")) as copublisher / (("/IEC/ISO")) as copublisher / ((slash [space] ((organization)) as copublisher))
+  }
+  conformance = {
+    (((([space] slash "Conformance" ((1*%x30-39)) as conf_number ([space] dash [space]) (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as conf_year)))) as conformance
+  }
+  ashrae_copub = {
+    ((((slash "ASHRAE" space [("Guideline" space)] ((1*%x30-39)) as ashrae_number [(([space] dash [space]) (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as ashrae_year)]))) as ashrae_copub)
+  }
+  ieee_crossref = {
+    ((((slash "C" 1*%x30-39 dot 1*%x30-39 dot 1*%x30-39 ([space] dash [space]) (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39))))))) as ieee_crossref)
+  }
+  ipcea_copub = ((((slash "IPCEA" space (1*(%x41-5A / %x61-7A / %x30-39 / "." / dash))))) as ipcea_copub)
+  s_designation = {
+    ([(publisher space)] [((("Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.") / (("N" / "n") "o") / "No")) as type [space])] (("S" dash 1*%x30-39)) as s_number [ipcea_copub] [parenthetical])
+  }
   # A dash group after the number is a PART, not more number (C1: the
   # part binds before the draft status and the year - the dash-continuation
   # swallowed "61850-9-3" whole, and the builder-side Code split came too
   # late for the separator and the P prefix).
-  number = ((([("P")] *upper digits *((digits / upper)) [lower])) as number)
-  type_word = "Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.") / (("N" / "n") "o") / "No"
-  part = ((dot / dash) !(year_digits) (1*(!(("REV" / "Rev" / "rev")) alnum_char))) as part
-  subpart = ((dot / dash / "_") !(year_digits) (1*(!(("REV" / "Rev" / "rev")) (digit / lower)) [(dot digits)])) as subpart
+  number = ((([("P")] *%x41-5A 1*%x30-39 *((1*%x30-39 / %x41-5A)) [%x61-7A])) as number)
+  type_word = {
+    "Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.") / (("N" / "n") "o") / "No"
+  }
+  part = {
+    ((dot / dash) !(("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) (1*(!(("REV" / "Rev" / "rev")) (%x30-39 / %x41-5A / %x61-7A)))) as part
+  }
+  subpart = {
+    ((dot / dash / "_") !(("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) (1*(!(("REV" / "Rev" / "rev")) (%x30-39 / %x61-7A)) [(dot 1*%x30-39)])) as subpart
+  }
   year = (((([space] (dot / dash) [space])) date_standalone ["(E)"]))
   draft_status = ((("Active Unapproved" / "Active Approved" / "Unapproved" / "Approved" / "Active") space))
   draft_prefix = (([space] ("/" / "_" / dash / space)))
@@ -75,20 +120,36 @@ grammar PubidIeee version "0.1.0" mode "v1" {
   # A draft-D token after the word is the DRAFT (the "REVD2.2" family), so
   # the lettered capture declines it. The word with no id is kept as the
   # rev_bare marker ("802.1AR-Rev/D2.2").
-  rev_numbered = ([rev_sep] (rev_word) [space] (1*digit) as revision)
-  rev_lettered = (([rev_sep] as rev_sep) (rev_word) (!(("D" digit)) (1*alnum_char)) as revision)
-  rev_bare = (([rev_sep] as rev_sep) (rev_word) as rev_bare)
+  rev_numbered = ([rev_sep] (rev_word) [space] (1*%x30-39) as revision)
+  rev_lettered = {
+    (([ ("-" / "&#x2013;" / "–" / "_" / "." / " " / "/") as rev_sep ]) (rev_word) (!(("D" %x30-39)) (1*(%x30-39 / %x41-5A / %x61-7A))) as revision)
+  }
+  rev_bare = (([ ("-" / "&#x2013;" / "–" / "_" / "." / " " / "/") as rev_sep ]) (rev_word) as rev_bare)
   rev_inline = ((rev_numbered) / (rev_lettered) / (rev_bare))
-  draft_version = (!(("R" dash)) [("D" !("IS"))] ((((1*2digit dot 1*2digit dot 1*2digit))) / ((((1*2digit dot 1*2digit [lower]))) / ((dot (!(year_digits)) (1*(alnum_char / dot)))) / (((digits "+" digits))) / (((digits [dot] "e" digits))) / ((((dash) (!(year_digits)) (1*alnum_char) [(("-d") / (("_") *alnum_char))])) / (((dash) (year_digits) as dash_year [dash (month_numeric) as dash_month]))) / (((1*alnum_char) [(("-d") / (("_") *alnum_char))]))) as draft_version))
+  draft_version = {
+    (!(("R" dash)) [("D" !("IS"))] ((((1*2digit dot 1*2digit dot 1*2digit))) / ((((1*2digit dot 1*2digit [lower]))) / ((dot (!(("19" / "20") 2digit 0*2lower !(1*digit))) (1*((digit / upper / lower) / dot)))) / (((1*digit "+" 1*digit))) / (((1*digit [dot] "e" 1*digit))) / ((((dash) (!(("19" / "20") 2digit 0*2lower !(1*digit))) (1*(digit / upper / lower)) [(("-d") / (("_") *(digit / upper / lower)))])) / (((dash) (("19" / "20") 2digit 0*2lower !(1*digit)) as draft_version_dash_year [dash (month_numeric) as draft_version_dash_month]))) / (((1*(digit / upper / lower)) [(("-d") / (("_") *(digit / upper / lower)))]))) as draft_version))
+  }
   # A draft date may comma-join its month and year (", Feb, 2011")
   # - the canonical forced-comma render (IEEE publisher, dated draft).
 
-  draft_date = (((("," [space]) / space) (month_name) as month [(space / comma)] ((year_digits)) as year)) / ((space ((year_digits)) as year)) / ((comma ((year_digits)) as year)) / ((("," / space) (month_numeric) as month (space / dash) ((year_digits)) as year)) / (((([space] comma [space]) / space) (month_name) as month (((space ((digits)) as day) (((("," / space / dash)) ((year_digits)) as year))) / ([((space ((digits)) as day)) comma] ((year_digits)) as year) / ((comma [space] ((year_digits)) as year)) / ((space ((year_digits)) as year))))) / (((([space] comma [space]) / space) (month_name) as month [space] ((("0" %x30-39)) / (("1" %x30-32))) as year)) / ((([space] dash [space]) (year_digits) as dash_year [dash (month_numeric) as dash_month]))
-  fdraft = ((((stage_sep ((("FDIS" / "CDV" / "CD" / "WD" / "PWI" / "NP")) as fdraft_stage [(((((("," [space]) / space) (month_name) as month [space] (year_digits) as year))) / (((("," / space) (year_digits) as year))))] [parenthetical]))) as fdraft))
-  draft = ((draft_prefix (1*2draft_version) [((dot digits) as revision)] [((("=" (((("D" ("FDIS" / "CDV" / "PWI" / "DIS" / "WD" / "NP" / "CD"))) / (("FDIS" / "CDV" / "PWI" / "DIS" / "WD" / "NP" / "CD"))) as draft_iso_stage)) [(":" / dash) (year_digits) as draft_stage_year] [[(dot / dash)] (digits 0*1letter) as draft_iso_iteration]))] [draft_date])) as draft
-  revision_suffix = ((slash "R" dash (1*alnum_char) as revision [([space] dash [space]) (year_digits) as dash_year [dash (month_numeric) as dash_month]])) / ((slash "D" dash) (slash "R" dash) (1*alnum_char) as revision [([space] dash [space]) (year_digits) as dash_year [dash (month_numeric) as dash_month]]) / (rev_numbered) / (rev_lettered)
-  edition = ((((comma (year_digits) as edition_year " Edition"))) / ((((space / dash)) "Edition " ((digits dot digits)) as edition (((" - ")) / space / dash) ((year_digits)) as edition_year [(dash (2digit) as edition_month)])))
-  part_subpart_year = ((part (1*2subpart) year)) / ((part subpart year)) / ((part year)) / ((part subpart)) / (year) / (part)
+  draft_date = {
+    (((("," [space]) / space) (month_name) as draft_date_month [(space / comma)] (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as draft_date_year)) / ((space (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as draft_date_year)) / ((comma (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as draft_date_year)) / ((("," / space) (month_numeric) as draft_date_month (space / dash) (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as draft_date_year)) / (((([space] comma [space]) / space) (month_name) as draft_date_month (((space ((1*%x30-39)) as draft_date_day) (((("," / space / dash)) (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as draft_date_year))) / ([((space ((1*%x30-39)) as draft_date_day)) comma] (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as draft_date_year) / ((comma [space] (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as draft_date_year)) / ((space (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as draft_date_year))))) / (((([space] comma [space]) / space) (month_name) as draft_date_month [space] ((("0" %x30-39)) / (("1" %x30-32))) as draft_date_year)) / ((([space] dash [space]) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as draft_date_dash_year [dash (month_numeric) as draft_date_dash_month]))
+  }
+  fdraft = {
+    ((((stage_sep ((("FDIS" / "CDV" / "CD" / "WD" / "PWI" / "NP")) as fdraft_stage [(((((("," [space]) / space) (month_name) as fdraft_month [space] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as fdraft_year))) / (((("," / space) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as fdraft_year))))] [parenthetical]))) as fdraft))
+  }
+  draft = {
+    ((draft_prefix (1*2draft_version) [((dot 1*%x30-39) as revision)] [((("=" (((("D" ("FDIS" / "CDV" / "PWI" / "DIS" / "WD" / "NP" / "CD"))) / (("FDIS" / "CDV" / "PWI" / "DIS" / "WD" / "NP" / "CD"))) as draft_iso_stage)) [(":" / dash) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as draft_stage_year] [[(dot / dash)] (1*%x30-39 0*1letter) as draft_iso_iteration]))] [draft_date])) as draft
+  }
+  revision_suffix = {
+    ((slash "R" dash (1*(%x30-39 / %x41-5A / %x61-7A)) as revision [([space] dash [space]) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as dash_year [dash (month_numeric) as dash_month]])) / ((slash "D" dash) (slash "R" dash) (1*(%x30-39 / %x41-5A / %x61-7A)) as revision [([space] dash [space]) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as dash_year [dash (month_numeric) as dash_month]]) / (rev_numbered) / (rev_lettered)
+  }
+  edition = {
+    ((((comma (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as edition_year " Edition"))) / ((((space / dash)) "Edition " ((1*%x30-39 dot 1*%x30-39)) as edition (((" - ")) / space / dash) (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as edition_year [(dash (2%x30-39) as edition_month)])))
+  }
+  part_subpart_year = {
+    ((part (1*2subpart) year)) / ((part subpart year)) / ((part year)) / ((part subpart)) / (year) / (part)
+  }
   # The corrigendum ordinal may carry a placeholder year ("Cor 1-201x")
   # and may be followed by the corrigendum's own draft (", D4, July
   # 2015"): a comma-form year wins before the trailing-comma eater that
@@ -97,12 +158,20 @@ grammar PubidIeee version "0.1.0" mode "v1" {
   # a comma year ("Cor 1, 2015"), or hand its trailing comma to the
   # corrigendum's own draft (", D4, July 2015") — three alternatives,
   # no mid-alternative backtracking.
-  # A corrigendum year: 4-digit, or the 201x-style pre-publication placeholder.
-  yearish = ((year_digits) / ("20" ("1" / "0") ("x" / "X" / digit)))
-  corrigendum = ((("_" / slash / dash / space) ("Corrigendum" / "Cor") [(dash / dot / space)] [space] [digits as cor_number] [ ( (comma !yearish [space] draft as cor_draft)   / (comma yearish as cor_year)   / ((dash / ":" / space) yearish as cor_year) ) ]) as corrigendum)
-  amendment = (((((("_" / slash / dash / space)) (("Amendment" / "Amd")) [(dash / dot / space)] [space] [digits as amd_number] [((dash / ":" / space) (year_digits) as amd_year)]))) as amendment)
-  interpretation = ((((slash "INT" [((dash / ":" / space) (year_digits) as int_year)]))) as interpretation)
-  reaffirmed = (((((("Reaffirmed " ((year_digits)) as year))) / ((([space] ("(R" ((year_digits)) as year ")")))))) as reaffirmed)
+  # A corrigendum year: 4-%x30-39, or the 201x-style pre-publication placeholder.
+  yearish = ((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) / ("20" ("1" / "0") ("x" / "X" / %x30-39)))
+  corrigendum = {
+    ((("_" / slash / dash / space) ("Corrigendum" / "Cor") [(dash / dot / space)] [space] [1*%x30-39 as cor_number] [ ( (comma !yearish [space] draft as cor_draft)   / (comma (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39) / ("20" ("1" / "0") ("x" / "X" / %x30-39))) as cor_year)   / ((dash / ":" / space) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39) / ("20" ("1" / "0") ("x" / "X" / %x30-39))) as cor_year) ) ]) as corrigendum)
+  }
+  amendment = {
+    (((((("_" / slash / dash / space)) (("Amendment" / "Amd")) [(dash / dot / space)] [space] [1*%x30-39 as amd_number] [((dash / ":" / space) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as amd_year)]))) as amendment)
+  }
+  interpretation = {
+    ((((slash "INT" [((dash / ":" / space) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as int_year)]))) as interpretation)
+  }
+  reaffirmed = {
+    (((((("Reaffirmed " (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as reaffirmed_year))) / ((([space] ("(R" (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as reaffirmed_year ")")))))) as reaffirmed)
+  }
   redline = ((((space [(dash space)] (("Redline" / "REDLINE" / "redline"))))) as redline)
   book_nickname = ((space "[" (1*non_rbracket) as nickname "]"))
   relationship_revision_of = "Revision of " / "Revison of "
@@ -118,46 +187,92 @@ grammar PubidIeee version "0.1.0" mode "v1" {
   relationship_supersedes = "Supersedes " / "Supercedes "
   relationship_previously_designated = "Previously designated as "
   relationship_includes = "Includes "
-  relationship_type = ((relationship_draft_amendment)) as draft_amendment_to / ((relationship_draft_revision)) as draft_revision_of / ((relationship_previously_designated)) as previously_designated_as / ((relationship_reaffirmation)) as reaffirmation_of / ((relationship_redesignation)) as redesignation_of / ((relationship_supersedes)) as supersedes / ((relationship_includes)) as includes / ((relationship_revision_of)) as revision_of / ((relationship_amendment_to)) as amendment_to / ((relationship_corrigendum_to)) as corrigendum_to / ((relationship_incorporates)) as incorporates / ((relationship_adoption_of)) as adoption_of / ((relationship_supplement_to)) as supplement_to
+  relationship_type = {
+    ((relationship_draft_amendment)) as draft_amendment_to / ((relationship_draft_revision)) as draft_revision_of / ((relationship_previously_designated)) as previously_designated_as / ((relationship_reaffirmation)) as reaffirmation_of / ((relationship_redesignation)) as redesignation_of / ((relationship_supersedes)) as supersedes / ((relationship_includes)) as includes / ((relationship_revision_of)) as revision_of / ((relationship_amendment_to)) as amendment_to / ((relationship_corrigendum_to)) as corrigendum_to / ((relationship_incorporates)) as incorporates / ((relationship_adoption_of)) as adoption_of / ((relationship_supplement_to)) as supplement_to
+  }
   identifier_string = (1*((!(", and") !(" and") !(", ") !(" as amended by ") !relationship_break !(")")) non_nl))
-  identifier_list = ((((identifier_string)) as id) (*(((((", and") / (" and") / (", "))) ((identifier_string)) as id))))
-  as_amended_by_clause = (((" as amended by IEEE's ") ((identifier_list)) as amendments)) / (((" as amended by ") ((identifier_list)) as amendments)) / ((" and its approved amendments") as approved_amendments)
+  identifier_list = {
+    (((1*((!(", and") !(" and") !(", ") !(" as amended by ") !relationship_break !(")")) (%x01-09 / %x0B-10FFFF))) as id) (*(((((", and") / (" and") / (", "))) (1*((!(", and") !(" and") !(", ") !(" as amended by ") !relationship_break !(")")) (%x01-09 / %x0B-10FFFF))) as id))))
+  }
+  as_amended_by_clause = {
+    (((" as amended by IEEE's ") ((identifier_list)) as amendments)) / (((" as amended by ") ((identifier_list)) as amendments)) / ((" and its approved amendments") as approved_amendments)
+  }
   relationship_separator = (([space] slash [space])) / (([space] ";" [space])) / (([space] dash [space]))
   relationship_break = (((relationship_separator)) [space] ((relationship_type)))
-  relationship_clause = (([space] "(" ((relationship_type)) as relationship_type ((identifier_list)) as related_ids [as_amended_by_clause] ((*(((relationship_separator) ((relationship_type)) as relationship_type ((identifier_list)) as related_ids [as_amended_by_clause]))) as additional_rels) ")"))
+  relationship_clause = {
+    (([space] "(" ((relationship_type)) as relationship_type ((identifier_list)) as related_ids [as_amended_by_clause] ((*(((relationship_separator) ((relationship_type)) as relationship_type ((identifier_list)) as related_ids [as_amended_by_clause]))) as additional_rels) ")"))
+  }
   title_portion = ((":" space (1*non_nl) as title))
   approved_draft_suffix = ((space "- (Approved Draft)")) / ((space "(Approved Draft)"))
-  additional_parameters = (((([space] "(" [space] ((((reaffirmed))) / (("Revision of IEEE Std ") [space] ((1*non_rparen)) as revision_of) / (("Revison of IEEE Std ") [space] ((1*non_rparen)) as revision_of) / (("Revision to IEEE Std ") [space] ((1*non_rparen)) as revision_of) / (("Revison to IEEE Std ") [space] ((1*non_rparen)) as revision_of) / (((("DRAFT" / "Draft" / "draft")) " Amendment to " ((1*non_rparen)) as draft_amendment_to)) / (("Amendment to IEEE Std ") [space] ((1*non_rparen)) as amendment_to) / (("Adoption of ") ((1*non_rparen)) as adoption) / (("Notebooks") [space] ((1*non_comma_rparen)) as notebooks) / (("Standard Newspaper(s)") [space] ((1*non_comma_rparen)) as standard_newspapers) / (((1*non_rparen)) as parenthetical_content)) [")"]))) as parameters)
+  additional_parameters = {
+    (((([space] "(" [space] ((((reaffirmed))) / (("Revision of IEEE Std ") [space] ((1*non_rparen)) as revision_of) / (("Revison of IEEE Std ") [space] ((1*non_rparen)) as revision_of) / (("Revision to IEEE Std ") [space] ((1*non_rparen)) as revision_of) / (("Revison to IEEE Std ") [space] ((1*non_rparen)) as revision_of) / (((("DRAFT" / "Draft" / "draft")) " Amendment to " ((1*non_rparen)) as draft_amendment_to)) / (("Amendment to IEEE Std ") [space] ((1*non_rparen)) as amendment_to) / (("Adoption of ") ((1*non_rparen)) as adoption) / (("Notebooks") [space] ((1*non_comma_rparen)) as notebooks) / (("Standard Newspaper(s)") [space] ((1*non_comma_rparen)) as standard_newspapers) / (((1*non_rparen)) as parenthetical_content)) [")"]))) as parameters)
+  }
   parenthetical = (relationship_clause / additional_parameters / (([space] ("P&V") as parenthetical_content)))
-  iso_stage = ((("FDIS" / (("FCD" [digit])) / (("CDV" [digit])) / (("DIS" [digit])) / (("CD" [digit])) / "WD" / "PWI" / "NP")) as iso_stage)
+  iso_stage = {
+    ((("FDIS" / (("FCD" [%x30-39])) / (("CDV" [%x30-39])) / (("DIS" [%x30-39])) / (("CD" [%x30-39])) / "WD" / "PWI" / "NP")) as iso_stage)
+  }
 
-  iec_ieee_copublished = ("IEC/IEEE" space !("P") &((*non_digit_nl digit)) ((1*non_nl)) as content)
+  iec_ieee_copublished = ("IEC/IEEE" space !("P") &((*non_digit_nl %x30-39)) ((1*non_nl)) as content)
   # A draft date may comma-join its month and year ("D31, August, 2010")
   # as well as space-join it ("D8, June 2010") - both spellings ride
   # :draft_month/:draft_year so the date belongs to the draft.
-  joint_development_ieee_format = (("ISO/IEC/IEEE" / "IEEE/ISO/IEC" / "ISO/IEEE" / "IEC/IEEE" / "IEEE/CSA") as joint_publishers) space (("P") as project_marker) (digits) as number [part [1*subpart]] [((stage_sep ("D" (digits) [dot digits]) stage_sep ("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as iso_stage)) / (slash space ("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as iso_stage [((((([comma] space) / (comma [space]) / ("," [space]) / space) (month_name) as month [space] (year_digits) as year ("" as printed_month_year))))]) / (stage_sep ("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as iso_stage space (year_digits) as year) / (stage_sep ("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as iso_stage (([space] dash [space]) (year_digits) as year [dash (month_numeric) as month] ("" as printed_dash_year))) / ((stage_sep (("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP")) as iso_stage slash "V" (digits) as iso_stage_iteration)) / (slash digits [dot digits] [dash (digits) as draft_version]) / (slash "D" "=" ((("FDIS" [digit]) / ("FCD" [digit]) / ("CDV" [digit]) / ("DIS" [digit]) / ("CD" [digit]) / ("WD" [digit]) / ("PWI" [digit]) / ("NP" [digit])) as draft_iso_stage) [(((":" (("19" / "20") 2digit)) / ("-" (("19" / "20") 2digit) [2digit]))) as draft_stage_year] [(dot (digits 0*1letter)) as draft_iso_iteration]) / (slash "E" dash (1*digit) as edition_e [([space] dash [space]) (year_digits) as edition_year [dash (month_numeric) as edition_month]]) / (slash "D" (([dash]) as draft_dash) (1*(digit / ".")) as draft_version [((comma / space) (month_name) as draft_month [(space / comma)] (year_digits) as draft_year) / (comma (year_digits)) as draft_year]) / (space ("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as iso_stage [space "D" [dash] (1*(digit / ".")) as draft_version]) / (comma (("FDIS" / "FCD" / "CDV" / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP")) as iec_stage [digits] as stage_iteration)] [edition] [((([space] dash [space]) (year_digits) as year [dash (month_numeric) as month] ("" as printed_dash_year)) / (((([comma] space) / (comma [space]) / ("," [space]) / space) (month_name) as month [space] (year_digits) as year ("" as printed_month_year))) / ((comma) space (month_name) as month [space] (year_digits) as year) / (([space] dash [space]) (year_digits) as year))] [revision_suffix] [parenthetical]
-  joint_development_iso_format = ((("ISO/IEC/IEEE" / "IEEE/ISO/IEC" / "IEEE/IEC/ISO" / "ISO/IEEE") as joint_publishers [space] ((iso_stage [space "Std"] space) / ((slash [space]) iso_stage [space "Std"] space) / (&(digit) / (["Draft" space] &("P" digit))) "" as iso_published [space])) / ((("IEC/IEEE" / "IEEE/IEC") as joint_publishers [space] (((slash [space]) iso_stage / iso_stage) [space "Std"] space / (["Draft" space] &("P" digit) "" as iso_published [space]))))/ ((("ISO/IEC" / "IEEE") as joint_publishers [space] ((slash [space]) iso_stage / iso_stage) [space "Std"] space)))["P"] as project_marker (digits) as number [part [1*subpart]] [((":" (year_digits) as year) / (([space] dash [space]) (year_digits) as year [dash (month_numeric) as month] ("" as printed_dash_year)) / ((([comma] space) / (comma [space])) (month_name) as month [space] (year_digits) as year ("" as printed_month_year)))] [space "(" (1*non_rparen) as edition_marker ")"] [((slash "D" "=" (("FDIS" / "FCD" / "CDV" / ("DIS" [digit]) / ("CD" [digit]) / "WD" / "PWI" / "NP") as draft_iso_stage) [(((":" (("19" / "20") 2digit)) / ("-" (("19" / "20") 2digit) [2digit]))) as draft_stage_year] [(dot (digits 0*1letter) as draft_iso_iteration)]) / (stage_sep "D" (([dash]) as draft_dash) (1*(digit / ".")) as draft_version [((([comma] space) / (comma [space])) (month_name) as draft_month [(space / comma)] (year_digits) as draft_year) / (comma (year_digits) as draft_year) / ((([space] dash [space]) (year_digits) as dash_year [dash (month_numeric) as dash_month]))]) / (space "D" [dash] (1*(digit / ".")) as draft_version [((([comma] space) / (comma [space])) (month_name) as draft_month [(space / comma)] (year_digits) as draft_year) / (comma (year_digits) as draft_year) / ((([space] dash [space]) (year_digits) as dash_year [dash (month_numeric) as dash_month]))]) / (slash "D" (1*(digit / ".")) as draft_version [space "D" [dash] (1*(digit / ".")) as draft_version [((([comma] space) / (comma [space])) (month_name) as draft_month [(space / comma)] (year_digits) as draft_year) / (comma (year_digits) as draft_year) / ((([space] dash [space]) (year_digits) as dash_year [dash (month_numeric) as dash_month]))]]) / (slash ("ED" (1*digit)) as draft_version [((([comma] space) / (comma [space])) (month_name) as draft_month [(space / comma)] (year_digits) as draft_year) / (comma (year_digits) as draft_year)]) / (slash "E" dash (1*digit) as edition_e [([space] dash [space]) (year_digits) as edition_year [dash (month_numeric) as edition_month]]))] [slash "Amd" [dot / space] (digits) as amd_number [(":" / dash) (year_digits) as amd_year]] [corrigendum] [edition] [revision_suffix] [parenthetical] [redline]
-  joint_development_ieee_tail_format = (("ISO/IEC/IEEE" / "IEEE/ISO/IEC" / "ISO/IEEE" / "IEC/IEEE" / "IEEE/CSA") as joint_publishers) space (("P") as project_marker) (digits) as number (part [1*subpart]) [((stage_sep ("D" (digits) [dot digits]) stage_sep ("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as iso_stage)) / (slash space ("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as iso_stage [((((([comma] space) / (comma [space]) / ("," [space]) / space) (month_name) as month [space] (year_digits) as year ("" as printed_month_year))))]) / (slash ("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as tail_iso_stage ((((([comma] space) / (comma [space]) / ("," [space]) / space) (month_name) as month [space] (year_digits) as year ("" as printed_month_year))))) / (stage_sep ("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as iso_stage space (year_digits) as year) / (stage_sep ("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as iso_stage (([space] dash [space]) (year_digits) as year [dash (month_numeric) as month] ("" as printed_dash_year))) / ((stage_sep (("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP")) as iso_stage slash "V" (digits) as iso_stage_iteration)) / (slash digits [dot digits] [dash (digits) as draft_version]) / (slash "D" "=" ((("FDIS" [digit]) / ("FCD" [digit]) / ("CDV" [digit]) / ("DIS" [digit]) / ("CD" [digit]) / ("WD" [digit]) / ("PWI" [digit]) / ("NP" [digit])) as draft_iso_stage) [(((":" (("19" / "20") 2digit)) / ("-" (("19" / "20") 2digit) [2digit]))) as draft_stage_year] [(dot (digits 0*1letter)) as draft_iso_iteration]) / (slash "E" dash (1*digit) as edition_e [([space] dash [space]) (year_digits) as edition_year [dash (month_numeric) as edition_month]]) / (slash "D" (([dash]) as draft_dash) (1*(digit / ".")) as draft_version [((comma / space) (month_name) as draft_month [(space / comma)] (year_digits) as draft_year) / (comma (year_digits)) as draft_year]) / (space ("FDIS" / ("FCD"   [digit]) / ("CDV"   [digit]) / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP") as iso_stage [space "D" [dash] (1*(digit / ".")) as draft_version]) / (comma (("FDIS" / "FCD" / "CDV" / ("DIS"   [digit]) / ("CD"   [digit]) / "WD" / "PWI" / "NP")) as iec_stage [digits] as stage_iteration)] [edition] [((([space] dash [space]) (year_digits) as year [dash (month_numeric) as month] ("" as printed_dash_year)) / (((([comma] space) / (comma [space]) / ("," [space]) / space) (month_name) as month [space] (year_digits) as year ("" as printed_month_year))) / ((comma) space (month_name) as month [space] (year_digits) as year) / (([space] dash [space]) (year_digits) as year))] [revision_suffix] [parenthetical]
-  joint_development_iso_iec_edition = ((("ISO/IEC") as joint_publishers) space ("" as iso_published) [("P")] as project_marker (digits) as number [((dot (digits)) as part) / ((dash ("" as iec_label_dash) !(year_digits) (digits) as part))] (":" [space] (year_digits) as year) [space] parenthetical)
-  joint_development_embedded_stage = ((("" as stage_embedded) (((((("ISO/IEC/IEEE" / "IEEE/ISO/IEC" / "IEEE/IEC/ISO" / "ISO/IEEE" / "IEC/IEEE" / "IEEE/IEC" / "ISO/IEC" / "IEEE"))) as joint_publishers) space [("P") as project_marker] ((digits)) as number [((((dot / dash) !(year_digits) ((digits)) as part)))] dot (iso_stage) (!(digit / letter)) [(((((":" ((year_digits)) as year))) / ((((([space] dash [space]) ((year_digits)) as year [(dash (month_numeric) as month)])))) / (((((("," [space]) / space) (month_name) as month [space] ((year_digits)) as year))))))]))))
-  number_first_identifier = ((number [((((([space] dash [space]) ((year_digits)) as year))))] space (((((publisher)) ((*copublisher) as copublishers)) as publishers)) space [(((type_word)) as type [space])] (((0*non_nl)) as title)))
-  ieee_p_identifier = ([(("IEEE") as publisher space)] ((number)) [((part_subpart_year / edition))] [(slash ((digits) as draft_version)) as digit_draft] [fdraft] [trailing_month_year] [corrigendum] [rev_inline] [draft] [revision_suffix] [trailing_month_year] [corrigendum] [parenthetical])
-  ansi_p_identifier = (((((("ANSI"))) as publisher) space "P" [space] ((number)) [((part_subpart_year / edition))] [trailing_month_year] [corrigendum] [rev_inline] [draft] [revision_suffix] [trailing_month_year] [((("," [space]) / space) (year_digits) as trailing_year)] [corrigendum] [parenthetical]))
-  ieee_draft_p_identifier = ((([((((("IEEE")) as publisher ((*copublisher) as copublishers)) as publishers) space)] [((draft_status)) as draft_status] "Draft" space ((number)) [((part_subpart_year / edition))] [((((space (month_name) as trailing_month space ((year_digits)) as trailing_year)) / ((space (month_numeric) as trailing_month ((space / dash)) ((year_digits)) as trailing_year))))] [rev_inline] [draft] [((((comma [space] (month_name) as trailing_month space ((year_digits)) as trailing_year))))] [revision_suffix] [((((comma [space] (month_name) as trailing_month space ((year_digits)) as trailing_year))))] [corrigendum] [parenthetical])))
-  ieee_approved_draft_identifier = (((((("IEEE"))) as publisher) space "Approved" space ((("Draft Std" / "Std"))) as type space [("P")] ((number)) [((part_subpart_year / edition))] [rev_inline] [draft] [revision_suffix] [parenthetical]))
-  trailing_month_year = ((("," [space]) / space) (month_name) as trailing_month space (year_digits) as trailing_year) / ((("," [space]) / space) (month_numeric) as trailing_month (space / dash) (year_digits) as trailing_year)
+  joint_development_ieee_format = {
+    (("ISO/IEC/IEEE" / "IEEE/ISO/IEC" / "ISO/IEEE" / "IEC/IEEE" / "IEEE/CSA") as joint_publishers) space (("P") as project_marker) (1*%x30-39) as number [part [1*subpart]] [((stage_sep ("D" (1*%x30-39) [dot 1*%x30-39]) stage_sep ("FDIS" / ("FCD"   [%x30-39]) / ("CDV"   [%x30-39]) / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP") as iso_stage)) / (slash space ("FDIS" / ("FCD"   [%x30-39]) / ("CDV"   [%x30-39]) / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP") as iso_stage [((((((([comma] space) / (comma [space]) / ("," [space]) / space))) as printed_month_year (month_name) as month [space] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year)))]) / (stage_sep ("FDIS" / ("FCD"   [%x30-39]) / ("CDV"   [%x30-39]) / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP") as iso_stage space (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year) / (stage_sep ("FDIS" / ("FCD"   [%x30-39]) / ("CDV"   [%x30-39]) / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP") as iso_stage ((((([space] dash [space])) as printed_dash_year (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year [dash (month_numeric) as month])))) / ((stage_sep (("FDIS" / ("FCD"   [%x30-39]) / ("CDV"   [%x30-39]) / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP")) as iso_stage slash "V" (1*%x30-39) as iso_stage_iteration)) / (slash 1*%x30-39 [dot 1*%x30-39] [dash (1*%x30-39) as draft_version]) / (slash "D" "=" ((("FDIS" [%x30-39]) / ("FCD" [%x30-39]) / ("CDV" [%x30-39]) / ("DIS" [%x30-39]) / ("CD" [%x30-39]) / ("WD" [%x30-39]) / ("PWI" [%x30-39]) / ("NP" [%x30-39])) as draft_iso_stage) [(((":" (("19" / "20") 2%x30-39)) / ("-" (("19" / "20") 2%x30-39) [2%x30-39]))) as draft_stage_year] [(dot (1*%x30-39 0*1letter)) as draft_iso_iteration]) / (slash "E" dash (1*%x30-39) as edition_e [([space] dash [space]) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as edition_year [dash (month_numeric) as edition_month]]) / (slash "D" ([ (dash) as draft_dash ]) (1*(%x30-39 / ".")) as draft_version [((comma / space) (month_name) as draft_month [(space / comma)] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as draft_year) / (comma (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39))) as draft_year]) / (space ("FDIS" / ("FCD"   [%x30-39]) / ("CDV"   [%x30-39]) / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP") as iso_stage [space "D" [dash] (1*(%x30-39 / ".")) as draft_version]) / (comma (("FDIS" / "FCD" / "CDV" / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP")) as iec_stage [1*%x30-39] as stage_iteration)] [edition] [(((((([space] dash [space])) as printed_dash_year (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year [dash (month_numeric) as month]))) / (((((([comma] space) / (comma [space]) / ("," [space]) / space))) as printed_month_year (month_name) as month [space] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year)) / ((comma) space (month_name) as month [space] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year) / (([space] dash [space]) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year))] [revision_suffix] [parenthetical]
+  }
+  joint_development_iso_format = {
+    ((("ISO/IEC/IEEE" / "IEEE/ISO/IEC" / "IEEE/IEC/ISO" / "ISO/IEEE") as joint_publishers [space] ((iso_stage [space "Std"] space) / ((slash [space]) iso_stage [space "Std"] space) / (&(%x30-39) / (["Draft" space] &("P" %x30-39))) [space])) / ((("IEC/IEEE" / "IEEE/IEC") as joint_publishers [space] (((slash [space]) iso_stage / iso_stage) [space "Std"] space / (["Draft" space] &("P" %x30-39) [space]))))/ ((("ISO/IEC" / "IEEE") as joint_publishers [space] ((slash [space]) iso_stage / iso_stage) [space "Std"] space))) as iso_published ["P"] as project_marker (1*%x30-39) as number [part [1*subpart]] [((":" (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year) / ((((([space] dash [space])) as printed_dash_year (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year [dash (month_numeric) as month]))) / ((([comma] space) / (comma [space])) (month_name) as month [space] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year ("" as printed_month_year)))] [space "(" (1*non_rparen) as edition_marker ")"] [((slash "D" "=" (("FDIS" / "FCD" / "CDV" / ("DIS" [%x30-39]) / ("CD" [%x30-39]) / "WD" / "PWI" / "NP") as draft_iso_stage) [(((":" (("19" / "20") 2%x30-39)) / ("-" (("19" / "20") 2%x30-39) [2%x30-39]))) as draft_stage_year] [(dot (1*%x30-39 0*1letter) as draft_iso_iteration)]) / (stage_sep "D" ([ (dash) as draft_dash ]) (1*(%x30-39 / ".")) as draft_version [((([comma] space) / (comma [space])) (month_name) as draft_month [(space / comma)] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as draft_year) / (comma (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as draft_year) / ((([space] dash [space]) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as dash_year [dash (month_numeric) as dash_month]))]) / (space "D" [dash] (1*(%x30-39 / ".")) as draft_version [((([comma] space) / (comma [space])) (month_name) as draft_month [(space / comma)] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as draft_year) / (comma (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as draft_year) / ((([space] dash [space]) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as dash_year [dash (month_numeric) as dash_month]))]) / (slash "D" (1*(%x30-39 / ".")) as draft_version [space "D" [dash] (1*(%x30-39 / ".")) as draft_version [((([comma] space) / (comma [space])) (month_name) as draft_month [(space / comma)] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as draft_year) / (comma (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as draft_year) / ((([space] dash [space]) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as dash_year [dash (month_numeric) as dash_month]))]]) / (slash ("ED" (1*%x30-39)) as draft_version [((([comma] space) / (comma [space])) (month_name) as draft_month [(space / comma)] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as draft_year) / (comma (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as draft_year)]) / (slash "E" dash (1*%x30-39) as edition_e [([space] dash [space]) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as edition_year [dash (month_numeric) as edition_month]]))] [slash "Amd" [dot / space] (1*%x30-39) as amd_number [(":" / dash) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as amd_year]] [corrigendum] [edition] [revision_suffix] [parenthetical] [redline]
+  }
+  joint_development_ieee_tail_format = {
+    (("ISO/IEC/IEEE" / "IEEE/ISO/IEC" / "ISO/IEEE" / "IEC/IEEE" / "IEEE/CSA") as joint_publishers) space (("P") as project_marker) (1*%x30-39) as number (part [1*subpart]) [((stage_sep ("D" (1*%x30-39) [dot 1*%x30-39]) stage_sep ("FDIS" / ("FCD"   [%x30-39]) / ("CDV"   [%x30-39]) / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP") as iso_stage)) / (slash space ("FDIS" / ("FCD"   [%x30-39]) / ("CDV"   [%x30-39]) / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP") as iso_stage [((((((([comma] space) / (comma [space]) / ("," [space]) / space))) as printed_month_year (month_name) as month [space] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year)))]) / (slash ("FDIS" / ("FCD"   [%x30-39]) / ("CDV"   [%x30-39]) / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP") as tail_iso_stage ((((((([comma] space) / (comma [space]) / ("," [space]) / space))) as printed_month_year (month_name) as month [space] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year)))) / (stage_sep ("FDIS" / ("FCD"   [%x30-39]) / ("CDV"   [%x30-39]) / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP") as iso_stage space (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year) / (stage_sep ("FDIS" / ("FCD"   [%x30-39]) / ("CDV"   [%x30-39]) / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP") as iso_stage ((((([space] dash [space])) as printed_dash_year (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year [dash (month_numeric) as month])))) / ((stage_sep (("FDIS" / ("FCD"   [%x30-39]) / ("CDV"   [%x30-39]) / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP")) as iso_stage slash "V" (1*%x30-39) as iso_stage_iteration)) / (slash 1*%x30-39 [dot 1*%x30-39] [dash (1*%x30-39) as draft_version]) / (slash "D" "=" ((("FDIS" [%x30-39]) / ("FCD" [%x30-39]) / ("CDV" [%x30-39]) / ("DIS" [%x30-39]) / ("CD" [%x30-39]) / ("WD" [%x30-39]) / ("PWI" [%x30-39]) / ("NP" [%x30-39])) as draft_iso_stage) [(((":" (("19" / "20") 2%x30-39)) / ("-" (("19" / "20") 2%x30-39) [2%x30-39]))) as draft_stage_year] [(dot (1*%x30-39 0*1letter)) as draft_iso_iteration]) / (slash "E" dash (1*%x30-39) as edition_e [([space] dash [space]) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as edition_year [dash (month_numeric) as edition_month]]) / (slash "D" ([ (dash) as draft_dash ]) (1*(%x30-39 / ".")) as draft_version [((comma / space) (month_name) as draft_month [(space / comma)] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as draft_year) / (comma (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39))) as draft_year]) / (space ("FDIS" / ("FCD"   [%x30-39]) / ("CDV"   [%x30-39]) / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP") as iso_stage [space "D" [dash] (1*(%x30-39 / ".")) as draft_version]) / (comma (("FDIS" / "FCD" / "CDV" / ("DIS"   [%x30-39]) / ("CD"   [%x30-39]) / "WD" / "PWI" / "NP")) as iec_stage [1*%x30-39] as stage_iteration)] [edition] [(((((([space] dash [space])) as printed_dash_year (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year [dash (month_numeric) as month]))) / (((((([comma] space) / (comma [space]) / ("," [space]) / space))) as printed_month_year (month_name) as month [space] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year)) / ((comma) space (month_name) as month [space] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year) / (([space] dash [space]) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year))] [revision_suffix] [parenthetical]
+  }
+  joint_development_iso_iec_edition = {
+    (((("ISO/IEC") as joint_publishers) space) as iso_published [("P")] as project_marker (1*%x30-39) as number [((dot (1*%x30-39)) as part) / ((dash as iec_label_dash !(("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) (1*%x30-39) as part))] (":" [space] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year) [space] parenthetical)
+  }
+  joint_development_embedded_stage = {
+    (((((((("ISO/IEC/IEEE" / "IEEE/ISO/IEC" / "IEEE/IEC/ISO" / "ISO/IEEE" / "IEC/IEEE" / "IEEE/IEC" / "ISO/IEC" / "IEEE"))) as joint_publishers) space [("P") as project_marker] ((1*%x30-39)) as number [((((dot / dash) !(("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) ((1*%x30-39)) as part)))] dot (iso_stage) (!(%x30-39 / letter)) [(((((":" (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as year))) / ((((([space] dash [space]) (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as year [(dash (month_numeric) as month)])))) / (((((("," [space]) / space) (month_name) as month [space] (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as year))))))]))))
+  }
+  number_first_identifier = {
+    ((number [((((([space] dash [space]) (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as year))))] space (((((publisher)) ((*copublisher) as copublishers)) as publishers)) space [((("Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.") / (("N" / "n") "o") / "No")) as type [space])] (((0*non_nl)) as title)))
+  }
+  ieee_p_identifier = {
+    ([(("IEEE") as publisher space)] ((number)) [((part_subpart_year / edition))] [(slash ((1*%x30-39) as draft_version)) as digit_draft] [fdraft] [trailing_month_year] [corrigendum] [rev_inline] [draft] [revision_suffix] [trailing_month_year] [corrigendum] [parenthetical])
+  }
+  ansi_p_identifier = {
+    (((((("ANSI"))) as publisher) space "P" [space] ((number)) [((part_subpart_year / edition))] [trailing_month_year] [corrigendum] [rev_inline] [draft] [revision_suffix] [trailing_month_year] [((("," [space]) / space) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as trailing_year)] [corrigendum] [parenthetical]))
+  }
+  ieee_draft_p_identifier = {
+    ((([((((("IEEE")) as publisher ((*copublisher) as copublishers)) as publishers) space)] [((draft_status)) as draft_status] "Draft" space ((number)) [((part_subpart_year / edition))] [((((space (month_name) as trailing_month space (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as trailing_year)) / ((space (month_numeric) as trailing_month ((space / dash)) (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as trailing_year))))] [rev_inline] [draft] [((((comma [space] (month_name) as trailing_month space (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as trailing_year))))] [revision_suffix] [((((comma [space] (month_name) as trailing_month space (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as trailing_year))))] [corrigendum] [parenthetical])))
+  }
+  ieee_approved_draft_identifier = {
+    (((((("IEEE"))) as publisher) space "Approved" space ((("Draft Std" / "Std"))) as type space [("P")] ((number)) [((part_subpart_year / edition))] [rev_inline] [draft] [revision_suffix] [parenthetical]))
+  }
+  trailing_month_year = {
+    ((("," [space]) / space) (month_name) as trailing_month space (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as trailing_year) / ((("," [space]) / space) (month_numeric) as trailing_month (space / dash) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as trailing_year)
+  }
 
-  combined_aiee_identifier = ((&(aiee.aiee_identifier) ((aiee.aiee_identifier)) as first_aiee) space "and" space ((aiee.aiee_identifier)) as second_aiee)
+  combined_aiee_identifier = {
+    ((&(aiee.aiee_identifier) ((aiee.aiee_identifier)) as first_aiee) space "and" space ((aiee.aiee_identifier)) as second_aiee)
+  }
   aiee_identifier = ((&(aiee.aiee_prefix) ((aiee.aiee_identifier)) as aiee))
-  ire_identifier = ((&((ire.ire_identifier_year_first / ire.ire_identifier_prefix_first)) ((ire.ire_identifier)) as ire))
+  ire_identifier = {
+    ((&((ire.ire_identifier_year_first / ire.ire_identifier_prefix_first)) ((ire.ire_identifier)) as ire))
+  }
   # The optional "IEEE Std " prefix precedes the guard: IEEE catalogues
   # NESC documents with the prefix ("IEEE Std C2.2012.Preprint"), so a
   # guard anchored at position 0 would reject every prefixed spelling.
-  nesc_identifier = (([("IEEE" space "Std" space)] &((nesc.draft_nesc / nesc.preprint_proposal / nesc.name_first / nesc.c2_preprint / nesc.c2_standard / nesc.year_first)) (((nesc.nesc_identifier)) as nesc)))
-  psi_draft = (((slash "D" [dash] (((digits)) as draft_version))))
-  psi_date = ((comma ((month_name / month_numeric) as month) (space / dash) (year_digits) as year) / (([space] dash [space]) (year_digits) as year [(dash (2digit) as month)]))
-  ieee_astm_si_psi = ((((("IEEE/ASTM" / "IEEE/ ASTM" / "IEEE"))) as publishers) space (("PSI" / "SI")) as si_type ((space / ".")) ((digits)) as number [(((("." ((year_digits)) as year))))] [(((psi_draft [psi_date])) / ((psi_date [psi_draft])))] [parenthetical])
-  no_prefix_ieee = ((((characteristic_ieee_number)) as number) ([((dash (upper / lower)))] as suffix) ([((([space] dash [space]) (year_digits)))] as year) [rev_inline] [draft] [(("(E)") / ("(F)"))] [parenthetical])
+  nesc_identifier = {
+    (([("IEEE" space "Std" space)] &((nesc.draft_nesc / nesc.preprint_proposal / nesc.name_first / nesc.c2_preprint / nesc.c2_standard / nesc.year_first)) (((nesc.nesc_identifier)) as nesc)))
+  }
+  psi_draft = (((slash "D" [dash] (((1*%x30-39)) as draft_version))))
+  psi_date = {
+    ((comma ((month_name / month_numeric) as month) (space / dash) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year) / (([space] dash [space]) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)) as year [(dash (2%x30-39) as month)]))
+  }
+  ieee_astm_si_psi = {
+    ((((("IEEE/ASTM" / "IEEE/ ASTM" / "IEEE"))) as publishers) space (("PSI" / "SI")) as si_type ((space / ".")) ((1*%x30-39)) as number [(((("." (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as year))))] [(((psi_draft [psi_date])) / ((psi_date [psi_draft])))] [parenthetical])
+  }
+  no_prefix_ieee = {
+    ((((characteristic_ieee_number)) as number) [ (((dash (%x41-5A / %x61-7A))) as suffix ) ] [ (((( [space] dash [space] ) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as year )] [rev_inline] [draft] [(("(E)") / ("(F)"))] [parenthetical])
+  }
   # Publisherless form of the generic tail (the original parser's
   # `parameters((organizations >> space).maybe)` route): LAST in the
   # choice so it only accepts what every publisher-led alternative
@@ -169,18 +284,135 @@ grammar PubidIeee version "0.1.0" mode "v1" {
   # the IEEE date convention ("IEEE P15026.2/D=FDIS-201008"). Final
   # alternative: it only accepts what every publisher-led rule above
   # rejected, so plain IEEE drafts keep their existing routes.
-  ieee_iso_draft_designation = ((publisher) space ["Draft" space] [((draft_status)) as draft_status] [("P") as project_marker] (digits) as number [part [1*subpart]] (slash "D" "=" ((("FDIS" [digit]) / ("FCD" [digit]) / ("CDV" [digit]) / ("DIS" [digit]) / ("CD" [digit]) / ("WD" [digit]) / ("PWI" [digit]) / ("NP" [digit])) as iso_stage)) [(("-" (("19" / "20") 2digit) [2digit])) as draft_stage_year] [((dash (month_name) [space] (year_digits)) as draft_stage_year)])
-  publisherless_ieee = ([(((type_word)) as type [space])] ((number)) [((part_subpart_year / edition))] [corrigendum] [rev_inline] [draft] [revision_suffix] [parenthetical])
-  corrigendum_identifier = ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [(((type_word)) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "Cor" [(dash / dot / space)] [space] ((digits)) as cor_number [ ( (comma !yearish [space] draft as cor_draft)   / (comma yearish as cor_year)   / ((dash / ":" / space) yearish as cor_year) ) ] [draft] [parenthetical]
-  interpretation_identifier = ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [(((type_word)) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "INT" [((dash / ":" / space) ((year_digits)) as int_year)] [parenthetical]
-  conformance_identifier = ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [(((type_word)) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "Conformance" ((1*digit)) as conf_number ([space] dash [space]) ((year_digits)) as conf_year [parenthetical]
-  multi_numbered_identifier = ((((((([(publisher space)] [(((type_word)) as type [space])] ((number)) [((part_subpart_year / edition))]))) as primary_identifier) ((((slash "C" digits dot digits dot digits ([space] dash [space]) ((year_digits)))) as secondary_crossref)))) / ((((((comma space) [(((type_word)) as type [space])] ((number)) ([space] dash [space]) ((year_digits)))) as secondary_joint))))
-  csa_dual_published = (((((((publisher) space) [(((type_word)) as type [space])] ((number)) [((part_subpart_year / edition))])) as ieee_portion) slash "CSA" space ((((("C" 2digit dot digit space ("No" / "NO") dot space (1*(digit / ".")) ((dash / ":")) 2digit)) / (("C" (1*(digit / ".")) dash 2digit)) / (("C" 2digit dot digit space ("No" / "NO") dot space (1*(digit / ".")) ":" 2digit)) / (("C" (1*(digit / ".")) ":" 2digit))) as csa_portion))))
-  identifier = combined_aiee_identifier / aiee_identifier / ire_identifier / nesc_identifier / ieee_astm_si_psi / multi_numbered_identifier / csa_dual_published / s_designation / corrigendum_identifier / interpretation_identifier / conformance_identifier / joint_development_ieee_format / joint_development_iso_format / joint_development_ieee_tail_format / joint_development_iso_iec_edition / joint_development_embedded_stage / iec_ieee_copublished / number_first_identifier / ieee_approved_draft_identifier / ieee_draft_p_identifier / ieee_p_identifier / ansi_p_identifier / (((((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))))) [((draft_status)) as draft_status] [(("Draft Std") as type [space])] [(((type_word)) as type [((space "No" space))] [space])] ((number)) [((part_subpart_year / edition))] [corrigendum] [amendment] [interpretation] [conformance] [ashrae_copub] [ieee_crossref] [rev_inline] [draft] [revision_suffix] [trailing_month_year] [ashrae_copub] [book_nickname] [corrigendum] [edition] [parenthetical] [book_nickname] [redline] [title_portion] [approved_draft_suffix] / no_prefix_ieee / publisherless_ieee / ieee_iso_draft_designation
+  ieee_iso_draft_designation = {
+    ((publisher) space ["Draft" space] [((draft_status)) as draft_status] [("P") as project_marker] (1*%x30-39) as number [part [1*subpart]] (slash "D" "=" ((("FDIS" [%x30-39]) / ("FCD" [%x30-39]) / ("CDV" [%x30-39]) / ("DIS" [%x30-39]) / ("CD" [%x30-39]) / ("WD" [%x30-39]) / ("PWI" [%x30-39]) / ("NP" [%x30-39])) as iso_stage)) [(("-" (("19" / "20") 2%x30-39) [2%x30-39])) as draft_stage_year] [((dash (month_name) [space] (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39))) as draft_stage_year)])
+  }
+  publisherless_ieee = {
+    ([((("Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.") / (("N" / "n") "o") / "No")) as type [space])] ((number)) [((part_subpart_year / edition))] [corrigendum] [rev_inline] [draft] [revision_suffix] [parenthetical])
+  }
+  corrigendum_identifier = {
+    ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [((("Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.") / (("N" / "n") "o") / "No")) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "Cor" [(dash / dot / space)] [space] ((1*%x30-39)) as cor_number [ ( (comma !yearish [space] draft as cor_draft)   / (comma (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39) / ("20" ("1" / "0") ("x" / "X" / %x30-39))) as cor_year)   / ((dash / ":" / space) (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39) / ("20" ("1" / "0") ("x" / "X" / %x30-39))) as cor_year) ) ] [draft] [parenthetical]
+  }
+  interpretation_identifier = {
+    ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [((("Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.") / (("N" / "n") "o") / "No")) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "INT" [((dash / ":" / space) (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as int_year)] [parenthetical]
+  }
+  conformance_identifier = {
+    ([((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))] [((("Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.") / (("N" / "n") "o") / "No")) as type [space])] ((number)) [(part_subpart_year)]) as base ((slash / dash / space)) "Conformance" ((1*%x30-39)) as conf_number ([space] dash [space]) (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))) as conf_year [parenthetical]
+  }
+  multi_numbered_identifier = {
+    ((((((([(publisher space)] [((("Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.") / (("N" / "n") "o") / "No")) as type [space])] ((number)) [((part_subpart_year / edition))]))) as primary_identifier) ((((slash "C" 1*%x30-39 dot 1*%x30-39 dot 1*%x30-39 ([space] dash [space]) (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))))) as secondary_crossref)))) / ((((((comma space) [((("Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.") / (("N" / "n") "o") / "No")) as type [space])] ((number)) ([space] dash [space]) (((("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39)))))) as secondary_joint))))
+  }
+  csa_dual_published = {
+    (((((((publisher) space) [((("Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.") / (("N" / "n") "o") / "No")) as type [space])] ((number)) [((part_subpart_year / edition))])) as ieee_portion) slash "CSA" space ((((("C" 2%x30-39 dot %x30-39 space ("No" / "NO") dot space (1*(%x30-39 / ".")) ((dash / ":")) 2%x30-39)) / (("C" (1*(%x30-39 / ".")) dash 2%x30-39)) / (("C" 2%x30-39 dot %x30-39 space ("No" / "NO") dot space (1*(%x30-39 / ".")) ":" 2%x30-39)) / (("C" (1*(%x30-39 / ".")) ":" 2%x30-39))) as csa_portion))))
+  }
+  identifier = {
+    combined_aiee_identifier / aiee_identifier / ire_identifier / nesc_identifier / ieee_astm_si_psi / multi_numbered_identifier / csa_dual_published / s_designation / corrigendum_identifier / interpretation_identifier / conformance_identifier / joint_development_ieee_format / joint_development_iso_format / joint_development_ieee_tail_format / joint_development_iso_iec_edition / joint_development_embedded_stage / iec_ieee_copublished / number_first_identifier / ieee_approved_draft_identifier / ieee_draft_p_identifier / ieee_p_identifier / ansi_p_identifier / (((((((((publisher)) ((*copublisher) as copublishers)) as publishers) space))))) [((draft_status)) as draft_status] [(("Draft Std") as type [space])] [((("Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.") / (("N" / "n") "o") / "No")) as type [((space "No" space))] [space])] ((number)) [((part_subpart_year / edition))] [corrigendum] [amendment] [interpretation] [conformance] [ashrae_copub] [ieee_crossref] [rev_inline] [draft] [revision_suffix] [trailing_month_year] [ashrae_copub] [book_nickname] [corrigendum] [edition] [parenthetical] [book_nickname] [redline] [title_portion] [approved_draft_suffix] / no_prefix_ieee / publisherless_ieee / ieee_iso_draft_designation
+  }
 
   entry identifier: identifier
 
-  test {
+
+  bindings identifier {
+    publisher -> publisher (string)
+    type -> type (string)
+    number -> number (string)
+    s_number -> s_number (string)
+    suffix -> suffix (string)
+    part -> part (string)
+    subpart -> subpart (string)
+    year -> year (string)
+    month -> month (string)
+    draft_status -> draft_status (string)
+    iso_stage -> iso_stage (string)
+    tail_iso_stage -> tail_iso_stage (string)
+    iso_stage_iteration -> iso_stage_iteration (string)
+    draft_iso_stage -> draft_iso_stage (string)
+    draft_iso_iteration -> draft_iso_iteration (string)
+    draft_stage_year -> draft_stage_year (string)
+    edition -> edition (string)
+    edition_year -> edition_year (string)
+    edition_month -> edition_month (string)
+    edition_e -> edition_e (string)
+    edition_marker -> edition_marker (string)
+    draft_month -> draft_month (string)
+    draft_year -> draft_year (string)
+    dash_year -> dash_year (string)
+    dash_month -> dash_month (string)
+    draft_dash -> draft_dash (string)
+    trailing_month -> trailing_month (string)
+    trailing_year -> trailing_year (string)
+    amd_number -> amd_number (string)
+    amd_year -> amd_year (string)
+    cor_number -> cor_number (string)
+    cor_year -> cor_year (string)
+    int_year -> int_year (string)
+    conf_number -> conf_number (string)
+    conf_year -> conf_year (string)
+    revision -> revision (string)
+    rev_sep -> rev_sep (string)
+    rev_bare -> rev_bare (string)
+    nickname -> nickname (string)
+    title -> title (string)
+    si_type -> si_type (string)
+    ashrae_number -> ashrae_number (string)
+    ashrae_year -> ashrae_year (string)
+    iec_stage -> iec_stage (string)
+    stage_iteration -> stage_iteration (string)
+    ipcea_copub -> ipcea_copub (string)
+    ieee_crossref -> ieee_crossref (string)
+    content -> content (string)
+    joint_publishers -> joint_publishers (string)
+    project_marker -> project_marker (string)
+    secondary_crossref -> secondary_crossref (string)
+    approved_amendments -> approved_amendments (string)
+    parenthetical_content -> parenthetical_content (string)
+    revision_of -> revision_of (string)
+    amendment_to -> amendment_to (string)
+    adoption -> adoption (string)
+    notebooks -> notebooks (string)
+    standard_newspapers -> standard_newspapers (string)
+    redline -> redline (string)
+    fdraft_stage -> fdraft_stage (string)
+    fdraft_month -> fdraft_month (string)
+    fdraft_year -> fdraft_year (string)
+    draft_date_month -> draft_date_month (string)
+    draft_date_year -> draft_date_year (string)
+    draft_date_day -> draft_date_day (string)
+    draft_date_dash_year -> draft_date_dash_year (string)
+    draft_date_dash_month -> draft_date_dash_month (string)
+    draft_version_dash_year -> draft_version_dash_year (string)
+    draft_version_dash_month -> draft_version_dash_month (string)
+    printed_month_year -> printed_month_year (string)
+    printed_dash_year -> printed_dash_year (string)
+    iec_label_dash -> iec_label_dash (string)
+    draft_version -> draft_version (raw)
+    draft -> draft (raw)
+    digit_draft -> digit_draft (raw)
+    fdraft -> fdraft (raw)
+    corrigendum -> corrigendum (raw)
+    amendment -> amendment (raw)
+    interpretation -> interpretation (raw)
+    conformance -> conformance (raw)
+    parameters -> parameters (raw)
+    ashrae_copub -> ashrae_copub (raw)
+    publishers -> publishers (raw)
+    base -> base (raw)
+    primary_identifier -> primary_identifier (raw)
+    secondary_joint -> secondary_joint (raw)
+    ieee_portion -> ieee_portion (raw)
+    csa_portion -> csa_portion (string)
+    aiee -> aiee (raw)
+    ire -> ire (raw)
+    nesc -> nesc (raw)
+    first_aiee -> first_aiee (raw)
+    second_aiee -> second_aiee (raw)
+    relationship_type -> relationship_type (raw)
+    related_ids -> related_ids (raw)
+    additional_rels -> additional_rels (raw)
+    amendments -> amendments (raw)
+    iso_published -> iso_published (raw)
+  }
+    test {
     # the D= designator accepts the glued stage iteration on every
     # token ("FDIS1", "CD1", "WD2") - the lossless face the builder
     # renders ("D=FDIS1-201607") must re-parse (track 01: 9349/1052/1090)
