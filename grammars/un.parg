@@ -1,11 +1,23 @@
 # Port of lib/pubid/un/parser.rb. `token` matches [A-Z0-9.] runs.
+#
+# Edition-2 typed bindings: `token` repeats (one per slash-separated
+# segment) and the builder walks every occurrence as a path element, so
+# the repeats collect under token[].token — a scalar binding would keep
+# only the first segment. The separator stays a raw "/" literal: a
+# parenthesized slash ref materializes a {slash:} node whose presence
+# the token-walking builder would read as an empty token.
 
-grammar PubidUn version "0.1.0" mode "v1" {
+grammar PubidUn version "0.1.0" edition 2 {
   token_char = %x41-5A / %x30-39 / %x2E
-  token = (1*token_char) as token
-  identifier = ["UN "] token 1*(slash token)
+  token = ( 1*(%x41-5A / %x30-39 / %x2E) ) as token
+  identifier = ["UN "] token 1*( "/" token )
   slash = "/"
+
   entry identifier: identifier
+
+  bindings identifier {
+    token -> token[].token (string)
+  }
 
   test {
     accept "UN/CEFACT/TBG14"

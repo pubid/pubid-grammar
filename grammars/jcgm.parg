@@ -1,29 +1,57 @@
 # Port of lib/pubid/jcgm/parser.rb: JCGM base, meeting, amendment and
 # corrigendum identifiers, and the named GUM/VIM guides.
+#
+# Edition-2 notes: the amendment/corrigendum base wrapper capture drops
+# (a wrapper over rule refs expands to element hashes, and the bindings
+# cannot nest); the base keeps the canonical number/date captures and the
+# amendment layer captures under supp_number/supp_date, mirroring the
+# iec supp_* position-scoped convention. The year_digits body is inlined
+# at every capture site, and bare helper refs adjacent to captures stay
+# raw literals (a parenthesized ref materializes a stray named node).
 
-grammar PubidJcgm version "0.1.0" mode "v1" {
+grammar PubidJcgm version "0.1.0" edition 2 {
   century = "19" / "20"
   year_digits = century 2*digit !digit
-  month_digits = 2*digit
-  day_digits = 2*digit
   digits = 1*digit
   publisher = "JCGM" as publisher
   ordinal_suffix = "st" / "nd" / "rd" / "th"
-  gum_number = "GUM-" (1*digit) as gum_number
-  standard_number = digits as number
+  gum_number = "GUM-" ( 1*digit ) as gum_number
+  standard_number = ( 1*digit ) as number
   number_portion = gum_number / standard_number
-  full_date = (year_digits dash month_digits dash day_digits) as date
-  year_only = year_digits as date
-  date_portion = colon (full_date / year_only)
-  language_portion = "(" (("E/F" / "F/E") / upper) as languages ")"
-  base = publisher space number_portion [date_portion] [language_portion]
-  meeting_identifier = publisher space digits as number ordinal_suffix space "Meeting" as type_with_stage [(space "(" year_digits as date ")")]
-  amendment_identifier = (base as base) slash "Amd" as type_with_stage (space / ("." [space])) digits as number [(colon (full_date / year_only))]
-  corrigendum_identifier = (base as base) space "Corrigendum" as type_with_stage
-  numbered_corrigendum_identifier = (base as base) slash "Cor" as type_with_stage (space / ("." [space])) digits as number [(colon (full_date / year_only))]
-  named_number = ("GUM" / ("VIM" [(dash digits)])) as number
-  named_guide_identifier = publisher space named_number
-  identifier = meeting_identifier / amendment_identifier / corrigendum_identifier / numbered_corrigendum_identifier / base / named_guide_identifier
+  full_date = {
+    ( ("19" / "20") 2*(%x30-39) !(%x30-39) "-" 2*(%x30-39) "-" 2*(%x30-39) ) as date
+  }
+  year_only = ( ("19" / "20") 2*(%x30-39) !(%x30-39) ) as date
+  date_portion = ":" ( full_date / year_only )
+  language_portion = "(" ( ( "E/F" / "F/E" ) / %x41-5A ) as languages ")"
+  base = publisher " " number_portion [date_portion] [language_portion]
+  meeting_identifier = {
+    publisher " " ( 1*digit ) as number ("st" / "nd" / "rd" / "th") " " "Meeting" as type_with_stage
+    [ ( " (" ( ("19" / "20") 2*(%x30-39) !(%x30-39) ) as date ")" ) ]
+  }
+  amendment_identifier = {
+    base "/" "Amd" as type_with_stage ( " " / ("." [" "]) ) ( 1*digit ) as supp_number
+    [ ( ":" ( ( ("19" / "20") 2*(%x30-39) !(%x30-39) "-" 2*(%x30-39) "-" 2*(%x30-39) ) as supp_date
+            / ( ("19" / "20") 2*(%x30-39) !(%x30-39) ) as supp_date ) ) ]
+  }
+  corrigendum_identifier = {
+    base " " "Corrigendum" as type_with_stage
+  }
+  numbered_corrigendum_identifier = {
+    base "/" "Cor" as type_with_stage ( " " / ("." [" "]) ) ( 1*digit ) as supp_number
+    [ ( ":" ( ( ("19" / "20") 2*(%x30-39) !(%x30-39) "-" 2*(%x30-39) "-" 2*(%x30-39) ) as supp_date
+            / ( ("19" / "20") 2*(%x30-39) !(%x30-39) ) as supp_date ) ) ]
+  }
+  named_number = ( "GUM" / ( "VIM" [ "-" 1*digit ] ) ) as number
+  named_guide_identifier = publisher " " named_number
+  identifier = {
+      meeting_identifier
+    / amendment_identifier
+    / corrigendum_identifier
+    / numbered_corrigendum_identifier
+    / base
+    / named_guide_identifier
+  }
   upper = %x41-5A
   digit = %x30-39
   slash = "/"
@@ -31,6 +59,17 @@ grammar PubidJcgm version "0.1.0" mode "v1" {
   colon = ":"
   space = " "
   entry identifier: identifier
+
+  bindings identifier {
+    publisher -> publisher (string)
+    number -> number (string)
+    gum_number -> gum_number (string)
+    date -> date (string)
+    supp_number -> supp_number (string)
+    supp_date -> supp_date (string)
+    languages -> languages (string)
+    type_with_stage -> type_with_stage (string)
+  }
 
   test {
     accept "JCGM 200:2008(F)"
