@@ -65,6 +65,12 @@ jobs:
             https://github.com/pubid/pubid-ts ../pubid-ts
           cd ../pubid-ts
           npm install
+          # pubid-ts declares parsanol with a caret, so a fresh install
+          # floats to whatever is latest at install time and the gate's
+          # verdict moves underneath it. Pin the wasm engine (the TS
+          # sibling of the ruby PARSANOL_VERSION pin above); the corpus
+          # used here agrees with 0.10.30 on every row. parsanol-ts#34.
+          npm install --no-save parsanol@0.10.30
           npm run build
           npx tsc -p tsconfig.test.json
           PARG_ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts" \
