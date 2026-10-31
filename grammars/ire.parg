@@ -16,8 +16,8 @@ grammar PubidIre version "0.1.0" edition 2 {
   dash = "-"
   dot = "."
 
-  year_short = (%x31-36 digit)
-  year_full = (("191" digit)) / (("19" ("2" / "3" / "4" / "5") digit)) / (("196" %x30-33))
+  year_short = (%x31-36 %x30-39)
+  year_full = (("191" %x30-39)) / (("19" ("2" / "3" / "4" / "5") %x30-39)) / (("196" %x30-33))
   ire_prefix = ("IEEE-IRE" / "IRE") as publisher
   ire_type = ("Trans." / "Standard" / "Std") as type
   number = {
@@ -35,25 +35,25 @@ grammar PubidIre version "0.1.0" edition 2 {
   # in the pure-Ruby VM, losing the backtrack the year-less forms need.
   ire_identifier_year_first = {
     (
-      ("191" digit)
-      / ("19" ("2" / "3" / "4" / "5") digit)
+      ("191" %x30-39)
+      / ("19" ("2" / "3" / "4" / "5") %x30-39)
       / ("196" %x30-33)
-      / (%x31-36 digit)
+      / (%x31-36 %x30-39)
     ) as year
     " " ire_prefix " " [ire_type " "] number
     [ yr_sep (
-      ("191" digit)
-      / ("19" ("2" / "3" / "4" / "5") digit)
+      ("191" %x30-39)
+      / ("19" ("2" / "3" / "4" / "5") %x30-39)
       / ("196" %x30-33)
     ) as full_year ]
   }
   ire_identifier_prefix_first = {
     ire_prefix " " [ire_type " "] number
     [ yr_sep (
-      ("191" digit)
-      / ("19" ("2" / "3" / "4" / "5") digit)
+      ("191" %x30-39)
+      / ("19" ("2" / "3" / "4" / "5") %x30-39)
       / ("196" %x30-33)
-      / (%x31-36 digit)
+      / (%x31-36 %x30-39)
     ) as year ]
   }
   ire_identifier = ire_identifier_year_first / ire_identifier_prefix_first
