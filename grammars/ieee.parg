@@ -319,7 +319,7 @@ grammar PubidIeee version "0.1.0" edition 2 {
     s_number -> s_number (string)
     suffix -> suffix (string)
     part -> part (string)
-    subpart -> subpart (string)
+    subpart -> subparts[].subpart (string)
     year -> year (string)
     month -> month (string)
     draft_status -> draft_status (string)
