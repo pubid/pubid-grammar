@@ -22,7 +22,15 @@ grammar PubidCsa version "0.1.0" edition 2 {
   code_c = (upper 1*digit *(dot 1*digit) *(dash code_c_tail) [2*6upper])
   code_d = (upper 1*digit [dot 1*digit])
   code_e = (upper 2*digit)
-  code_pattern = ((1*digit dot 1*digit *1(dash 1*digit) [2*6upper]) / (1*digit 2*6upper) / (upper 1*digit *(dot 1*digit) *(dash ((digit !digit) / 3*digit / (1*digit 1*letter))) [2*6upper]) / (upper 1*digit [dot 1*digit]) / (upper 2*digit)) as code
+  code_pattern = {
+    (
+      (1*digit dot 1*digit *1(dash 1*digit) [2*6upper])
+      / (1*digit 2*6upper)
+      / (upper 1*digit *(dot 1*digit) *(dash ((digit !digit) / 3*digit / (1*digit 1*letter))) [2*6upper])
+      / (upper 1*digit [dot 1*digit])
+      / (upper 2*digit)
+    ) as code
+  }
 
   no_notation = space ("NO." / "No.") as no_notation space
   no_number = ((1*digit 2*10(dash 1*digit)) / (5*digit dash 1*digit) / (3*4digit dash (one_or_one_follow / 3*digit)) / (1*digit 1*3(dot 1*digit)) / 1*digit) as no_number
@@ -34,7 +42,14 @@ grammar PubidCsa version "0.1.0" edition 2 {
   reaffirmation = space "(R" ((4digit) as reaffirmation_4digit / (2digit) as reaffirmation_2digit) ")"
   amendment_slash = slash ["Amd " ] ["A"] (1*digit) as amendment_number [(colon (2digit) as amendment_year)]
   package_keyword = "Code" / "Handbook" / "Training Package" / "Package"
-  package_portion = space ("Code" / "Handbook" / "Training Package" / "Package") *((", " ("Code" / "Handbook" / "Training Package" / "Package")) / (space "& " ("Code" / "Handbook" / "Training Package" / "Package")))
+  package_portion = {
+    space
+    ("Code" / "Handbook" / "Training Package" / "Package")
+    *(
+      (", " ("Code" / "Handbook" / "Training Package" / "Package"))
+      / (space "& " ("Code" / "Handbook" / "Training Package" / "Package"))
+    )
+  }
   series_prefix = (2*3upper) as series_prefix
   series_keyword = "SERIES"
 
@@ -42,20 +57,69 @@ grammar PubidCsa version "0.1.0" edition 2 {
   cec_part = "C22.2" / "C22.3" / "C22.4" / "C22.6"
   cec_identifier = publisher (cec_part as cec_part) no_notation no_number [colon_year / dash_year] [reaffirmation]
   adoption_identifier = ("CSA" as adoption_pub) adoption_body [reaffirmation]
-  adoption_body = (("ISO/IEC" as adoption_org space ("TR" / "TS") as iso_type space (1*numdash) as adoption_number) / ("ISO/IEC" as adoption_org_with_type space (1*numdash) as adoption_number) / (("ISO" / "IEC" / "CEI/IEC" / "CISPR") as adoption_org space (1*numdash) as adoption_number)) ((colon / dash) as adoption_year_sep (year_4digit / year_2digit) as adoption_year) [(slash "A" digit as adoption_amendment (colon / dash) (year_4digit / year_2digit) as adoption_amendment_year)]
+  adoption_body = {
+    (
+      ("ISO/IEC" as adoption_org space ("TR" / "TS") as iso_type space (1*numdash) as adoption_number)
+      / ("ISO/IEC" as adoption_org_with_type space (1*numdash) as adoption_number)
+      / (("ISO" / "IEC" / "CEI/IEC" / "CISPR") as adoption_org space (1*numdash) as adoption_number)
+    )
+    ((colon / dash) as adoption_year_sep (year_4digit / year_2digit) as adoption_year)
+    [
+      (slash "A" digit as adoption_amendment (colon / dash) (year_4digit / year_2digit) as adoption_amendment_year)
+    ]
+  }
   numdash = digit / "-"
   iso_iec_adoption = adoption_identifier
 
-  trailing_block = ((no_notation no_number (colon_year / dash_year)) / (space series_prefix space "SERIES" as series (colon_year / dash_year)) / (space "SERIES" as series (colon_year / dash_year)) / (colon_year / dash_year))
+  trailing_block = {
+    (
+      (no_notation no_number (colon_year / dash_year))
+      / (space series_prefix space "SERIES" as series (colon_year / dash_year))
+      / (space "SERIES" as series (colon_year / dash_year))
+      / (colon_year / dash_year)
+    )
+  }
   csa_code = publisher code_pattern [trailing_block] [amendment_slash]
   base_csa_code = publisher code_pattern [trailing_block]
   continuation_code = [publisher] code_pattern [trailing_block] [amendment_slash]
   bundled_portion = code_pattern ((no_notation no_number [colon_year / dash_year]) / [colon_year / dash_year])
   bundled_identifier = csa_code_first (" + ") as plus_separator bundled_portion_first (*(" + " bundled_portion_first)) [reaffirmation]
   combined_slash = csa_code_first 1*(slash csa_code_part) [reaffirmation] [package_portion]
-  combined_comma = csa_code_first ("," as comma_separator) space csa_code_part [reaffirmation] [(space "& " space ("Code" / "Handbook" / "Training Package" / "Package") *((", " ("Code" / "Handbook" / "Training Package" / "Package")) / (space "& " ("Code" / "Handbook" / "Training Package" / "Package"))) / space ("Code" / "Handbook" / "Training Package" / "Package") *((", " ("Code" / "Handbook" / "Training Package" / "Package")) / (space "& " ("Code" / "Handbook" / "Training Package" / "Package")))) as package_portion]
-  single_identifier = csa_code [reaffirmation] [space ("Code" / "Handbook" / "Training Package" / "Package") *((", " ("Code" / "Handbook" / "Training Package" / "Package")) / (space "& " ("Code" / "Handbook" / "Training Package" / "Package"))) as package_portion]
-  code_only_identifier = code_pattern ((space series_prefix space "SERIES" as series (colon_year / dash_year)) / (space "SERIES" as series (colon_year / dash_year)) / (colon_year / dash_year)) [(space "PACKAGE") as package_portion]
+  combined_comma = {
+    csa_code_first
+    ("," as comma_separator)
+    space
+    csa_code_part
+    [reaffirmation]
+    [
+      (
+        space "& " space ("Code" / "Handbook" / "Training Package" / "Package")
+          *((", " ("Code" / "Handbook" / "Training Package" / "Package"))
+            / (space "& " ("Code" / "Handbook" / "Training Package" / "Package")))
+        / space ("Code" / "Handbook" / "Training Package" / "Package")
+          *((", " ("Code" / "Handbook" / "Training Package" / "Package"))
+            / (space "& " ("Code" / "Handbook" / "Training Package" / "Package")))
+      ) as package_portion
+    ]
+  }
+  single_identifier = {
+    csa_code
+    [reaffirmation]
+    [
+      space ("Code" / "Handbook" / "Training Package" / "Package")
+      *((", " ("Code" / "Handbook" / "Training Package" / "Package"))
+        / (space "& " ("Code" / "Handbook" / "Training Package" / "Package"))) as package_portion
+    ]
+  }
+  code_only_identifier = {
+    code_pattern
+    (
+      (space series_prefix space "SERIES" as series (colon_year / dash_year))
+      / (space "SERIES" as series (colon_year / dash_year))
+      / (colon_year / dash_year)
+    )
+    [(space "PACKAGE") as package_portion]
+  }
 
   # Combined and bundled identifiers: every position captures the same
   # part_* fields, so one csa_code_part[] array group pairs them by
@@ -65,8 +129,23 @@ grammar PubidCsa version "0.1.0" edition 2 {
   csa_code_first = publisher_first 1*(code_pattern_part) [trailing_block_part]
   csa_code_part = [publisher_first] 1*(code_pattern_part) [trailing_block_part] [amendment_slash]
   publisher_first = 1*(("CSA" space) as part_has_publisher)
-  code_pattern_part = 1*((1*digit dot 1*digit *1(dash 1*digit) [2*6upper]) / (1*digit 2*6upper) / (upper 1*digit *(dot 1*digit) *(dash ((digit !digit) / 3*digit / (1*digit 1*letter))) [2*6upper]) / (upper 1*digit [dot 1*digit]) / (upper 2*digit)) as part_code
-  trailing_block_part = ((part_no_notation part_no_number (part_colon_year / part_dash_year)) / (space part_series_prefix space 1*("SERIES" as part_series) (part_colon_year / part_dash_year)) / (space 1*("SERIES" as part_series) (part_colon_year / part_dash_year)) / (part_colon_year / part_dash_year))
+  code_pattern_part = {
+    1*(
+      (1*digit dot 1*digit *1(dash 1*digit) [2*6upper])
+      / (1*digit 2*6upper)
+      / (upper 1*digit *(dot 1*digit) *(dash ((digit !digit) / 3*digit / (1*digit 1*letter))) [2*6upper])
+      / (upper 1*digit [dot 1*digit])
+      / (upper 2*digit)
+    ) as part_code
+  }
+  trailing_block_part = {
+    (
+      (part_no_notation part_no_number (part_colon_year / part_dash_year))
+      / (space part_series_prefix space 1*("SERIES" as part_series) (part_colon_year / part_dash_year))
+      / (space 1*("SERIES" as part_series) (part_colon_year / part_dash_year))
+      / (part_colon_year / part_dash_year)
+    )
+  }
   part_no_notation = space 1*(("NO." / "No.") as part_no_notation) space
   part_no_number = 1*((1*digit 2*10(dash 1*digit)) / (5*digit dash 1*digit) / (3*4digit dash ((digit !digit) / 3*digit)) / (1*digit 1*3(dot 1*digit)) / 1*digit) as part_no_number
   part_series_prefix = 1*((2*6upper) as part_series_prefix)

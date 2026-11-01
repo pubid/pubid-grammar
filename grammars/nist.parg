@@ -61,7 +61,12 @@ grammar PubidNist version "0.1.0" edition 2 {
   slash = "/"
   hash_prefix = "#"
 
-  month_abbrev = "January" / "February" / "September" / "November" / "December" / "October" / "August" / "June" / "March" / "April" / "July" / "May" / "Jan" / "Feb" / "Mar" / "Apr" / "Jun" / "Jul" / "Aug" / "Sep" / "Oct" / "Nov" / "Dec"
+  month_abbrev = {
+    "January" / "February" / "September" / "November" / "December"
+    / "October" / "August" / "June" / "March" / "April" / "July"
+    / "May" / "Jan" / "Feb" / "Mar" / "Apr" / "Jun" / "Jul" / "Aug"
+    / "Sep" / "Oct" / "Nov" / "Dec"
+  }
 
   # esp before es: lint-forced longest-first (see header).
   language_code = {

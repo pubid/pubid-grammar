@@ -98,7 +98,14 @@ grammar PubidIso version "0.3.0" edition 2 {
   jcgm_identifier = "JCGM" as publisher space second_part third_part
 
   # ---- NSB stage prefixes: "FprISO 105-A03", "WD/ISO 10360-5:2000" ----
-  nsb_iso_identifier = ("Fpr" as nsb_stage prefix_sole_publisher [space] [copublishers] [space] [type_with_stage] [space] second_part third_part) / ("WD" as nsb_stage slash prefix_sole_publisher [space] [copublishers] [space] [type_with_stage] [space] second_part third_part)
+  nsb_iso_identifier = {
+    (
+      "Fpr" as nsb_stage prefix_sole_publisher [space] [copublishers] [space] [type_with_stage] [space] second_part third_part
+    )
+    / (
+      "WD" as nsb_stage slash prefix_sole_publisher [space] [copublishers] [space] [type_with_stage] [space] second_part third_part
+    )
+  }
 
   # ---- TC documents: "ISO/TC 184/SC 4/WG 3 N 123" ----
   tc_type = alt from_table "tc_types" column "name" as tc_type
@@ -127,10 +134,22 @@ grammar PubidIso version "0.3.0" edition 2 {
   directives_part_and_subpart = space ("ISO" / "IEC") !slash !(space "SUP")
   directives_number_with_part = (number [directives_part_and_subpart]) as number_with_part
   directives_typed_stage = alt from_table "directives_typed_stages" column "abbr"
-  directives_identifier_no_third = prefix_with_copublishers [space] [directives_publisher_subgroup space] directives_typed_stage as type_with_stage [space directives_publisher_subgroup !(space "SUP")] [[space directives_number_with_part] [(colon date)]]
+  directives_identifier_no_third = {
+    prefix_with_copublishers
+    [space]
+    [directives_publisher_subgroup space]
+    directives_typed_stage as type_with_stage
+    [space directives_publisher_subgroup !(space "SUP")]
+    [[space directives_number_with_part] [(colon date)]]
+  }
   directives_identifier = directives_identifier_no_third [third_part] [space] [date]
   directives_supplement_typed_stage = alt from_table "directives_supplements_typed_stages" column "abbr"
-  directives_supplement_part_no_third = [[space] "--" [space] "Consolidated" space] ("ISO/IEC" / "ISO" / "IEC" / "JTC 1") as publisher (space directives_supplement_typed_stage as type_with_stage) [date]
+  directives_supplement_part_no_third = {
+    [[space] "--" [space] "Consolidated" space]
+    ("ISO/IEC" / "ISO" / "IEC" / "JTC 1") as publisher
+    (space directives_supplement_typed_stage as type_with_stage)
+    [date]
+  }
   directives_supplement_part = directives_supplement_part_no_third [third_part]
   directives_supplement_identifier = directives_identifier_no_third as base [space] directives_supplement_part
   directives_base_document = (directives_identifier_no_third [[third_part] [space]] [[date] [space]]) as base_document
@@ -144,7 +163,20 @@ grammar PubidIso version "0.3.0" edition 2 {
 
   ## The ISO identifier root: common-text twin form first, then the
   ## single spine.
-  identifier = bare_tc_document / nsb_iso_identifier / tc_document / directives_identifiers / jcgm_identifier / iso_r_supplement_identifier / iso_r_identifier / supplement_supplement_supplement_identifier / supplement_supplement_identifier / supplement_identifier / joint_identifier / identifier_copublishers
+  identifier = {
+    bare_tc_document
+    / nsb_iso_identifier
+    / tc_document
+    / directives_identifiers
+    / jcgm_identifier
+    / iso_r_supplement_identifier
+    / iso_r_identifier
+    / supplement_supplement_supplement_identifier
+    / supplement_supplement_identifier
+    / supplement_identifier
+    / joint_identifier
+    / identifier_copublishers
+  }
 }
 
 entry identifier: identifier

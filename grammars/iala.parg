@@ -1,20 +1,51 @@
 # Port of lib/pubid/iala/parser.rb: [IALA ]<type><number>[.dots][-subs]
 # [ Ed X.Y | :edX.Y] [(L)], plus the Annex-to-base form. The annex
 # letter guard (!lower) keeps "Ed 1" from mis-capturing.
+#
+# Edition-2 conversion with typed model bindings. Deviations from the
+# v1 tree:
+# - the dotted continuation and the dash subpart repeat capture-bearing
+#   rule refs (the itu `parts` shape): a repetition over a capture-less
+#   unit harvested as a bare span binds differently per engine, so the
+#   bindings read the inner captures through the array paths
+#   `doc_number_dots[].dotted_segment` and `subpart[].subpart_number`.
+#   The dotted segment gains its own capture (`dotted_segment`); the
+#   subpart keeps its `subpart_number` capture, hoisted out of the
+#   inline repetition into a rule ref of its own.
+# - the annex base composite stays unbound. Every capture inside it
+#   (type_letter, doc_number, …) is the only occurrence of its name on
+#   the annex path, so the binding harvest hoists it to the top level:
+#   the builder reads one flat map for the plain and the annex form
+#   alike and dispatches on :annex_marker. edition_value and language
+#   hoist out of their edition/language_group composites the same way.
 
 grammar PubidIala version "0.1.0" edition 2 {
   type_letter = ("GA" / "S" / "R" / "G" / "M" / "C" / "A" / "L" / "X" / "P") as type_letter
   doc_number = (1*digit) as doc_number
-  dotted_number = "." 1*digit
+  dotted_number = dot (1*digit) as dotted_segment
   number_with_dots = doc_number (*dotted_number) as doc_number_dots
-  subpart = (1*(dash (1*digit) as subpart_number)) as subpart
+  subpart_number = dash (1*digit) as subpart_number
+  subpart = (1*subpart_number) as subpart
   code = type_letter number_with_dots [subpart]
   edition_value = (1*digit *(dot 1*digit)) as edition_value
   edition_human = (space "Ed" space edition_value) as edition
   edition_compact = (colon "ed" edition_value) as edition
   language_group = ([space] "(" ("E" / "F" / "S" / "C" / "A" / "R") as language ")") as language_group
-  annex_identifier = ((publisher type_letter number_with_dots [subpart]) as base) space ("Annex" / "ANNEX") as annex_marker [(space upper as annex_letter !lower)] [edition_human / edition_compact] [language_group]
-  identifier = annex_identifier / (publisher code [edition_human / edition_compact] [language_group])
+  annex_identifier = {
+    ((publisher type_letter number_with_dots [subpart]) as base)
+    space
+    ("Annex" / "ANNEX") as annex_marker
+    [ (space upper as annex_letter !lower) ]
+    [edition_human / edition_compact]
+    [language_group]
+  }
+  plain_identifier = {
+    publisher code [edition_human / edition_compact] [language_group]
+  }
+  identifier = {
+      annex_identifier
+    / plain_identifier
+  }
   publisher = ["IALA "]
   upper = %x41-5A
   lower = %x61-7A
@@ -25,9 +56,50 @@ grammar PubidIala version "0.1.0" edition 2 {
   space = " "
   entry identifier: identifier
 
+  bindings identifier {
+    type_letter -> type_letter (string)
+    doc_number -> doc_number (string)
+    dotted_segment -> doc_number_dots[].dotted_segment (string)
+    subpart_number -> subpart[].subpart_number (string)
+    edition_value -> edition_value (string)
+    language -> language (string)
+    annex_marker -> annex_marker (string)
+    annex_letter -> annex_letter (string)
+  }
+
   test {
     accept "G1040"
     accept "GA1040"
+    accept "IALA S1070 Ed 2.0"
+    accept "R1016:ed2.0(F)"
+    accept "C0103-1 Ed 3.0"
+    accept "IALA L2.1.11 Ed 2"
+    accept "IALA G1128 Annex A Ed 1.6"
+    accept "IALA G1045 Annex Ed 1"
+    accept "IALA A12-01 (E)"
     reject "nonsense"
+    example "G1040" { type_letter: "G", doc_number: "1040" }
+    example "GA01.01" {
+      type_letter: "GA",
+      doc_number: "01",
+      doc_number_dots: [ { dotted_segment: "01" } ],
+    }
+    example "C0103-1" {
+      type_letter: "C",
+      doc_number: "0103",
+      subpart: [ { subpart_number: "1" } ],
+    }
+    example "IALA S1070 Ed 2.0" {
+      type_letter: "S",
+      doc_number: "1070",
+      edition_value: "2.0",
+    }
+    example "IALA G1128 Annex A Ed 1.6" {
+      type_letter: "G",
+      doc_number: "1128",
+      annex_marker: "Annex",
+      annex_letter: "A",
+      edition_value: "1.6",
+    }
   }
 }
