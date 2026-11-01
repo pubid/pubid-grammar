@@ -21,12 +21,12 @@
 # swallows it (a year needs all four digits of 19xx/20xx; a dotted
 # version needs all three segments).
 #
-# The grammar stays edition v1: the v1 tree inlines rule references
-# inside a captured body (the v2 tree materializes them as named
-# nodes), which the builder's string fold over :number/:type expects.
-# The tail rule uses only raw terms, so nothing in it needs v2.
+# Edition 2: ruby#400's capture-flatten keeps text captures over
+# reference-built rules as the matched text, so the v2 tree is the v1
+# tree plus named leaves for non-captured structure - the builder's
+# string fold over :number/:type sees the same values.
 
-grammar PubidIho version "0.1.0" edition 1 {
+grammar PubidIho version "0.1.0" edition 2 {
   digit = %x30-39
   upper = %x41-5A
   lower = %x61-7A

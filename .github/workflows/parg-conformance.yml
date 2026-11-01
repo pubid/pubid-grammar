@@ -13,7 +13,7 @@ env:
   # v1.3.114 carries the numeric editions (the canonical `edition 2`
   # header, the integer envelope field) and the v2 whitespace-class
   # glue fix: %xNN whitespace rules stay anonymous in edition-2 trees.
-  PARSANOL_VERSION: 1.3.114
+  PARSANOL_VERSION: 1.3.121
   RS_REF: main
   TS_REF: main
 
