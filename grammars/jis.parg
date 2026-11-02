@@ -1,7 +1,8 @@
 # Port of lib/pubid/jis/parser.rb — JIS identifiers with the Japanese
 # full-width separator tolerance (ｰ 　 ： （）), TR/TS prefixes, parts,
 # reaffirmed years, (E)/(J) language codes, 規格群 all-parts, AMD/EXPL/
-# CORR supplements, and the SYMBOL clause.
+# CORR supplements, and the SYMBOL clause. WES (Japan Welding Engineering
+# Society) ids share the JIS tail but carry no series letter or JIS prefix.
 
 grammar PubidJis version "0.1.0" edition 2 {
   dash = ("-" / "ｰ") as dash
@@ -44,7 +45,18 @@ grammar PubidJis version "0.1.0" edition 2 {
     space "SYMBOL" as symbol_present
     ([space (1*symbol_value_char) as symbol_value])
   }
-  identifier = {
+  wes_identifier = {
+    "WES" as wes
+    space
+    number
+    parts
+    [year]
+    [language]
+    [all_parts]
+    [supplement]
+    [symbol_clause]
+  }
+  jis_identifier = {
     ["JIS" [(space / slash)]]
     [type_prefix]
     [space]
@@ -58,16 +70,18 @@ grammar PubidJis version "0.1.0" edition 2 {
     [supplement]
     [symbol_clause]
   }
+  identifier = wes_identifier / jis_identifier
   upper = %x41-5A
   digit = %x30-39
   slash = "/"
-  reaffirmed_rule = "R" (*"R") as reaffirmed
+  reaffirmed_rule = ("R" (*"R")) as reaffirmed
   entry identifier: identifier
 
   # Typed model bindings: bound captures land on the consumer
   # builder's fields of the same name; repeated parts collect under
   # parts[].part.
   bindings identifier {
+    wes -> wes (string)
     type -> type (string)
     series -> series (string)
     number -> number (string)
@@ -93,6 +107,16 @@ grammar PubidJis version "0.1.0" edition 2 {
   test {
     accept "JIS B 0001"
     accept "JIS X 0208:1997"
+    accept "WES 7700-1:2019"
+    accept "WES 7301:2020R"
+    reject "JIS WES 7700"
+    reject "WES X 7700"
     reject "nonsense"
+    example "WES 7700-1:2019" { wes: "WES", number: "7700", year: "2019" }
+    example "WES 7301:2020R" { wes: "WES", number: "7301", year: "2020", reaffirmed: "R" }
+    example "JIS X 0208:1997" { series: "X", number: "0208", year: "1997" }
+    example "WES 7700:2019/AMD 1:2020R" { wes: "WES", number: "7700", amd_type: "AMD", amd_number: "1", amd_year: "2020", amd_reaffirmed: "R" }
+    example "JIS X 0208:1997R" { series: "X", year: "1997", reaffirmed: "R" }
+    example "JIS X 0208:1997RR" { series: "X", year: "1997", reaffirmed: "RR" }
   }
 }
