@@ -25,6 +25,17 @@
 #   volume       Vol. N              volume              string
 #   issue        (N) / Issue N       issue               string
 #
+# The part has a COMPACT face, hyphenated onto the code - `IHO S-5-B`
+# (lettered part) and `IHO S-100-1` (numbered part) - which both parses
+# and renders; the canonical expanded face stays `IHO S-100 x.y.z
+# Part 1`. Gluing a part onto the code without a separator (S-5A) is
+# DISALLOWED as a form: it cannot extend to numbered parts without
+# ambiguity (S-1001 = series 1001 vs series 100 part 1). The four
+# lettered bases the corpus records (S-5A, S-5B, S-8A, S-8B) are
+# LEGACY data spellings: they still parse as aliases (S-5A == S-5
+# Part A) but are never rendered; the owner rules later whether to
+# reject them outright.
+#
 # Two main syntaxes per the owner ruling: `IHO S-100 1.0.0` (dated =
 # edition-specific) and `IHO S-100` (undated = edition-non-specific).
 # A year beside an edition is the with-year variant qualifier
@@ -34,9 +45,10 @@
 # P-1 and P-6 are volume-keyed (`IHO P-1 Vol. 30 (1)`).
 #
 # Aliases: "Sup" (canonical face Suppl), "App"/"Ap." (canonical face
-# Appendix), "S-5A"-style lettered bases (glued shorthand for
-# series+part: S-5A == S-5 Part A), "S-100P2" (glued numeric part),
-# "S-100 v1..v5.1" (edition shorthand), "Issue N" (canonical (N)).
+# Appendix), the hyphenated compact part face (S-5-B == S-5 Part B,
+# S-100-1 == S-100 Part 1), the legacy glued lettered bases (S-5A,
+# parse-only), "S-100 v1..v5.1" (edition shorthand), "Issue N"
+# (canonical (N)).
 #
 # == URN segment grammar (positional, containment-ordered)
 #
@@ -95,15 +107,20 @@ grammar PubidIho version "0.2.0" edition 2 {
   dot = "."
 
   series = ("S" / "P" / "M" / "B" / "C") as type
-  number_suffix = ((":" 1*digit) / ("/" 1*digit) / (dash 1*digit))
+  number_suffix = ((":" 1*digit) / ("/" 1*digit))
   number = (1*digit [number_suffix]) as number
-  # Lettered bases are glued shorthand for series+part (S-5A == S-5
-  # Part A); "P" + digits is the glued numeric part (S-100P2 == S-100
-  # Part 2). Each branch captures its own value — the digits of the
-  # numeric branch, the letter of the lettered branch — so the part
-  # carries "2", never the glued "P2". The bare trailing uppercase
-  # letter therefore no longer joins the number.
-  glued = (("P" (1*digit) as part) / (upper as part))
+  # The compact part face, hyphenated onto the code: S-5-B (lettered)
+  # and S-100-1 (numbered) — the dash replaces the old bare-glued
+  # suffix, so a number like S-1001 stays a whole number (the dash is
+  # what makes the part unambiguous). The dash-digit suffix that used
+  # to join the number (P-6-3 as number "6-3") is now the part
+  # component. The dash is an inlined literal: a named dash ref here
+  # collides with the sequence's own dash node in the edition-2 tree.
+  compact_part = "-" ((1*digit [*letter]) / upper) as part
+  # LEGACY glued lettered bases (S-5A, S-5B, S-8A, S-8B in the corpus):
+  # parse-only aliases, never rendered. Kept because the records exist;
+  # the owner rules later whether to reject them.
+  glued = upper as part
 
   # The official edition is the dotted x.y.z; "v1"/"v5.1" is the S-100
   # shorthand (parse-only, the builder pads to x.y.0).
@@ -141,6 +158,7 @@ grammar PubidIho version "0.2.0" edition 2 {
     series
     dash
     number
+    [compact_part]
     [glued]
     [dated]
     [supplement]
@@ -172,16 +190,22 @@ grammar PubidIho version "0.2.0" edition 2 {
     accept "IHO M-2 Suppl 1"
     accept "IHO M-2 Sup 6"
     accept "IHO S-66 2.0.0 Suppl 4"
+    accept "IHO S-5-B"
+    accept "IHO S-100-1"
+    accept "IHO S-100-1 1.0.0"
+    accept "IHO P-6-3 1.0.0"
     accept "IHO S-5A"
     accept "IHO S-5A 1.0.2"
     accept "IHO S-5 1.0.2 Part A"
-    accept "IHO S-100P2"
     accept "IHO S-100 5.0.0 Part 2 (2024)"
     accept "IHO S-100 v5.1"
     accept "IHO S-100 v1"
     accept "IHO S-100 1.0.0 (2024) Part A"
     accept "IHO S-53 Ap. 1 1.0.0"
     accept "IHO S-98 Part A 1.0.0"
+    accept "IHO S-158:100 1.0.0"
+    accept "IHO S-158:100 Part 2 1.0.0"
+    accept "IHO S-1001"
     reject "nonsense"
     reject "IHO B-12 3.0"
     reject "IHO P-5 1850"
