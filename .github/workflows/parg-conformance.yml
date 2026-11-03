@@ -9,11 +9,13 @@ env:
   # Post brace-body rule forms (ruby#311) and the advisory lint split:
   # the compiler must parse brace-form grammars and reproduce the
   # committed contracts byte-for-byte.
-  # The released compiler the artifacts are baked with. ruby#361's
-  # v1.3.114 carries the numeric editions (the canonical `edition 2`
-  # header, the integer envelope field) and the v2 whitespace-class
-  # glue fix: %xNN whitespace rules stay anonymous in edition-2 trees.
-  PARSANOL_VERSION: 1.3.121
+  # The released compiler the artifacts are baked with. 1.3.121 carried
+  # ruby#400's capture-flatten (the edition-2 text-capture semantics);
+  # 1.3.126 is the last good compiler before ruby#434 (its successor's
+  # loud-loss check matches the binding PATH instead of the CAPTURE
+  # name, wrongly dropping every capture != path rename, so the whole
+  # fleet pins below it until that fix ships).
+  PARSANOL_VERSION: 1.3.126
   RS_REF: main
   TS_REF: main
 
