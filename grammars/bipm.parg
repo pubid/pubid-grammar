@@ -43,9 +43,28 @@ grammar PubidBipm version "0.1.0" edition 2 {
         group
         space
         type_abbrev
-        [(space number)]
+        [(space number [(space "A" (1*digit) as appendix [dot (1*digit) as annex])])]
         [(space year_paren)]
       ) as committee_short
+    )
+  }
+  # The publisher-prefixed decision form the corpus cites
+  # ("BIPM DECN CIPM/101-1 (2012, EN)"): a literal BIPM publisher lead, the
+  # outcome type, then the body-qualified resource-specific-id "{body}/{id}".
+  # It names the same document as the unprefixed "<body> <TYPE> <id>" form, so
+  # the builder dispatches it through the same CommitteeDocument path.
+  committee_prefixed = {
+    (
+      (
+        "BIPM"
+        space
+        type_abbrev
+        space
+        group
+        slash
+        number
+        [(space year_paren)]
+      ) as committee_prefixed
     )
   }
   committee_long_en = {
@@ -62,13 +81,8 @@ grammar PubidBipm version "0.1.0" edition 2 {
   committee_long_fr = {
     (
       (
-        type_name_fr
-        [(space number)]
-        space
-        connective
-        space
-        group
-        [(space year_paren_nolang)]
+        (type_name_fr [(space number)] space connective space group [(space year_paren_nolang)])
+        / (type_name_fr space group slash number [(space year_paren_nolang)])
       ) as committee_long_fr
     )
   }
@@ -90,6 +104,8 @@ grammar PubidBipm version "0.1.0" edition 2 {
       (
         (group space number ordinal space "Meeting" [(space year_paren)])
         / (group space "Meeting" space number [(space year_paren)])
+        / (group space "--" space number ordinal space "Meeting" [(space year_paren)])
+        / (group space "--" space "Meeting" space number [(space year_paren)])
       ) as meeting_en
     )
   }
@@ -127,15 +143,34 @@ grammar PubidBipm version "0.1.0" edition 2 {
   years = ((1*digit) [(slash (1*digit))]) as years
   si_brochure = {
     (
-      ("BIPM SI Brochure" / "SI Brochure")
-      space
-      ["sur le SI" space]
-      edition
-      space
-      version
-      space
-      "(" years ", " lang ")"
-    ) as si_brochure
+      (
+        ("BIPM SI Brochure" / "SI Brochure" / "Brochure sur le SI")
+        space
+        ["sur le SI" space]
+        edition
+        [space version]
+        space
+        "(" years [(", " lang)] ")"
+      ) as si_brochure
+    )
+  }
+  # The guide's language-independent form drops the language code and the
+  # version is optional ("SI Brochure 9e (2019, E)"); the guide's French
+  # publication identifier leads with "Brochure sur le SI" instead of the
+  # English brochure name. All render in the canonical "BIPM SI Brochure …"
+  # spelling. The corpus-cited ordinal-edition spelling normalizes the
+  # English "9th edition" onto the canonical "9e" edition value.
+  si_brochure_ordinal_edition = {
+    (
+      (
+        "SI Brochure"
+        space
+        ((1*digit) ordinal) as ordinal_edition
+        space
+        "edition"
+        [(space year_paren)]
+      ) as si_brochure_ordinal_edition
+    )
   }
   brochure_variant = (("Appendix" space (1*digit)) / "Concise" / "FAQ") as variant
   si_brochure_variant = {
@@ -183,9 +218,11 @@ grammar PubidBipm version "0.1.0" edition 2 {
     / si_brochure
     / si_brochure_variant
     / si_brochure_section
+    / si_brochure_ordinal_edition
     / mep
     / guide
     / committee_long_fr
+    / committee_prefixed
     / group_leading
   }
 
@@ -193,6 +230,7 @@ grammar PubidBipm version "0.1.0" edition 2 {
 
   bindings identifier {
     committee_short -> committee_short (raw)
+    committee_prefixed -> committee_prefixed (raw)
     committee_long_en -> committee_long_en (raw)
     committee_long_fr -> committee_long_fr (raw)
     committee_bare -> committee_bare (raw)
@@ -200,6 +238,7 @@ grammar PubidBipm version "0.1.0" edition 2 {
     meeting_fr -> meeting_fr (raw)
     metrologia -> metrologia (raw)
     si_brochure -> si_brochure (raw)
+    si_brochure_ordinal_edition -> si_brochure_ordinal_edition (raw)
     si_brochure_variant -> si_brochure_variant (raw)
     si_brochure_section -> si_brochure_section (raw)
     mep -> mep (raw)
@@ -222,6 +261,7 @@ grammar PubidBipm version "0.1.0" edition 2 {
     mep_code -> mep_code (string)
     report_code -> report_code (string)
     guide_kind -> guide_kind (string)
+    ordinal_edition -> ordinal_edition (string)
   }
 
   test {
@@ -233,6 +273,18 @@ grammar PubidBipm version "0.1.0" edition 2 {
     accept "CCTF REC 2"
     accept "BIPM SI Brochure Appendix 2"
     accept "SI Brochure Part 1"
+    accept "CGPM -- Meeting 1 (1889)"
+    accept "BIPM DECN CIPM/101-1 (2012, EN)"
+    accept "BIPM DECN CIPM/101-1 (2012, FR)"
+    accept "Décision CIPM/111-10 (2022)"
+    accept "Recommandation JCRB/43-1 (2021)"
+    accept "CIPM DECN 111-10-2 (2022, F)"
+    accept "CIPM DECN 112 A3 (2022, F)"
+    accept "CIPM DECN 112 A3.5 (2022, F)"
+    accept "SI Brochure 9e v3.01 (2019/2024)"
+    accept "SI Brochure 9e (2019, E)"
+    accept "Brochure sur le SI 9e v3.01 (2019/2024, F)"
+    accept "SI Brochure 9th edition (2019)"
     reject "nonsense"
   }
 }
