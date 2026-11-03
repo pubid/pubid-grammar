@@ -7,7 +7,7 @@
 # artifact is the validator — and brace_rule below is itself written in
 # the brace form it recognizes.
 
-grammar PgMeta version "1.0.0" edition 1 {
+grammar PgMeta version "1.0.0" edition 2 {
 
   # ---- lexical ----
   digit = %x30-39
