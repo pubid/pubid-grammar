@@ -1,30 +1,65 @@
-# Port of lib/pubid/sae/parser.rb: SAE <AMS|AIR|ARP|AS|J|MA> <number>[:year]
+# SAE identifiers, in SAE's printed form and in the hyphen-free form of its
+# Crossref DOI suffixes (10.4271/<code>):
+#
+#   SAE <type>[ |-]<number>[-<dash>][<tail>][/<part>[<part_tail>]][_A<n>][:yyyy|_yyyymm]
+#
+# The grammar only segments. What a letter tail means (a revision, the
+# metric M of a J report, a digital-annex DA) and which spelling of the type
+# is printed is decided by pubid's lib/pubid/sae/builder.rb, which owns the
+# type table (Pubid::Sae::Components::Type::TYPES). The doc_type
+# alternatives are that table's keys plus their hyphen-free spellings,
+# longest first: PEG commits to the first alternative that matches, so
+# "AMS" must come after every "AMS..." family.
 
-grammar PubidSae version "0.1.0" edition 2 {
-  doc_type = ("AMS" / "AIR" / "ARP" / "AS" / "J" / "MA") as type
-  number = ((1*1letter 1*digit) / (1*digit *1letter)) as number
-  year = (4digit) as year
-  identifier = "SAE" as publisher space doc_type [space] number [(colon year)]
+grammar PubidSae version "0.2.0" edition 2 {
+  doc_type = ("AMS-QQ-A" / "AMS-QQ-C" / "AMS-QQ-N" / "AMS-QQ-P" / "AMS-QQ-S" / "AMS-QQ-W" / "AMS-WW-T" / "GEIA-STD" / "AMS-DTL" / "AMS-PRF" / "AMS-STD" / "EIA-STD" / "GEIA-HB" / "GEIA-OP" / "GEIA-TB" / "GEIASTD" / "AMSDTL" / "AMSPRF" / "AMSQQA" / "AMSQQC" / "AMSQQN" / "AMSQQP" / "AMSQQS" / "AMSQQW" / "AMSSTD" / "AMSWWT" / "EIA-IS" / "EIASTD" / "GEIAHB" / "GEIAOP" / "GEIATB" / "AMS-A" / "AMS-B" / "AMS-C" / "AMS-D" / "AMS-F" / "AMS-G" / "AMS-H" / "AMS-I" / "AMS-L" / "AMS-M" / "AMS-P" / "AMS-R" / "AMS-S" / "AMS-T" / "AMS-W" / "EIAIS" / "USCAR" / "AMSA" / "AMSB" / "AMSC" / "AMSD" / "AMSF" / "AMSG" / "AMSH" / "AMSI" / "AMSL" / "AMSM" / "AMSP" / "AMSR" / "AMSS" / "AMST" / "AMSW" / "GEIA" / "AIR" / "AMS" / "ARD" / "ARP" / "CMB" / "CRP" / "EIA" / "MAM" / "MAP" / "SSB" / "TSB" / "AS" / "JA" / "MA" / "MS" / "J") as type
+  type_sep = space / "-"
+  number = (1*digit) as number
+  # A dash number: J1939-71, EIA649-2, and the DOI's EIA649_1. At most three
+  # digits and no digit after, so "_202104" stays a date.
+  dash = ("-" / "_") (1*3digit) as dash !digit
+  tail = (1*letter) as tail
+  part = "/" ((*letter 1*digit) / 1*letter) as part [(1*letter) as part_tail]
+  amendment = "_A" (1*digit) as amendment
+  date = (":" (4digit) as year) / ("_" (4digit) as year (2digit) as month)
+  identifier = "SAE" as publisher space doc_type [type_sep] number [dash] [tail] [part] [amendment] [date]
   letter = %x41-5A
   digit = %x30-39
   space = " "
-  colon = ":"
   entry identifier: identifier
 
-  # Typed model bindings: every bound capture lands on the
-  # consumer model's field of the same name.
   bindings identifier {
+    publisher -> publisher (string)
     type -> type (string)
     number -> number (string)
+    dash -> dash (string)
+    tail -> tail (string)
+    part -> part (string)
+    part_tail -> part_tail (string)
+    amendment -> amendment (string)
     year -> year (string)
-    publisher -> publisher (string)
+    month -> month (string)
   }
-
 
   test {
     accept "SAE J1939"
+    accept "SAE J 3016"
     accept "SAE AMS2430"
     accept "SAE ARP4754A:2010"
+    accept "SAE AMS-QQ-A-250/4B"
+    accept "SAE AMSQQA250/4B"
     reject "nonsense"
+    reject "SAE J3016_2021"
+    reject "SAE XYZ1"
+    example "SAE J3016_202104" { type: "J", number: "3016", year: "2021", month: "04" }
+    example "SAE AMS4121J" { type: "AMS", number: "4121", tail: "J" }
+    example "SAE AS22520/45A" { type: "AS", number: "22520", part: "45", part_tail: "A" }
+    example "SAE AMS5622/H1025" { type: "AMS", number: "5622", part: "H1025" }
+    example "SAE J2945/AS" { type: "J", number: "2945", part: "AS" }
+    example "SAE J1939-71:2020" { type: "J", number: "1939", dash: "71", year: "2020" }
+    example "SAE EIA649_1A" { type: "EIA", number: "649", dash: "1", tail: "A" }
+    example "SAE AS5259/7A_A1" { type: "AS", number: "5259", part: "7", part_tail: "A", amendment: "1" }
+    example "SAE AMSSTD595" { type: "AMSSTD", number: "595" }
+    example "SAE GEIA-STD-0001" { type: "GEIA-STD", number: "0001" }
   }
 }
