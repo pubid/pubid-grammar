@@ -640,9 +640,10 @@ grammar PubidNist version "0.1.0" edition 2 {
     / mr_identifier
     / research_library_identifier
     / (
-        (compound_series) (space / dot)
-        [old_stage] [report_number] [fips_date]
-        (*parts) [draft] [translation] [new_stage]
+        (compound_series)
+        [ (space / dot)
+          [old_stage] [report_number] [fips_date]
+          (*parts) [draft] [translation] [new_stage] ]
       )
     / (
         (publisher) (space / dot)
@@ -878,6 +879,18 @@ grammar PubidNist version "0.1.0" edition 2 {
     accept "NIST SP 800-38A Add."
     accept "NIST.FIPS.197-upd"
     accept "NBS TN 467pt1 Add."
+    # Bare compound series = the series reference (number/edition nil):
+    # the relaton fuzz gate drops the edition from a published
+    # "NBS CS e15"-style row; the ruling is that the bare abbreviation of
+    # a named series is a legitimate identity (v1 series.yaml: CS =
+    # Commercial Standards, CSM = Commercial Standards Monthly, CIS =
+    # Consumer Information Series, CS-E = the emergency form).
+    accept "NBS CS"
+    accept "NBS CSM"
+    accept "NBS CIS"
+    accept "NBS CS-E"
+    accept "NIST PS"
+    accept "NIST DCI"
     reject "nonsense"
   }
 }
