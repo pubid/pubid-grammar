@@ -1,9 +1,17 @@
-# REMAINING — the reconciled work ledger (2026-09-26)
+# REMAINING — the reconciled work ledger (synced 2026-11-11)
 
 Single source of truth for what is left. Items marked DONE here are
 checked in their topic files with commit references. Ordered by the
 dependency chain: engine correctness → language features → consumers
 → conformance → release (P5 stays owner-frozen).
+
+Reality snapshot 2026-11-11: 48 flavors (aiee, ire, nesc ride the ieee
+grammar fleet), 415 committed corpus cases, every flavor on edition-2
+typed bindings (see dashboard.md, regenerated this sync). The grammar
+CI job runs on ubuntu-24.04 with ruby 3.4.8 — bakes and contract regens
+stay on that toolchain because the artifact stamps embed the Ruby
+version; the compiler pin is `PARSANOL_VERSION` in
+`.github/workflows/parg-conformance.yml` (1.3.126).
 
 ## Engine (parsanol-ruby / parsanol-rs)
 
@@ -56,9 +64,16 @@ repetition iterations as defense in depth.
       until 2+ flavors stabilize render specs per the rs#144 plan.
 - [x] **F8 — parsanol-shape v2 freeze**: contract is normative Annex A
       of PN 6; engines verify `shape` at load (Ruby + Rust).
-- [ ] **F9 — preprocessing vocabulary policy** (rs#147): OWNER DECISION
-      — freeze vs grow-with-minor. Recommendation: grow-with-minor
-      (binding_version bump on new ops); the flavor set is now stable.
+- [x] **F9 — preprocessing vocabulary policy** (rs#147): RESOLVED
+      grow-with-minor (owner decision, 2026-11-11): declarative
+      preprocess vocabulary v1.1 — `const_map`, `default_when_absent`,
+      `rename` beside `table_lookup`, all sharing the uniform
+      `{op, table, from, to}` step wire shape, engine-executed on both
+      engines. Shipped in the parsanol 0.20.14 train (crates 0.20.14,
+      rubygems 1.3.138, pypi 0.1.25, npm parsanol 0.10.46 +
+      @parsanol/wasm 0.20.14). Binding version: v1-only artifacts stay
+      byte-identical at 1; artifacts using post-v1 ops declare 2;
+      engines refuse >= 3 at load.
 - [x] **F10 phase 2 — complete**: self-hosting validity (ALL 47
       grammars parse under the pg artifact via SelfHost) AND the
       artifact-driven front end. Frontend (parsanol-ruby pg-authoring
@@ -148,11 +163,22 @@ repetition iterations as defense in depth.
       (4digit) as year — 44 no-star count captures across 12
       flavors) turned bipm cen_cenelec sae itu CLEAN — bipm and
       sae swapped (49fc9e0f), cen_cenelec and itu held on form
-      coverage; remaining DELTA: bsi etsi jis un (sequence-fold and
-      multi-capture restructuring); adobe gb ieee resolved (aiee
+      coverage; remaining DELTA: bsi etsi (sequence-fold and
+      multi-capture restructuring; jis and un resolved since the
+      sweep); adobe gb ieee resolved (aiee
       paren-leak, always-present copublishers). cie and omg's capture fixes probe
       CLEAN (commit above) but their spec suites gate on identifier
       forms still uncovered (joint/paren + x-proceedings; tails).
+      LANDING STATE 2026-11-11: the swaps sit on unmerged local
+      branches in the pubid monorepo — a linear stack
+      `pg-iso-parser-swap` (1bc5b995 iso + 185c14c4 R3 model-parity
+      gate) → `pg-adobe-parser-swap` (+ adobe doi ogc w3c xsf easc iana
+      isbn amca calconnect ccsds ecma iala ietf oasis tgpp bipm sae) →
+      `pg-cen-cenelec-swap` (+ gb un): 21 flavors, none merged;
+      origin/main carries no `data/pg/`. The landing campaign rebases
+      each stack onto main, re-vendors the artifacts from grammar main,
+      gates EVERY flavor on its own spec suite (the only swap gate —
+      tree parity is insufficient) and opens one PR per stack.
 - [x] **R2 — ingestion hooks (iso)**: the ISO Normalizer's
       parse_with_builder routes through the same PG backend as
       Identifier.parse — Tier-3 normalizations and direct parses feed
@@ -183,7 +209,9 @@ repetition iterations as defense in depth.
 - [x] **P4 — version triple** semantics and manifest: release.json
       (grammar version, artifact checksums, binding_version; semver
       policy; owner-frozen order position).
-- [ ] **P5 — release order** — OWNER-FROZEN until PG is fully done.
+- [ ] **P5 — release order** — owner-accepted 2026-11-11:
+      pubid-grammar → parsanol engines (DONE — the 0.20.14 train is
+      out) → pubid swap landing → one-tag 3-artifact release.
 - [x] **P6 — downstream gates**: scripts/downstream-expressir.sh runs
       expressir's suite against the local parsanol (baseline 1829/0
       verified; smoke 23/0 green).
