@@ -21,7 +21,7 @@ env:
 
 jobs:
   grammar:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
@@ -44,7 +44,7 @@ jobs:
             parsanol parg test "$f" || exit 1
           done
   rust:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Rust VM gate (docker, 4GB cap)
@@ -55,7 +55,7 @@ jobs:
           PARG_ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts" \
             ./docker-test.sh test -p parsanol --test parg_bindings
   typescript:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
