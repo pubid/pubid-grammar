@@ -169,16 +169,25 @@ repetition iterations as defense in depth.
       paren-leak, always-present copublishers). cie and omg's capture fixes probe
       CLEAN (commit above) but their spec suites gate on identifier
       forms still uncovered (joint/paren + x-proceedings; tails).
-      LANDING STATE 2026-11-11: the swaps sit on unmerged local
-      branches in the pubid monorepo — a linear stack
-      `pg-iso-parser-swap` (1bc5b995 iso + 185c14c4 R3 model-parity
-      gate) → `pg-adobe-parser-swap` (+ adobe doi ogc w3c xsf easc iana
-      isbn amca calconnect ccsds ecma iala ietf oasis tgpp bipm sae) →
-      `pg-cen-cenelec-swap` (+ gb un): 21 flavors, none merged;
-      origin/main carries no `data/pg/`. The landing campaign rebases
-      each stack onto main, re-vendors the artifacts from grammar main,
-      gates EVERY flavor on its own spec suite (the only swap gate —
-      tree parity is insufficient) and opens one PR per stack.
+      LANDING STATE 2026-11-11, verified: the DELTA list above is
+      CLOSED — pubid main carries the whole fleet. The pg-namespace
+      stacks (`pg-iso-parser-swap` 1bc5b995 + 185c14c4 →
+      `pg-adobe-parser-swap` +adobe doi ogc w3c xsf easc iana isbn amca
+      calconnect ccsds ecma iala ietf oasis tgpp bipm sae →
+      `pg-cen-cenelec-swap` +gb un; 21 flavors, still unmerged locals)
+      were superseded by pubid 7a253feb's squash reconciliation
+      (data/parg/ + Pubid::Parg::Backend, pg namespace removed) and
+      then the typed-binding migration: every flavor routes through
+      `Pubid::Parg::Model.bound`, the parslet parsers are empty shells,
+      and spec/pubid/parg/ gates it (backend, error-contract,
+      freshness, model-parity, typed-binding-parity). No swap PRs
+      remain to open — landing the stacks would regress main off the
+      typed-binding path. Per-flavor gates on current main (2026-11-11):
+      all 21 stack flavors green (iso 3128, adobe 30, doi 11, ogc 52,
+      w3c 132, xsf 73, easc 26, iana 115, isbn 18, amca 68, calconnect
+      106, ccsds 23, ecma 143, iala 86, ietf 209, oasis 92, tgpp 212,
+      bipm 575, sae 313, gb 88, un 10 — 0 failures each) and bsi+etsi
+      608 green.
 - [x] **R2 — ingestion hooks (iso)**: the ISO Normalizer's
       parse_with_builder routes through the same PG backend as
       Identifier.parse — Tier-3 normalizations and direct parses feed
