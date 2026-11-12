@@ -369,6 +369,72 @@ grammar PubidIec version "0.1.0" edition 2 {
     space supplement_second_part
     supplement_third_part
   }
+
+  ## The legacy DAM-family prefix face (the JTC1 ballot spelling): the
+  ## stage token precedes the base designation — "IEC/FDAM 60038-1",
+  ## "ISO/IEC PDAM 12207", "ISO/IEC PDAM 2 10646:2012",
+  ## "ISO/IEC FPDAM 9075/1", "ISO/IEC FDAM 1 14496-12:2004". A number
+  ## between the token and the designation is the SUPPLEMENT number; the
+  ## designation is the base's and is kept whole (the owner's 2026-11-12
+  ## ruling, reversing #693: unnumbered DAM/PDAM/FDAM/FPDAM means
+  ## Amendment 1, and the old slash-part spelling "9075/1" carries the
+  ## base's part). The date rides with the designation — old notation
+  ## prints the base's year, and the draft supplement carries none of
+  ## its own. Longest tokens first: FPDAM before PDAM, FDAM before DAM.
+  ## The slash-part alternative precedes the dash-part one: the
+  ## number_with_part body also matches a bare "9075" (its part terms
+  ## are optional), so a slash-part input must be claimed first or the
+  ## "/1" would dangle unclaimed.
+  legacy_dam_token = "FPDAM" / "PDAM" / "FDAM" / "DAM"
+  legacy_supplement = {
+    prefix_with_copublishers
+    [space]
+    [slash]
+    legacy_dam_token as legacy_stage
+    space
+    [
+      ( 1*digit ) as legacy_supplement_number
+      space
+    ]
+    (
+      (
+        ( 1*6digit ) as legacy_base_number
+        slash
+        ( 1*digit ) as legacy_base_part
+      )
+      / (
+        (
+          ("DIR" *(space 1*(upper / digit)))
+          / "VIM"
+          / "SYMBOL"
+          / ( 1*6digit "v" 1*digit *(upper / lower) [("_" 1*(upper / lower))] )
+          / ( 2*4upper [(dash 1*digit)] *(upper / digit) )
+          / ( 1*6digit [*1(upper / lower) [("_" 1*(upper / lower))]] )
+        )
+        [
+          (
+            (dash / comma) [space]
+            1*((upper / lower / digit) / %x5F / %x26 / %x2C)
+            *( (dash / comma) 1*((upper / lower / digit) / %x5F / %x26 / %x2C) )
+          )
+        ]
+      ) as legacy_base_number_with_part
+    )
+    [
+      [space] (
+        (colon / dash) (
+          (
+            ("19" / "20") 2*digit !digit
+            [(dash 2*digit)]
+            [(dash 2*digit)]
+          ) as date
+          / "--" as undated_marker
+          / "—" as undated_marker
+        )
+      )
+    ]
+    third_part
+  }
   supplement_identifier_no_third = {
     identifier_copublishers_no_third
     slash supplement_type_with_stage
@@ -386,6 +452,7 @@ grammar PubidIec version "0.1.0" edition 2 {
       working_programme
     / technical_group
     / working_document
+    / legacy_supplement
     / sheet_supplement_identifier
     / sheet_identifier
     / supplement_supplement_identifier
@@ -427,6 +494,11 @@ grammar PubidIec version "0.1.0" edition 2 {
     vap_suffix -> vap_suffix (string)
     database -> database (string)
     type_with_stage -> type_with_stage (string)
+    legacy_stage -> legacy_stage (string)
+    legacy_supplement_number -> legacy_supplement_number (string)
+    legacy_base_number_with_part -> legacy_base_number_with_part (string)
+    legacy_base_number -> legacy_base_number (string)
+    legacy_base_part -> legacy_base_part (string)
     supp_type_with_stage -> supp_type_with_stage (string)
     supp2_type_with_stage -> supp2_type_with_stage (string)
     type_with_stage_fr -> type_with_stage_fr (string)
@@ -445,6 +517,19 @@ grammar PubidIec version "0.1.0" edition 2 {
     accept "CISPR 16-1-1"
     accept "IECQ OD 1234"
     accept "IEC/TS 80000-1"
+    accept "IEC/FDAM 60038-1"
+    accept "IEC FDAM 60038-1"
+    accept "IEC DAM 60038-1"
+    accept "ISO/IEC PDAM 12207"
+    accept "ISO/IEC PDAM 2 10646:2012"
+    accept "ISO/IEC FPDAM 9075/1"
+    accept "ISO/IEC FDAM 1 14496-12:2004"
+    accept "IEC DCOR 60038-1"
+    accept "IEC 60038-1/FDAM 1"
     reject "nonsense"
+    example "IEC/FDAM 60038-1" { publisher: "IEC", legacy_stage: "FDAM", legacy_base_number_with_part: "60038-1" }
+    example "ISO/IEC PDAM 2 10646:2012" { publisher: "ISO", legacy_stage: "PDAM", legacy_supplement_number: "2", legacy_base_number_with_part: "10646", date: "2012" }
+    example "ISO/IEC FPDAM 9075/1" { publisher: "ISO", legacy_stage: "FPDAM", legacy_base_number: "9075", legacy_base_part: "1" }
+    example "ISO/IEC FDAM 1 14496-12:2004" { publisher: "ISO", legacy_stage: "FDAM", legacy_supplement_number: "1", legacy_base_number_with_part: "14496-12", date: "2004" }
   }
 }
