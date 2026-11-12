@@ -64,6 +64,13 @@ jobs:
             echo "::error::generated doi_pfs outputs are stale — run scripts/pfs compile and commit"
             exit 1
           }
+          ruby "$GITHUB_WORKSPACE/scripts/pfs" compile \
+            "$GITHUB_WORKSPACE/definitions/etsi.pfs" --as etsi_pfs \
+            --parsanol-version "$PARSANOL_VERSION"
+          git diff --exit-code -- grammars/etsi_pfs.parg artifacts/etsi_pfs.json || {
+            echo "::error::generated etsi_pfs outputs are stale — run scripts/pfs compile and commit"
+            exit 1
+          }
           PARSANOL_VERSION="$PARSANOL_VERSION" \
             rspec spec --format progress
   rust:
