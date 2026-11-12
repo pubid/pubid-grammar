@@ -386,8 +386,19 @@ grammar PubidIec version "0.1.0" edition 2 {
   ## are optional), so a slash-part input must be claimed first or the
   ## "/1" would dangle unclaimed.
   legacy_dam_token = "FPDAM" / "PDAM" / "FDAM" / "DAM"
+  # The legacy rule captures a copublisher as its own TOP-LEVEL scalar
+  # instead of reusing prefix_with_copublishers: the wasm binder
+  # scatters every unresolved array binding (copublishers[],
+  # consolidated_supplements[]) over the enclosing node list when the
+  # shape carries a bare `copublisher` node with no `copublishers`
+  # wrapper (the known phantom-array trap), which the legacy rule's
+  # flat shape triggered on every copublished row. A distinct scalar
+  # capture binds by name on both engines; the builder attaches it.
+  legacy_copublisher_item = slash [space] organization as legacy_copublisher
   legacy_supplement = {
-    prefix_with_copublishers
+    prefix_sole_publisher
+    [space]
+    [legacy_copublisher_item]
     [space]
     [slash]
     legacy_dam_token as legacy_stage
@@ -499,6 +510,7 @@ grammar PubidIec version "0.1.0" edition 2 {
     legacy_base_number_with_part -> legacy_base_number_with_part (string)
     legacy_base_number -> legacy_base_number (string)
     legacy_base_part -> legacy_base_part (string)
+    legacy_copublisher -> legacy_copublisher (string)
     supp_type_with_stage -> supp_type_with_stage (string)
     supp2_type_with_stage -> supp2_type_with_stage (string)
     type_with_stage_fr -> type_with_stage_fr (string)
