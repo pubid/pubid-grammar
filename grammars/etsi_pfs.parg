@@ -1,0 +1,83 @@
+# PFS-generated grammar — DO NOT EDIT BY HAND.
+# Source: definitions/etsi.pfs (pfs:1) sha256:9343088bf087b55ea790057e6be0bbebe2272407ee81f035b52e5f9a4d5c7b76
+# Compiler: pubid/grammar/pfs 0.1.0
+# Flavor key: etsi_pfs (grammar PubidEtsiPfs)
+# Regenerate: ruby scripts/pfs compile definitions/etsi.pfs --as etsi_pfs
+
+grammar PubidEtsiPfs version "0.1.0" edition 2 {
+
+  # Grammar fragments: named lexical terms declared under `grammar:`.
+  digit = %x30-39
+  alnum_char = %x41-5A / %x61-7A / %x30-39
+  version_char = %x30-39 / %x2E
+
+  # Fields: one capture rule per declared field; the whole pattern
+  # is the capture.
+  etsi_type = ("I-ETS" / "TCRTR" / "GTS" / "ETR" / "ETS" / "TBR" / "NET" / "EN" / "ES" / "EG" / "TS" / "GR" / "GS" / "SR" / "TR") as type
+  etsi_number = (("GSM" " " 1*digit "." 1*digit) / (1*digit "." 1*digit) / (1*alnum_char [("-" 1*alnum_char)] " " 1*digit) / (1*digit)) as number
+  etsi_minor = (1*digit) as minor
+  etsi_parts = (1*("-" 1*alnum_char)) as parts
+  etsi_supplements = (1*(("/A" / "/C") 1*digit)) as supplements
+  etsi_version = (1*version_char) as version
+  etsi_edition = (1*digit) as edition
+  etsi_year = (4digit) as year
+  etsi_month = (2digit) as month
+
+  # Identifier rule: the canonical template first, then the
+  # declared alternates (parse-in spellings; they normalize to the
+  # canonical render face).
+  identifier = {
+    "ETSI " etsi_type " " etsi_number
+    / "ETSI " etsi_type " " etsi_number [" " etsi_minor] [etsi_parts] [etsi_supplements] [( " V" etsi_version / " ed." etsi_edition )] [" (" etsi_year "-" etsi_month ")"]
+  }
+  entry identifier: identifier
+
+  # Typed model bindings: every bound capture lands on the
+  # consumer model's field of the same name.
+  bindings identifier {
+    type -> type (string)
+    number -> number (string)
+    minor -> minor (string)
+    parts -> parts (string)
+    supplements -> supplements (string)
+    version -> version (string)
+    edition -> edition (string)
+    year -> year (string)
+    month -> month (string)
+  }
+
+  # REQUIRED examples from the definition — accepts, rejects, and
+  # the capture expectations the compiler replayed at compile time.
+  test {
+    accept "ETSI EG 200 053 V1.5.1 (2004-06)"
+    accept "ETSI EN 300 175"
+    accept "ETSI EN 300 175-2"
+    accept "ETSI EN 300 019-1-0 V2.1.2 (2003-09)"
+    accept "ETSI TS 103 702"
+    accept "ETSI EG 201 880 V1.2.1"
+    accept "ETSI GTS GSM 02.01 V5.5.0 (1999-08)"
+    accept "ETSI GR NFV-EVE 008 V3.1.1 (2017-12)"
+    accept "ETSI I-ETS 300 003 ed.1 (1991-08)"
+    accept "ETSI ETR 108/A1 ed.1 (1995-08)"
+    accept "ETSI ETS 300 092-1/A1/C1 ed.1 (1994-04)"
+    reject "nonsense"
+    reject "ETSI"
+    reject "ETSI EN"
+    reject "ETSI XX 100"
+    reject "ETSI EN 300 175 V"
+    reject "ETSI EN 300 175 V1.2.x"
+    reject "ETSI EN 300 175 ("
+    reject "ETSI EN 300 175 (2004-6)"
+    example "ETSI EG 200 053 V1.5.1 (2004-06)" { type: "EG" number: "200 053" version: "1.5.1" year: "2004" month: "06" }
+    example "ETSI EN 300 175" { type: "EN" number: "300 175" }
+    example "ETSI EN 300 175-2" { type: "EN" number: "300 175" parts: "-2" }
+    example "ETSI EN 300 019-1-0 V2.1.2 (2003-09)" { type: "EN" number: "300 019" parts: "-1-0" version: "2.1.2" year: "2003" month: "09" }
+    example "ETSI TS 103 702" { type: "TS" number: "103 702" }
+    example "ETSI EG 201 880 V1.2.1" { type: "EG" number: "201 880" version: "1.2.1" }
+    example "ETSI GTS GSM 02.01 V5.5.0 (1999-08)" { type: "GTS" number: "GSM 02.01" version: "5.5.0" year: "1999" month: "08" }
+    example "ETSI GR NFV-EVE 008 V3.1.1 (2017-12)" { type: "GR" number: "NFV-EVE 008" version: "3.1.1" year: "2017" month: "12" }
+    example "ETSI I-ETS 300 003 ed.1 (1991-08)" { type: "I-ETS" number: "300 003" edition: "1" year: "1991" month: "08" }
+    example "ETSI ETR 108/A1 ed.1 (1995-08)" { type: "ETR" number: "108" supplements: "/A1" edition: "1" year: "1995" month: "08" }
+    example "ETSI ETS 300 092-1/A1/C1 ed.1 (1994-04)" { type: "ETS" number: "300 092" parts: "-1" supplements: "/A1/C1" edition: "1" year: "1994" month: "04" }
+  }
+}

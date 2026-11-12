@@ -8,6 +8,10 @@ RSpec.describe Pubid::Grammar::Pfs::Compiler do
     File.join(PFS_REPO_ROOT, "definitions/doi.pfs")
   end
 
+  let(:etsi_definition_path) do
+    File.join(PFS_REPO_ROOT, "definitions/etsi.pfs")
+  end
+
   describe "the committed doi_pfs outputs" do
     it "recompiles definitions/doi.pfs byte-identically (generation is deterministic)" do
       dir = Dir.mktmpdir("pfs-golden")
@@ -25,6 +29,35 @@ RSpec.describe Pubid::Grammar::Pfs::Compiler do
       expect(result.grammar_text).to eq(committed)
       expect(File.read(result.artifact_path))
         .to eq(File.read(File.join(PFS_REPO_ROOT, "artifacts/doi_pfs.json")))
+    end
+  end
+
+  describe "the committed etsi_pfs outputs (pubid#706 phase 2)" do
+    it "recompiles definitions/etsi.pfs byte-identically (generation is deterministic)" do
+      dir = Dir.mktmpdir("pfs-golden")
+      result = described_class.compile(
+        etsi_definition_path,
+        source_rel: "definitions/etsi.pfs",
+        flavor_key: "etsi_pfs",
+        grammar_out: File.join(dir, "etsi_pfs.parg"),
+        artifact_out: File.join(dir, "etsi_pfs.json"),
+        repo_root: PFS_REPO_ROOT,
+        parsanol_version: ENV.fetch("PARSANOL_VERSION", "1.3.126"),
+      )
+
+      committed = File.read(File.join(PFS_REPO_ROOT, "grammars/etsi_pfs.parg"))
+      expect(result.grammar_text).to eq(committed)
+      expect(File.read(result.artifact_path))
+        .to eq(File.read(File.join(PFS_REPO_ROOT, "artifacts/etsi_pfs.json")))
+    end
+
+    it "bakes the embedded test panel into the artifact (accepts, rejects, captures)" do
+      artifact = Parsanol::PARG::Artifact.new(
+        JSON.parse(File.read(File.join(PFS_REPO_ROOT, "artifacts/etsi_pfs.json"))),
+        nil, File.join(PFS_REPO_ROOT, "tables"),
+        imports_dir: File.join(PFS_REPO_ROOT, "grammars"),
+      )
+      expect(artifact.run_tests).to be_empty
     end
   end
 
@@ -159,6 +192,83 @@ RSpec.describe Pubid::Grammar::Pfs::Compiler do
         .to raise_error(
           Pubid::Grammar::Pfs::ExampleFailure,
           /renders "doi:10.1000\/182" under the canonical template, not the declared/,
+        )
+    end
+  end
+
+  describe "etsi-specific rejection demos (pubid#706 phase 2)" do
+    it "rejects a negative that the etsi grammar accepts (accept/reject mismatch)" do
+      yaml = File.read(etsi_definition_path)
+        .sub('    - "ETSI EN"', '    - "ETSI EN 300 175"')
+
+      expect { compile_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::ExampleFailure,
+          /examples\.negatives\[2\]: negative input "ETSI EN 300 175" parses/,
+        )
+    end
+
+    it "rejects an int-kind field (int patterns are a later extension) — " \
+       "the gap that keeps the supplement ordinal out of pfs:1" do
+      yaml = File.read(etsi_definition_path)
+        .sub(%r{^  year:\n    pattern: "4digit"\n    kind: string$},
+             "  year:\n    pattern: \"4digit\"\n    kind: integer")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /fields\.year\.kind: unsupported field kind "integer" — pfs:1 carries `string`/,
+        )
+    end
+
+    it "rejects an :int core kind in urn.schema.types (cores carry bare " \
+       "paths in pfs:1) — the coded etsi schema's `core: [[\"number\", :int]]` " \
+       "supplement ordinal is not declarable" do
+      yaml = File.read(etsi_definition_path)
+        .sub('- { type: "pubid:etsi_pfs:identifier", token: id, core: [] }',
+             "- { type: \"pubid:etsi_pfs:identifier\", token: id, core: [[number, 1]] }")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /urn\.schema\.types\[0\]: core must be an array of field paths/,
+        )
+    end
+
+    it "rejects a render face that claims a tail the core template cannot " \
+       "produce (the conditional-render gap, cited on the row)" do
+      yaml = File.read(etsi_definition_path)
+        .sub('      renders: "ETSI EG 200 053"', '      renders: "ETSI EG 200 053 V1.5.1 (2004-06)"')
+
+      expect { compile_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::ExampleFailure,
+          /renders "ETSI EG 200 053" under the canonical template, not the declared/,
+        )
+    end
+
+    it "rejects a template referencing an undeclared grammar rule" do
+      yaml = File.read(etsi_definition_path)
+        .sub('[" (" {year} "-" {month} ")"]',
+             '[" /" letter "(" {year} "-" {month} ")"]')
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          %r{templates\.alternates\[0\]: unknown grammar rule letter},
+        )
+    end
+
+    it "rejects a field pattern spanning multiple lines (edition-2 line " \
+       "discipline is the compiler's job, never the definition's)" do
+      yaml = File.read(etsi_definition_path)
+        .sub("    pattern: \"1*digit\"",
+             "    pattern: \"1*digit\\\\n  2*digit\"")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /fields\.minor\.pattern: pattern spans multiple lines/,
         )
     end
   end

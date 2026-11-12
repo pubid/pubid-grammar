@@ -1,0 +1,190 @@
+# ETSI (European Telecommunications Standards Institute) — the PFS v1
+# port of the coded flavor (pubid/pubid#706 Phase 2: the language
+# bracket at the largest corpus — 24,718 pass fixtures, int-kind URN
+# atoms, multi-part numbers, the `V` edition).
+#
+# The accept surface is the coded grammar's one rule (lib/pubid/etsi +
+# pubid-grammar's grammars/etsi.parg):
+#
+#   ETSI <one of 15 types> <number> [minor][-parts][/A../C..]
+#       [ V<version> | ed.N] [(YYYY-MM)]
+#
+# The fields are the coded model's COLUMNS (type, number, minor, parts,
+# version, edition, year, month, supplements): the bound captures are
+# byte-identical with what the coded builder stores, so to_hash parity
+# reaches every row whose identity carries no collection, edition or
+# supplement wrapper — the constructs pfs:1 cannot declare (see the
+# gap comments at each such field).
+#
+# v1 boundary notes (each documented for the compiler record):
+#   * templates.canonical is the CORE face ("ETSI <type> <number>"):
+#     the render face cannot render optionals, so the version/date/parts
+#     tail of a dated row is not producible by a generated renderer
+#     (compiler gap: conditional render segments).
+#   * `parts` is captured as the printed dash run ("-1-0") — pfs:1 has
+#     no repeated-capture collection binding (the coded grammar binds
+#     `part -> parts[].part`), so the coded ["1","0"] array shape is
+#     out of reach (compiler gap: collection bindings).
+#   * `supplements` is captured as the printed run ("/A1/C1") — the
+#     coded flavor wraps them as Amendment/Corrigendum identifier
+#     classes delegating to their base; v1 emits single-type schemes
+#     with no wrapper semantics (compiler gap: supplements).
+#   * the coded pubid-etsi URN schema places the supplement ordinal as
+#     an :int core (`core: [["number", :int]]`) — urn.schema.types.core
+#     carries bare paths only in pfs:1 (compiler gap: int-kind cores).
+
+pfs: 1
+
+scheme: etsi
+title: "ETSI"
+
+organization:
+  name: "European Telecommunications Standards Institute"
+  publisher: "ETSI"
+  # The sole head-dispatch token (the type/series tokens — EN, ES, EG,
+  # TS, TR, ETS, ... — are sub-types that follow the ETSI prefix, never
+  # standalone routing tokens; the coded flavor's PREFIXES is ["ETSI"]).
+  prefixes: ["ETSI"]
+
+# Named lexical rules the fields reference (the coded grammar's char
+# tables, verbatim).
+grammar:
+  digit: "%x30-39"
+  alnum_char: "%x41-5A / %x61-7A / %x30-39"
+  version_char: "%x30-39 / %x2E"
+
+# The single identifier type. The wire tag is the SCHEME's canonical
+# tag (`pubid:etsi:etsi-standard`) so to_hash is byte-identical with
+# the coded flavor; no stage binding — the coded flavor declares no
+# typed stages.
+types:
+  standard:
+    key: etsi
+    title: "ETSI Standard"
+    short: "ETSI"
+    tag: "pubid:etsi:etsi-standard"
+
+# Fields: the coded model's columns. Every pattern mirrors the coded
+# etsi.parg rule of the same name — same ordered alternation (PEG
+# first-match wins), same capture extent — so the bound values are the
+# strings the coded builder stores.
+fields:
+  type:
+    # The 15 series/type tokens, in the coded grammar's order.
+    pattern: '"I-ETS" / "TCRTR" / "GTS" / "ETR" / "ETS" / "TBR" / "NET" / "EN" / "ES" / "EG" / "TS" / "GR" / "GS" / "SR" / "TR"'
+    kind: string
+  number:
+    # gsm_with_space / dotted / complex / simple, in the coded order.
+    # The capture is the whole printed number ("300 175", "GSM 02.01",
+    # "11.40", "NFV-EVE 008") — the inner pieces are structural only,
+    # exactly as the coded grammar's comment records.
+    pattern: '("GSM" " " 1*digit "." 1*digit) / (1*digit "." 1*digit) / (1*alnum_char [("-" 1*alnum_char)] " " 1*digit) / (1*digit)'
+    kind: string
+  minor:
+    # The coded `minor` rule: the digit run only (the space lives in
+    # the template's optional segment).
+    pattern: "1*digit"
+    kind: string
+  parts:
+    # GAP (collection bindings): captured as the printed dash run
+    # ("-1-0"); the coded model stores ["1", "0"] via the
+    # `part -> parts[].part` binding pfs:1 cannot declare.
+    pattern: '1*("-" 1*alnum_char)'
+    kind: string
+  supplements:
+    # GAP (supplements): captured as the printed run ("/A1/C1"); the
+    # coded model wraps them as Amendment/Corrigendum classes with an
+    # Integer ordinal, which v1's single-type emission cannot express.
+    pattern: '1*(("/A" / "/C") 1*digit)'
+    kind: string
+  version:
+    # The `V` edition face: the token lives in the template's optional
+    # segment so the capture is the bare version string ("1.5.1") —
+    # byte-identical with the coded `version` column.
+    pattern: "1*version_char"
+    kind: string
+  edition:
+    # GAP (the `V` edition, is_edition face): the coded flavor folds
+    # `ed.N` into Version(version: "N", is_edition: true); pfs:1 fields
+    # are plain strings, so the compiled hash carries `edition: "N"`
+    # where the coded hash carries `version` + `is_edition`.
+    pattern: "1*digit"
+    kind: string
+  year:
+    pattern: "4digit"
+    kind: string
+  month:
+    pattern: "2digit"
+    kind: string
+
+templates:
+  # The canonical face is the CORE: the one renderable projection under
+  # pfs:1 (optionals never render). A dated row's `V`/`ed.`/date tail
+  # is accept-only (see the boundary notes above).
+  canonical: '"ETSI " {type} " " {number}'
+  alternates:
+    # The coded grammar's identifier rule, piece for piece: minor, then
+    # the parts run, then the supplements run, then V-version / ed.N
+    # (mutually exclusive), then the (YYYY-MM) date. Each optional
+    # carries its own leading separator, so a partial reference omits
+    # the trailing components without a stray separator.
+    - '"ETSI " {type} " " {number} [" " {minor}] [{parts}] [{supplements}] [" V" {version} / " ed." {edition}] [" (" {year} "-" {month} ")"]'
+
+urn:
+  # The scheme's own namespace (RFC 8515): the coded to_urn's
+  # urn:etsi: form. The coded generator composes
+  # urn:etsi:{type}:{code}:{version}:{date} in hand-written Ruby —
+  # a compiler gap (no URN-generator declaration surface); the
+  # generated generator pins the namespace only.
+  namespace: etsi
+  schema:
+    atoms:
+      - { path: type, prefix: type }
+      # GAP (collection bindings): `parts` is a :list atom in the coded
+      # schema; the compiled capture is the printed dash run.
+      - { path: parts, prefix: part, kind: list }
+      - { path: minor, prefix: minor }
+      - { path: year, prefix: year }
+      - { path: month, prefix: month }
+      - { path: version, prefix: v }
+    types:
+      - { type: "pubid:etsi_pfs:identifier", token: id, core: [] }
+      - { type: "pubid:etsi_pfs:standard", token: es, core: [] }
+
+# REQUIRED. The live test panel: real corpus shapes, one per grammar
+# piece; each positive renders as the canonical CORE face declared
+# above; each negative fails to parse (every negative was verified
+# against the coded flavor first).
+examples:
+  positives:
+    - input: "ETSI EG 200 053 V1.5.1 (2004-06)"
+      renders: "ETSI EG 200 053"
+    - input: "ETSI EN 300 175"
+      renders: "ETSI EN 300 175"
+    - input: "ETSI EN 300 175-2"
+      renders: "ETSI EN 300 175"
+    - input: "ETSI EN 300 019-1-0 V2.1.2 (2003-09)"
+      renders: "ETSI EN 300 019"
+    - input: "ETSI TS 103 702"
+      renders: "ETSI TS 103 702"
+    - input: "ETSI EG 201 880 V1.2.1"
+      renders: "ETSI EG 201 880"
+    - input: "ETSI GTS GSM 02.01 V5.5.0 (1999-08)"
+      renders: "ETSI GTS GSM 02.01"
+    - input: "ETSI GR NFV-EVE 008 V3.1.1 (2017-12)"
+      renders: "ETSI GR NFV-EVE 008"
+    - input: "ETSI I-ETS 300 003 ed.1 (1991-08)"
+      renders: "ETSI I-ETS 300 003"
+    - input: "ETSI ETR 108/A1 ed.1 (1995-08)"
+      renders: "ETSI ETR 108"
+    - input: "ETSI ETS 300 092-1/A1/C1 ed.1 (1994-04)"
+      renders: "ETSI ETS 300 092"
+  negatives:
+    - "nonsense"
+    - "ETSI"
+    - "ETSI EN"
+    - "ETSI XX 100"
+    - "ETSI EN 300 175 V"
+    - "ETSI EN 300 175 V1.2.x"
+    - "ETSI EN 300 175 ("
+    - "ETSI EN 300 175 (2004-6)"
