@@ -5,7 +5,16 @@
 # drafts, stages (old "(1pd)" and new ".1pd"), circ supplements,
 # dated NBS bulletins and the Research Library series. The gem's
 # parse()-side preprocessing (Preprocessor + ALL_PARTS suffix +
-# parsed_format tagging) is Tier-3 and outside the grammar. Source
+# parsed_format tagging) is Tier-3 and outside the grammar. The two
+# trailing identifier alternatives are the DEFAULT-SERIES plain-number
+# branch (pubid#711): a bare report number ("800-90B") and the
+# publisher-led spelling ("NIST 800-90B") — series omitted — ride the
+# same report-number tail as the series-bearing branches; the gem's
+# Builder defaults the identity onto the SpecialPublication series, so
+# the grammar carries no series token for them. Placed LAST so PEG
+# ordering leaves every previously accepted form on its original
+# alternative (they only catch inputs that previously failed outright).
+# Source
 # deviations, all lint-forced longest-first reorderings that preserve
 # the accept-set under PEG backtracking: esp before es in language_code,
 # romans ordered longest-first, CSM before CS in simple_series; the
@@ -656,6 +665,15 @@ grammar PubidNist version "0.1.0" edition 2 {
         [report_number] [fips_date]
         (*parts) [draft] [translation] [new_stage]
       )
+    / (
+        (publisher) (space)
+        (report_number) [fips_date]
+        (*parts) [draft] [translation] [new_stage]
+      )
+    / (
+        (report_number) [fips_date]
+        (*parts) [draft] [translation] [new_stage]
+      )
   }
 
   circ_supplement_identifier = {
@@ -891,6 +909,13 @@ grammar PubidNist version "0.1.0" edition 2 {
     accept "NBS CS-E"
     accept "NIST PS"
     accept "NIST DCI"
+    # Default-series plain-number branch (pubid#711): the docid-derived
+    # citation of NIST.SP.800-90B is the bare docnumber "800-90B"; the
+    # publisher-led "NIST 800-90B" rides the same branch. The gem's
+    # Builder defaults both onto the SP series.
+    accept "800-90B"
+    accept "NIST 800-90B"
+    accept "800-53"
     reject "nonsense"
   }
 }
