@@ -1,0 +1,68 @@
+# PFS-generated grammar — DO NOT EDIT BY HAND.
+# Source: definitions/cen.pfs (pfs:1) sha256:bc1edd5874f8938b5f946416a2b052d9d9b9df3d99f6c20a3d88fcab9ae1d70c
+# Compiler: pubid/grammar/pfs 0.1.0
+# Flavor key: cen_pfs (grammar PubidCenPfs)
+# Regenerate: ruby scripts/pfs compile definitions/cen.pfs --as cen_pfs
+# Module: iso.inner v1 (sha256:6f04cf475f1c...)
+# Module: en.overlay v1 (sha256:851af8c5f31b...)
+# Module: national.prefix v1 (sha256:c7aa2f2442e8...)
+# Module: supplements.core v1 (sha256:9fa9656375c7...)
+
+grammar PubidCenPfs version "0.1.0" edition 2 {
+
+  # Grammar fragments: named lexical terms declared under `grammar:`.
+  iso_space = " "
+  iso_colon = ":"
+  iso_dash = "-"
+  iso_year = 4*digit
+  iso_part = 1*digit ["-" 1*digit]
+  iso_number = 1*("0" %x31-39) *digit [iso_dash iso_part]
+  iso_document = "ISO" iso_space iso_number [iso_colon iso_year]
+  en_space = " "
+  en_draft = ("pr" / "Fpr")
+  en_face = [en_draft] "EN"
+  en_adoption = en_face en_space iso_document
+  supplement_number = 1*digit
+  supplement_year = 4*digit
+  supplement_month = 2*digit
+  digit = %x30-39
+  space = " "
+  slash = "/"
+  colon = ":"
+  dash = "-"
+
+  # Fields: one capture rule per declared field; the whole pattern
+  # is the capture.
+  cen_cenelec_number = ((%x31-39) *digit) as number
+  cen_cenelec_part = (1*digit) as part
+  cen_cenelec_year = (4*digit) as year
+
+  # Identifier rule: the canonical template first, then the
+  # declared alternates (parse-in spellings; they normalize to the
+  # canonical render face).
+  identifier = "EN" " " cen_cenelec_number ["-" cen_cenelec_part] [":" cen_cenelec_year]
+  entry identifier: identifier
+
+  # Typed model bindings: every bound capture lands on the
+  # consumer model's field of the same name.
+  bindings identifier {
+    number -> number (string)
+    part -> part (string)
+    year -> year (string)
+  }
+
+  # REQUIRED examples from the definition — accepts, rejects, and
+  # the capture expectations the compiler replayed at compile time.
+  test {
+    accept "EN 1325"
+    accept "EN 12464-1:2011"
+    accept "EN 1177:2018"
+    reject "EN"
+    reject "EN ISO 9001:2015"
+    reject "nonsense"
+    reject "CEN/TS 12345"
+    example "EN 1325" { number: "1325" }
+    example "EN 12464-1:2011" { number: "12464" part: "1" year: "2011" }
+    example "EN 1177:2018" { number: "1177" year: "2018" }
+  }
+}

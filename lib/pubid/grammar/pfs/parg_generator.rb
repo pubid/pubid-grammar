@@ -50,7 +50,7 @@ module Pubid
         private
 
         def header
-          [
+          lines = [
             "# PFS-generated grammar — DO NOT EDIT BY HAND.",
             "# Source: #{@definition.source_path} (pfs:#{Pfs::SCHEMA_VERSION}) " \
             "sha256:#{@definition.source_sha}",
@@ -58,6 +58,11 @@ module Pubid
             "# Flavor key: #{@flavor_key} (grammar Pubid#{@module_name})",
             "# Regenerate: ruby scripts/pfs compile #{@definition.source_path} --as #{@flavor_key}",
           ]
+          @definition.modules.each do |mod|
+            lines << "# Module: #{mod.name} v#{mod.version} " \
+                     "(sha256:#{mod.source_sha[0, 12]}...)"
+          end
+          lines
         end
 
         def fragments

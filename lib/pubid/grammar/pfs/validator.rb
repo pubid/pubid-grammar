@@ -29,7 +29,7 @@ module Pubid
 
         TOP_LEVEL_KEYS = %w[
           pfs scheme title organization grammar types fields templates
-          urn examples
+          urn examples modules date
         ].freeze
 
         module_function
@@ -37,15 +37,24 @@ module Pubid
         # @param raw [Hash] the strict-loaded definition
         # @param source_path [String] citing path for the header
         # @param source_sha [String] sha256 of the raw definition bytes
+        # @param module_library [Hash{String => ModuleLibrary::Module}] the
+        #   loaded module library (name → module); empty when absent
         # @return [Definition::Root]
         # @raise [InvalidDefinition]
-        def validate(raw, source_path:, source_sha:)
+        def validate(raw, source_path:, source_sha:, module_library: {})
           check_keys("definition", raw, TOP_LEVEL_KEYS)
           check_version(raw.fetch("pfs", nil))
 
           scheme = check_scheme(raw)
           organization = check_organization(raw)
-          grammar = check_grammar(raw, scheme)
+          modules, module_bindings = check_modules(raw.fetch("modules", []), module_library, raw)
+          grammar = check_grammar(raw, scheme, modules)
+          # The merged fragment view: module fragments first, then the
+          # definition's own. Names are unique across the view — the
+          # module-aware collision checks guarantee it. Templates resolve
+          # against it, so a composed definition names a module's face
+          # (`en_face`) exactly like its own fragment.
+          grammar = merged_grammar(modules, grammar)
           types = check_types(raw, scheme)
           fields = check_fields(raw, scheme, grammar)
           templates = check_templates(raw, fields, grammar)
@@ -63,7 +72,168 @@ module Pubid
             templates: templates,
             urn: urn,
             examples: check_examples_shape(raw),
+            modules: modules.freeze,
+            module_bindings: module_bindings.freeze,
+            date: check_date(raw.fetch("date", nil), fields),
           )
+        end
+
+        # Resolve the `modules:` entries against the library and run the
+        # MODULE-AWARE checks the composition exists to enable:
+        #
+        #   * fragment collisions — a `grammar:` name claimed by two modules,
+        #     or by a module and the definition, is a compile-time ambiguity
+        #     citing both claimants (templates resolve against the merged
+        #     view, so a collision is a silent rebinding if allowed);
+        #   * token claims — a module token colliding with the definition's
+        #     publisher, prefixes, type keys or stage abbreviations, or with
+        #     a co-bound module's tokens, cites both (the module-aware form
+        #     of the type-token ambiguity rule);
+        #   * reserved tokens hold inside modules and their parameters too;
+        #   * versioning — resolved and version-checked by the library
+        #     (fail-closed on unknown and stale versions).
+        def check_modules(entries, library, raw)
+          entries ||= []
+          unless entries.is_a?(Array)
+            raise InvalidDefinition.new("modules",
+                                        "must be an array of module bindings")
+          end
+
+          bindings = entries.map.with_index do |entry, i|
+            rule = "modules[#{i}]"
+            unless entry.is_a?(Hash)
+              raise InvalidDefinition.new(
+                rule,
+                "must be {module:, version:[, parameters:]} — a bare module " \
+                "name would let the version drift silently",
+              )
+            end
+            check_keys(rule, entry, %w[module version parameters])
+            name = entry["module"]
+            unless name.is_a?(String) && ModuleLibrary::NAME.match?(name)
+              raise InvalidDefinition.new("#{rule}.module",
+                                          "must be a dotted module name, got #{name.inspect}")
+            end
+            version = entry["version"]
+            unless version.is_a?(Integer)
+              raise InvalidDefinition.new(
+                "#{rule}.version",
+                "must be the integer version the definition is written against",
+              )
+            end
+            parameters = entry["parameters"] || {}
+            unless parameters.is_a?(Hash)
+              raise InvalidDefinition.new("#{rule}.parameters", "must be a map")
+            end
+            ModuleLibrary::Binding.new(
+              name: name, version: version, parameters: parameters,
+            )
+          end
+
+          resolved = ModuleLibrary.resolve(bindings, library)
+
+          check_fragment_collisions(resolved)
+          check_module_token_claims(resolved, raw)
+          check_identity_base_modules(resolved, bindings)
+
+          [resolved.map { |_, mod| mod }, bindings]
+        end
+
+        # Compile-time span of the identity declarations: a module whose
+        # identity names the module carrying its adopted face holds the
+        # definition to BINDING that module — an en.overlay composed
+        # without iso.inner would declare a base the composition cannot
+        # resolve.
+        def check_identity_base_modules(resolved, bindings)
+          bound = bindings.map(&:name)
+          resolved.each do |binding, mod|
+            base = mod.identity&.base_module
+            next if base.nil? || bound.include?(base)
+
+            raise InvalidDefinition.new(
+              "modules",
+              "module #{mod.name.inspect} (#{binding.name}) declares the " \
+              "identity base #{base.inspect}, which the definition does not " \
+              "bind — add it to `modules:` or the composition cannot resolve",
+            )
+          end
+        end
+
+        # A fragment name claimed twice across the composition — modules
+        # first, then the definition — is an ambiguity, not an override.
+        def check_fragment_collisions(resolved)
+          seen = {}
+          resolved.each do |binding, mod|
+            mod.grammar.each_key do |name|
+              if seen.key?(name)
+                raise InvalidDefinition.new(
+                  "modules",
+                  "ambiguity: grammar rule #{name.inspect} is declared by " \
+                  "#{seen[name]} and by module #{mod.name.inspect} " \
+                  "(#{binding.name}) — templates resolve against the merged " \
+                  "view, so a collision would be a silent rebinding",
+                )
+              end
+              seen[name] = "module #{mod.name.inspect} (#{binding.name})"
+            end
+          end
+          seen
+        end
+
+        # A module's claimed tokens must be unclaimed by every CO-BOUND
+        # module: two modules fighting over one token is an unresolved
+        # composition. Claims shared with the BINDING definition are
+        # co-ownership, not competition — the definition binding a module
+        # IS the sharing (its prefixes, publisher and stage abbreviations
+        # may all name the module's spellings; the overlay's EN face is
+        # the definition's head token and its stage abbreviation). The
+        # claim is case-insensitive — head dispatch is.
+        def check_module_token_claims(resolved, _raw)
+          claimed = {}
+          resolved.each do |binding, mod|
+            mod.tokens.each do |token|
+              owner = claimed[token.to_s.downcase.tr(":-_.", "")]
+              next unless owner
+
+              raise InvalidDefinition.new(
+                "modules",
+                "ambiguity: modules #{owner} and #{mod.name.inspect} " \
+                "(#{binding.name}) both claim token #{token.inspect} — " \
+                "co-bound modules must not compete for a token",
+              )
+            end
+            mod.tokens.each do |token|
+              claimed[token.to_s.downcase.tr(":-_.", "")] =
+                "module #{mod.name.inspect} (#{binding.name})"
+            end
+          end
+        end
+
+        # The definition-side token inventory the module claims are checked
+        # against: publisher, prefixes, type keys and stage abbreviations.
+        def token_claims(raw)
+          claims = {}
+          org = raw["organization"] || {}
+          claims[org["publisher"].to_s.downcase.tr(":-_.", "")] = "organization.publisher" if org["publisher"].is_a?(String)
+          (org["prefixes"] || []).each do |token|
+            claims[token.to_s.downcase.tr(":-_.", "")] = "organization.prefixes" if token.is_a?(String)
+          end
+          (raw["types"] || {}).each do |name, body|
+            next unless body.is_a?(Hash)
+
+            claims[body["key"].to_s.downcase.tr(":-_.", "")] = "types.#{name}.key" if body["key"].is_a?(String)
+            (body.dig("stage", "abbr") || []).each do |abbr|
+              claims[abbr.to_s.downcase.tr(":-_.", "")] = "types.#{name}.stage.abbr" if abbr.is_a?(String)
+            end
+          end
+          claims
+        end
+
+        # The merged fragment view the templates reference and the PARG
+        # generator emits: module fragments, then the definition's own.
+        def merged_grammar(modules, grammar)
+          modules.reduce({}) { |merged, mod| merged.merge(mod.grammar) }
+                 .merge(grammar)
         end
 
         def check_version(value)
@@ -141,32 +311,54 @@ module Pubid
           )
         end
 
-        def check_grammar(raw, scheme)
+        def check_grammar(raw, scheme, resolved_modules = [])
           fragments = raw["grammar"] || {}
           unless fragments.is_a?(Hash)
             raise InvalidDefinition.new("grammar", "must be a map of rule name → term")
           end
+          check_grammar_map(fragments, "grammar")
+          # Module-aware collision: the definition may not re-claim a name a
+          # bound module already declared (the merged view would make the
+          # definition's copy a silent override).
+          resolved_modules.each do |mod|
+            fragments.each_key do |name|
+              next unless mod.grammar.key?(name)
+
+              raise InvalidDefinition.new(
+                "grammar.#{name}",
+                "ambiguity: grammar rule #{name.inspect} is already declared by " \
+                "module #{mod.name.inspect} — the definition and its modules " \
+                "must not compete for a rule name",
+              )
+            end
+          end
+          fragments.freeze
+        end
+
+        # The shared fragment checks (rule names, single-line terms,
+        # balanced quotes/brackets), citable under any prefix — the
+        # definition's `grammar:` and a module's `grammar:` both use it.
+        def check_grammar_map(fragments, prefix)
           fragments.each do |name, term|
             unless name.is_a?(String) && NAME.match?(name)
-              raise InvalidDefinition.new("grammar.#{name}",
+              raise InvalidDefinition.new("#{prefix}.#{name}",
                                           "rule name must be lower-case snake_case")
             end
             unless term.is_a?(String) && !term.empty?
-              raise InvalidDefinition.new("grammar.#{name}", "term must be a string")
+              raise InvalidDefinition.new("#{prefix}.#{name}", "term must be a string")
             end
             unless single_line?(term)
               raise InvalidDefinition.new(
-                "grammar.#{name}",
+                "#{prefix}.#{name}",
                 "term spans multiple lines — edition-2 line discipline is the " \
                 "compiler's job; a fragment is a single-line term",
               )
             end
             unless balanced?(term)
-              raise InvalidDefinition.new("grammar.#{name}",
+              raise InvalidDefinition.new("#{prefix}.#{name}",
                                           "unbalanced quotes or brackets")
             end
           end
-          fragments.freeze
         end
 
         def check_types(raw, scheme)
@@ -182,7 +374,7 @@ module Pubid
             unless name.is_a?(String) && NAME.match?(name)
               raise InvalidDefinition.new("types.#{name}", "type name must be snake_case")
             end
-            check_keys("types.#{name}", body, %w[key title short tag stage])
+            check_keys("types.#{name}", body, %w[key web title short tag stage])
 
             key = body["key"]
             unless key.is_a?(String) && NAME.match?(key)
@@ -219,6 +411,7 @@ module Pubid
             Definition::Type.new(
               name: name,
               key: key,
+              web: body["web"] || key,
               title: body["title"] || key,
               short: body["short"] || key,
               tag: tag,
@@ -289,7 +482,7 @@ module Pubid
                 "but the bare name stays reserved for the fragment",
               )
             end
-            check_keys("fields.#{name}", body, %w[pattern kind])
+            check_keys("fields.#{name}", body, %w[pattern kind sub_numbering])
 
             pattern = body["pattern"]
             unless pattern.is_a?(String) && !pattern.empty?
@@ -306,6 +499,7 @@ module Pubid
               raise InvalidDefinition.new("fields.#{name}.pattern",
                                           "unbalanced quotes or brackets")
             end
+            pattern = apply_sub_numbering(name, pattern, body["sub_numbering"])
 
             kind = body["kind"] || "string"
             unless %w[string].include?(kind)
@@ -318,6 +512,33 @@ module Pubid
 
             Definition::Field.new(name: name, pattern: pattern, kind: kind)
           end
+        end
+
+        # The sub-numbering extension (tier-B extension 6, #706 §6): a
+        # decimal/dashed sub-number suffix on a field, declared at the
+        # pattern level so the wizard offers it as a form field. CalConnect's
+        # `CC/Adv 0707.1:2007` is the motivating surface. The declaration
+        # folds into the field's pattern — the capture stays WHOLE (the
+        # sub-number is part of the field's value, exactly as the coded
+        # flavors model it), so the model stores what the scheme prints.
+        def apply_sub_numbering(field_name, pattern, sub_numbering)
+          return pattern if sub_numbering.nil?
+
+          unless sub_numbering.is_a?(Hash)
+            raise InvalidDefinition.new("fields.#{field_name}.sub_numbering",
+                                        "must be a map")
+          end
+          check_keys("fields.#{field_name}.sub_numbering", sub_numbering, %w[separators])
+          separators = sub_numbering["separators"]
+          unless separators.is_a?(Array) && !separators.empty? &&
+              separators.all? { |s| s.is_a?(String) && !s.empty? && !s.include?('"') }
+            raise InvalidDefinition.new(
+              "fields.#{field_name}.sub_numbering.separators",
+              "must be a non-empty array of separator literals",
+            )
+          end
+
+          "#{pattern} [(#{separators.map { |s| "\"#{s}\"" }.join(' / ')}) 1*digit]"
         end
 
         def check_templates(raw, fields, grammar)
@@ -342,6 +563,7 @@ module Pubid
             )
           end
           check_refs(canonical, fields, grammar, "templates.canonical")
+          check_canonical_optionals(canonical)
 
           alternates = (templates["alternates"] || []).map.with_index do |text, i|
             unless text.is_a?(String) && !text.empty?
@@ -391,9 +613,28 @@ module Pubid
               unless grammar.key?(item.name)
                 raise InvalidDefinition.new(
                   rule,
-                  "unknown grammar rule #{item.name} — declare it under `grammar:`",
+                  "unknown grammar rule #{item.name} — declare it under " \
+                  "`grammar:` (or bind the module that declares it)",
                 )
               end
+            end
+          end
+        end
+
+        # A canonical optional renders as a PRESENCE GUARD (it renders its
+        # inner face iff every field inside captured), so an optional with
+        # no field inside has no presence signal — its rendering could not
+        # be decided. Parse-only alternates are free of the rule.
+        def check_canonical_optionals(canonical)
+          walk(canonical) do |item|
+            next unless Template::Opt === item
+
+            unless Template.fields_in(item).any?
+              raise InvalidDefinition.new(
+                "templates.canonical",
+                "an optional segment with no field inside cannot render — " \
+                "the render face decides presence from the captured fields",
+              )
             end
           end
         end
@@ -403,7 +644,7 @@ module Pubid
           unless urn.is_a?(Hash)
             raise InvalidDefinition.new("urn", "section is required")
           end
-          check_keys("urn", urn, %w[namespace schema])
+          check_keys("urn", urn, %w[namespace schema official])
           check_keys("urn.schema", urn["schema"], %w[atoms types])
 
           namespace = urn["namespace"]
@@ -411,6 +652,8 @@ module Pubid
             raise InvalidDefinition.new("urn.namespace",
                                         "must be a lower-case namespace, got #{namespace.inspect}")
           end
+
+          official = check_urn_official(urn["official"] || [], fields)
 
           schema = urn["schema"] || {}
           atoms = (schema["atoms"] || []).map.with_index do |atom, i|
@@ -459,7 +702,83 @@ module Pubid
                                         "ambiguity: duplicate URN type declarations")
           end
 
-          Definition::Urn.new(namespace: namespace, atoms: atoms, types: types)
+          Definition::Urn.new(namespace: namespace, atoms: atoms, types: types,
+                              official: official)
+        end
+
+        # The calendar binding (`date:`): the declared fields fold into the
+        # shared ::Pubid::Components::Date — the coded flavors' own shape —
+        # and the serialized hash stays flat (the shared flat-scalar
+        # machinery). A definition without `date:` keeps its fields as
+        # plain string attributes (doi's shape).
+        def check_date(date, fields)
+          return nil if date.nil?
+
+          unless date.is_a?(Hash)
+            raise InvalidDefinition.new("date", "must be a map")
+          end
+          check_keys("date", date, %w[component fields])
+
+          component = date["component"] || "pubid"
+          unless component == "pubid"
+            raise InvalidDefinition.new(
+              "date.component",
+              "unsupported component #{component.inspect} — pfs:1 folds the " \
+              "calendar fields into the shared ::Pubid::Components::Date",
+            )
+          end
+
+          date_fields = date["fields"]
+          known = fields.map(&:name)
+          unless date_fields.is_a?(Array) && date_fields.all? { |f| known.include?(f) }
+            raise InvalidDefinition.new(
+              "date.fields",
+              "must be an array of declared field names, got " \
+              "#{date_fields.inspect}",
+            )
+          end
+
+          Definition::Date.new(fields: date_fields)
+        end
+
+        # The OFFICIAL URN's ordered segments (`urn.official`): the scheme's
+        # registered form (`urn:calconnect:<series>:<number>:<date>`) is the
+        # generator's composition, declared — not inherited from a base
+        # template that knows nothing of the scheme. A segment is a field
+        # name (omitted when the field did not capture) or a fused
+        # `{date: [fields...]}` group (the fields joined with `-`, the
+        # group omitted when none captured). A definition without
+        # `official:` keeps the shared base generator (doi's shape).
+        def check_urn_official(official, fields)
+          unless official.is_a?(Array)
+            raise InvalidDefinition.new("urn.official",
+                                        "must be an array of ordered segments")
+          end
+          known = fields.map(&:name)
+          official.map.with_index do |segment, i|
+            rule = "urn.official[#{i}]"
+            case segment
+            when String
+              unless known.include?(segment)
+                raise InvalidDefinition.new(rule, "unknown field #{segment.inspect}")
+              end
+              Definition::UrnField.new(name: segment)
+            when Hash
+              check_keys(rule, segment, %w[date])
+              date_fields = segment["date"]
+              unless date_fields.is_a?(Array) && !date_fields.empty? &&
+                  date_fields.all? { |f| known.include?(f) }
+                raise InvalidDefinition.new(
+                  "#{rule}.date",
+                  "must be a non-empty array of known field names",
+                )
+              end
+              Definition::UrnDate.new(fields: date_fields)
+            else
+              raise InvalidDefinition.new(rule,
+                                          "must be a field name or {date: [fields]}")
+            end
+          end
         end
 
         def check_examples_shape(raw)

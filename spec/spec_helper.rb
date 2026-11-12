@@ -29,6 +29,7 @@ RSpec.configure do |config|
       artifact_out: File.join(dir, "#{flavor_key}.json"),
       repo_root: PFS_REPO_ROOT,
       parsanol_version: ENV.fetch("PARSANOL_VERSION", "1.3.126"),
+      ruby_out: File.join(dir, "ruby"),
     )
   end
 

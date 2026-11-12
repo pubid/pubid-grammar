@@ -1,0 +1,39 @@
+# The national-prefix module (issue #706 §4): the parameterized NSB token
+# layer. DIN, BS, NF, SS-, NEN-, UNE-, ÖNORM, CAN/CSA are the same module
+# with a different parameter — `BS EN ISO 9001:2015`, `NF EN ISO 9001`,
+# `SS-EN ISO 9001`, `NEN-EN-ISO 9001` are one definition composed with
+# this module and a different `prefixes` value.
+#
+# The parameter is the module's whole point: the tokens are DATA, so the
+# wizard (#406) offers national.prefix as a parameterized form field.
+
+module: national.prefix
+version: 1
+title: "The national-standards-body prefix"
+description: >-
+  The national body's own head token(s), parameterized per composing
+  definition. The national token leads the reference; an adoption overlay
+  or an inner document may follow it.
+
+parameters:
+  prefixes:
+    type: tokens
+    required: true
+    description: >-
+      The NSB head tokens, verbatim as printed ("DIN", "BS", "NF",
+      "SS-", "NEN-", "UNE-", "ÖNORM", "CAN/CSA"). Each becomes a
+      head-dispatch token of the composed flavor.
+
+identity:
+  composition: wrapper-with-adopted
+  base_module: iso.inner
+  adopted_field: adopted
+
+hooks:
+  national_amendment: >-
+    National irregularity on the amendment face — the BS "+A1" national
+    amendment numbering is the canonical example. Where a body exceeds
+    the parameters, it drops to a coded hook beside its definition.
+  redating: >-
+    National re-dating (the adopted year replaced by the national
+    publication year) is a body-specific rule, not a module parameter.
