@@ -1,0 +1,54 @@
+# PFS-generated grammar — DO NOT EDIT BY HAND.
+# Source: definitions/doi.pfs (pfs:1) sha256:60abc3c403c61019d727ee44d9a72591c1549672451e6609a72d36189cae6340
+# Compiler: pubid/grammar/pfs 0.1.0
+# Flavor key: doi_pfs (grammar PubidDoiPfs)
+# Regenerate: ruby scripts/pfs compile definitions/doi.pfs --as doi_pfs
+
+grammar PubidDoiPfs version "0.1.0" edition 2 {
+
+  # Grammar fragments: named lexical terms declared under `grammar:`.
+  digit = %x30-39
+  suffix_char = %x30-39 / %x41-5A / %x61-7A / %x2E / %x5F / %x2D / %x2F / %x28 / %x29
+  slash = "/"
+  url_prefix = [["https://" / "http://"] ["doi.org"]]
+  scheme_prefix = ["doi:" / "DOI:" / "Doi:"]
+
+  # Fields: one capture rule per declared field; the whole pattern
+  # is the capture.
+  doi_prefix = ("10" "." 2*digit) as prefix
+  doi_suffix = (1*suffix_char) as suffix
+
+  # Identifier rule: the canonical template first, then the
+  # declared alternates (parse-in spellings; they normalize to the
+  # canonical render face).
+  identifier = {
+    "doi:" doi_prefix "/" doi_suffix
+    / [url_prefix] [scheme_prefix] [slash] doi_prefix "/" doi_suffix
+  }
+  entry identifier: identifier
+
+  # Typed model bindings: every bound capture lands on the
+  # consumer model's field of the same name.
+  bindings identifier {
+    prefix -> prefix (string)
+    suffix -> suffix (string)
+  }
+
+  # REQUIRED examples from the definition — accepts, rejects, and
+  # the capture expectations the compiler replayed at compile time.
+  test {
+    accept "doi:10.1000/182"
+    accept "10.1006/jmbi.1998.2354"
+    accept "DOI:10.6028/NIST.2022-04-15.001"
+    accept "https://doi.org/10.1000/182"
+    reject "doi:"
+    reject "doi:10"
+    reject "doi:10.X/abc"
+    reject "doi:10.1000/"
+    reject "nonsense"
+    example "doi:10.1000/182" { prefix: "10.1000" suffix: "182" }
+    example "10.1006/jmbi.1998.2354" { prefix: "10.1006" suffix: "jmbi.1998.2354" }
+    example "DOI:10.6028/NIST.2022-04-15.001" { prefix: "10.6028" suffix: "NIST.2022-04-15.001" }
+    example "https://doi.org/10.1000/182" { prefix: "10.1000" suffix: "182" }
+  }
+}

@@ -1,0 +1,94 @@
+# DOI (Digital Object Identifier) per ISO 26324 — the PFS v1 worked
+# example (pubid/pubid#706 §9's bracketing spike: the smallest tier-A
+# scheme, zero renderer value branches).
+#
+# Accepts: [doi:|DOI:|Doi:|https://doi.org/|...]10.{REGISTRAR}/{SUFFIX}.
+# The prefix capture includes the "10." face (the whole printed prefix),
+# so the model stores exactly what the scheme defines — no builder
+# re-assembly. The suffix is printable non-whitespace minus the
+# DOI-reserved exclusions, per the scheme's char table.
+
+pfs: 1
+
+scheme: doi
+title: "Digital Object Identifier"
+
+organization:
+  name: "DOI Foundation"
+  publisher: "DOI"
+  # The head-dispatch tokens of the scheme: the bare "10." form is the
+  # canonical prefix per ISO 26324 §4.1.
+  prefixes: ["doi:", "DOI:", "10."]
+
+# Named lexical rules the fields and templates reference. The suffix
+# char table is the scheme's data: digits, letters, and the printable
+# set minus whitespace and the DOI-reserved exclusions.
+grammar:
+  digit: "%x30-39"
+  suffix_char: "%x30-39 / %x41-5A / %x61-7A / %x2E / %x5F / %x2D / %x2F / %x28 / %x29"
+  slash: '"/"'
+  url_prefix: '[["https://" / "http://"] ["doi.org"]]'
+  scheme_prefix: '["doi:" / "DOI:" / "Doi:"]'
+
+# Typed identifier types. The wire tag is the SCHEME's canonical tag —
+# a compiled flavor under a dev alias key carries it so its to_hash
+# stays byte-identical with the coded flavor.
+types:
+  resource:
+    key: doi
+    title: "DOI"
+    short: "DOI"
+    tag: "pubid:doi:resource"
+    stage:
+      code: pubdoi
+      stage_code: published
+      abbr: ["DOI"]
+
+# Fields: the captures, each with its whole-pattern lexical rule.
+fields:
+  prefix:
+    pattern: '"10" "." 2*digit'
+    kind: string
+  suffix:
+    pattern: "1*suffix_char"
+    kind: string
+
+templates:
+  # The canonical face: what renders, and an accepted spelling.
+  canonical: '"doi:" {prefix} "/" {suffix}'
+  # Parse-in spellings that normalize to the canonical face: the bare
+  # form, the resolver URL forms, any casing of the scheme face, and a
+  # leading slash.
+  alternates:
+    - '[url_prefix] [scheme_prefix] [slash] {prefix} "/" {suffix}'
+
+urn:
+  # The scheme's own namespace (dev-alias compiled flavors keep the
+  # scheme-canonical namespace on to_urn).
+  namespace: doi
+  schema:
+    atoms:
+      - { path: prefix, prefix: prefix }
+      - { path: suffix, prefix: suffix }
+    types:
+      - { type: "pubid:doi_pfs:identifier", token: id, core: [] }
+      - { type: "pubid:doi_pfs:resource", token: resource, core: [] }
+
+# REQUIRED. The live test panel: each positive must parse and render as
+# declared; each negative must fail to parse.
+examples:
+  positives:
+    - input: "doi:10.1000/182"
+      renders: "doi:10.1000/182"
+    - input: "10.1006/jmbi.1998.2354"
+      renders: "doi:10.1006/jmbi.1998.2354"
+    - input: "DOI:10.6028/NIST.2022-04-15.001"
+      renders: "doi:10.6028/NIST.2022-04-15.001"
+    - input: "https://doi.org/10.1000/182"
+      renders: "doi:10.1000/182"
+  negatives:
+    - "doi:"
+    - "doi:10"
+    - "doi:10.X/abc"
+    - "doi:10.1000/"
+    - "nonsense"
