@@ -43,6 +43,28 @@ jobs:
           for f in "$GITHUB_WORKSPACE"/grammars/*.parg; do
             parsanol parg test "$f" || exit 1
           done
+  pfs-compiler:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.8'
+      - name: PFS definitions compile + verify + specs
+        run: |
+          gem install parsanol -v "$PARSANOL_VERSION" rspec -N
+          ruby "$GITHUB_WORKSPACE/scripts/pfs" compile \
+            "$GITHUB_WORKSPACE/definitions/doi.pfs" --as doi_pfs \
+            --parsanol-version "$PARSANOL_VERSION"
+          # A definition change must carry its regenerated outputs: the
+          # compile is deterministic, so drift means the PR edited the
+          # definition but committed neither the grammar nor the rebake.
+          git diff --exit-code -- grammars/doi_pfs.parg artifacts/doi_pfs.json || {
+            echo "::error::generated doi_pfs outputs are stale — run scripts/pfs compile and commit"
+            exit 1
+          }
+          PARSANOL_VERSION="$PARSANOL_VERSION" \
+            rspec spec --format progress
   rust:
     runs-on: ubuntu-24.04
     steps:
