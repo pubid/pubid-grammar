@@ -52,7 +52,8 @@ jobs:
           ruby-version: '3.4.8'
       - name: PFS definitions compile + verify + specs
         run: |
-          gem install parsanol -v "$PARSANOL_VERSION" rspec -N
+          gem install parsanol -v "$PARSANOL_VERSION" -N
+          gem install rspec -N
           ruby "$GITHUB_WORKSPACE/scripts/pfs" compile \
             "$GITHUB_WORKSPACE/definitions/doi.pfs" --as doi_pfs \
             --parsanol-version "$PARSANOL_VERSION"
