@@ -1,17 +1,79 @@
-# REMAINING — the reconciled work ledger (synced 2026-11-11)
+# REMAINING — the reconciled work ledger (synced 2026-11-12)
 
 Single source of truth for what is left. Items marked DONE here are
 checked in their topic files with commit references. Ordered by the
 dependency chain: engine correctness → language features → consumers
 → conformance → release (P5 stays owner-frozen).
 
-Reality snapshot 2026-11-11: 48 flavors (aiee, ire, nesc ride the ieee
-grammar fleet), 415 committed corpus cases, every flavor on edition-2
-typed bindings (see dashboard.md, regenerated this sync). The grammar
-CI job runs on ubuntu-24.04 with ruby 3.4.8 — bakes and contract regens
-stay on that toolchain because the artifact stamps embed the Ruby
-version; the compiler pin is `PARSANOL_VERSION` in
-`.github/workflows/parg-conformance.yml` (1.3.126).
+Reality snapshot 2026-11-12: 48 flavors (aiee, ire, nesc ride the ieee
+grammar fleet) plus two PFS dev grammars (`doi_pfs`, `etsi_pfs` —
+generated definitions, dev-alias flavors in pubid; not routed), 415
+committed corpus cases + the PFS golden/etsi corpora, every flavor on
+edition-2 typed bindings (see dashboard.md, regenerated this sync).
+The grammar CI job runs on ubuntu-24.04 with ruby 3.4.8 — bakes and
+contract regens stay on that toolchain because the artifact stamps
+embed the Ruby version; the compiler pin is `PARSANOL_VERSION` in
+`.github/workflows/parg-conformance.yml` (1.3.126) and the
+cross-engine wasm gate is pinned to `@parsanol/wasm` 0.10.46
+(rs 0.20.14 — the phantom-array harvest of parsanol-ts#66, ruby
+ancestor parsanol-ruby#399, is fixed there; 0.10.32 predates the fix).
+
+## Landed 2026-11-12 (this sync's waves)
+
+- [x] **ISO historic ballot faces decode-to-modern** (owner ruling,
+      Option B): TYPE-first ballot supplement faces
+      (`[P|F]?DAM [N] BASE [:year][/Amd.N]`) parse and decode onto the
+      stored-twin identities — stage from token, implied number 1 at
+      build time (identity-bearing), base kept whole; `Am1` accepted
+      as an `Amd 1` alias; ballot-letters-vs-stored-round drift rows
+      spec-pinned. 12 anchors raise→parse; 213,414-stored-face probe
+      0 diff lines. (56833fe; grammar branches `ballot_supplement_identifier`,
+      `ballot_space_supplement_identifier`, `typed_stages_ballots`.)
+- [x] **IEC legacy DAM-family decode-to-modern** (same ruling):
+      `IEC/FDAM 60038-1` ≡ `IEC FDAM 60038-1` ≡ `IEC 60038-1/FDAM1` —
+      the designation moves whole onto a concrete InternationalStandard,
+      supplement number defaults to 1; #693's part→supplement-number
+      move deleted. CDCOR all-caps alias, PDAM/FPDAM typed stages,
+      copublisher captured as a top-level scalar (the wasm
+      phantom-array workaround, see parsanol-ts#66).
+      (c13db43, ecb32f0, 77c05e8, c711eb6; follow-up 0793420 adds the
+      `[language]` slot to the on-base supplement branch so
+      `ISO/IEC 19772:2009(en)/DAM1:2019` parses.)
+- [x] **NIST default-series plain-number branch** (pubid#711): bare
+      `800-90B` and publisher-led `NIST 800-90B` parse and default to
+      series SP / publisher NIST — `800-90B == NIST SP 800-90B`, MR
+      face = the stored DOI surface. 43,109-input replay, 0
+      regressions; contracts re-pinned. (7307c69, 22564c2.)
+- [x] **CI wasm gate pin 0.10.46** (b76be8d): the cross-engine gate
+      was pinned to 0.10.32 (rs 0.19.19), predating the phantom-array
+      fix — valid rules reded. Upstream finding filed as
+      parsanol/parsanol-ts#66 with the version matrix
+      (0.10.30/0.10.32 carry it; 0.10.46 fixed).
+- [x] **PFS — the PubID Format Schema, phase 1 + the etsi bracket**
+      (pubid#706, owner-adopted): the compiler (`lib/pubid/grammar/pfs/`,
+      `scripts/pfs`) — strict YAML load, fail-closed validation
+      (pfs:1, reserved tokens, ambiguity rejection citing the rule),
+      edition-2 generation, bake integration, example verification —
+      with `definitions/doi.pfs` (02fedd4, b8cab61) and
+      `definitions/etsi.pfs` (e3d8578) as the two compiled definitions.
+      Parity: doi 55/55 byte-identical vs the coded flavor; etsi
+      accept 24,718/24,718 with to_hash/to_pubid_urn parity 18,945/
+      24,718 (rows carrying the three undeclarable constructs pinned
+      per-construct in pubid's `spec/pubid/etsi_pfs/parity_spec.rb` —
+      progress turns the pins red). Dev-alias flavors only; cutover is
+      a separate decision.
+- [ ] **PFS v2 — the six compiler gaps** (the etsi bracket's pinned
+      backlog): collection bindings; conditional render segments;
+      supplement wrapper types; int-kind URN cores (+ the generator's
+      `core.map(&:to_sym)` load crash on non-empty cores); URN-generator
+      declaration surface (namespace-only today); MR-slug `mr_*` hooks.
+      Each is the precise blocker for full byte-parity on etsi rows
+      (3,772 collection-part / 1,833 ed.N / 168 supplement-wrapper
+      rows) and for the tier-B extension catalog's conditional-segment
+      item. Phase 3 also owes: the module library (iso.inner/iec.inner/
+      en.overlay/national.prefix), the cen_cenelec NSB proof, the
+      CalConnect port (sub-numbering extension), and the remaining
+      tier-A ports — in flight at sync time.
 
 ## Engine (parsanol-ruby / parsanol-rs)
 
