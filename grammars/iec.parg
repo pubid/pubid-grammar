@@ -448,9 +448,17 @@ grammar PubidIec version "0.1.0" edition 2 {
   }
   supplement_identifier_no_third = {
     identifier_copublishers_no_third
+    [language]
     slash supplement_type_with_stage
     [space] supplement_second_part
   }
+  ## The [language] slot between the base designation and the supplement
+  ## token: the renderer prints the BASE document's languages right after
+  ## its date ("ISO/IEC 19772:2009(en)/DAM1:2019"), and without the slot
+  ## the canonical face could not re-parse (the input's (E) rides the
+  ## supplement's third part; the rendered (en) rides the base). The
+  ## capture lands on the base: the builder's supplement branch rejects
+  ## only the supp_* keys into the base hash.
   supplement_identifier = supplement_identifier_no_third supplement_third_part
   supplement_supplement_identifier = {
     supplement_identifier_no_third
@@ -538,6 +546,8 @@ grammar PubidIec version "0.1.0" edition 2 {
     accept "ISO/IEC FDAM 1 14496-12:2004"
     accept "IEC DCOR 60038-1"
     accept "IEC 60038-1/FDAM 1"
+    accept "ISO/IEC 19772:2009(en)/DAM1:2019"
+    example "ISO/IEC 19772:2009(en)/DAM1:2019" { publisher: "ISO", languages: "en", supp_type_with_stage: "DAM", supp_number_with_part: "1", date: "2009", supp_date: "2019" }
     reject "nonsense"
     example "IEC/FDAM 60038-1" { publisher: "IEC", legacy_stage: "FDAM", legacy_base_number_with_part: "60038-1" }
     example "ISO/IEC PDAM 2 10646:2012" { publisher: "ISO", legacy_stage: "PDAM", legacy_supplement_number: "2", legacy_base_number_with_part: "10646", date: "2012" }
