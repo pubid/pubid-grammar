@@ -30,6 +30,7 @@ module Pubid
       autoload :ExampleFailure, "#{__dir__}/pfs/errors"
       autoload :Loader, "#{__dir__}/pfs/loader"
       autoload :Definition, "#{__dir__}/pfs/definition"
+      autoload :ModuleLibrary, "#{__dir__}/pfs/module"
       autoload :Template, "#{__dir__}/pfs/template"
       autoload :Validator, "#{__dir__}/pfs/validator"
       autoload :PargGenerator, "#{__dir__}/pfs/parg_generator"

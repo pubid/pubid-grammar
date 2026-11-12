@@ -53,6 +53,9 @@ module Pubid
             raw,
             source_path: source_rel,
             source_sha: Digest::SHA256.hexdigest(raw_bytes),
+            module_library: ModuleLibrary.load(
+              File.join(repo_root, "definitions", "modules"),
+            ),
           )
 
           generator = PargGenerator.new(definition, flavor_key: flavor_key)

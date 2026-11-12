@@ -1,0 +1,59 @@
+# The CEN adoption overlay (issue #706 §4): the EN, EN ISO, EN IEC routing
+# layer. `EN 12464-1:2011`, `EN ISO 9001:2015`, `EN IEC 60335-1:2020`,
+# `prEN ISO 1234:2020` and `FprEN ISO 1234:2020` are this module's faces —
+# the European adoption of the inner document, with the draft stages the
+# CEN adoption process carries (the adoption's stage, not the adopted
+# document's).
+#
+# The module declares the IDENTITY composition, not just grammar: an
+# adoption identifier is a wrapper-with-adopted (the adopted ISO/IEC
+# document is the base) — the bsi/cen `adopted` model is the in-fleet
+# precedent. Grammar alone would produce a token soup with no identity
+# rule.
+
+module: en.overlay
+version: 1
+title: "The CEN/ENELEC adoption overlay"
+description: >-
+  The European adoption layer: the EN publisher with its draft faces
+  (prEN proposal, FprEN final proposal), routing to the bound inner
+  modules. Where a national prefix composes with it (`BS EN ISO 9001`),
+  the national.prefix module contributes the outer token.
+
+grammar:
+  en_space: '" "'
+  en_draft: '("pr" / "Fpr")'
+  en_face: '[en_draft] "EN"'
+  # The adoption face composes the overlay's own tokens with the identity
+  # base's face (iso.inner, the declared base_module). An EN IEC adoption
+  # binds iec.inner as well and composes `en_face en_space iec_document`
+  # in its own template — the fragment below is the ISO-adoption face.
+  en_adoption: 'en_face en_space iso_document'
+
+tokens:
+  - "EN"
+  - "prEN"
+  - "FprEN"
+
+parameters:
+  inner_modules:
+    type: tokens
+    required: false
+    description: >-
+      The inner modules the overlay may adopt (iso.inner, iec.inner);
+      advisory — the resolved binding is the compiler's check.
+
+identity:
+  composition: wrapper-with-adopted
+  base_module: iso.inner
+  adopted_field: adopted
+
+hooks:
+  inner_parse: >-
+    The adopted segment's parse. An EN ISO adoption parses the ISO face;
+    an EN IEC adoption parses the IEC face; a plain EN has none. The
+    routed dispatch is a coded hook beside the definition in v1.
+  draft_stage: >-
+    The draft faces carry the adoption's stage (proposal / final
+    proposal); binding them to the harmonized stage machinery is a typed
+    stage binding of the composing definition.

@@ -1,0 +1,41 @@
+# The ISO inner identifier module (issue #706 §4) — the inner ISO document
+# face as a referenceable library, NOT the declared ISO scheme (tier D
+# stays coded; the study draft data/iso/historic-schemes.md defines the
+# inner faces this module carries).
+#
+# A national-adoption definition binds this module so the adopted segment
+# of `BS EN ISO 9001:2015` / `DIN ISO 12345` has a declared face and a
+# declared identity: the adopted ISO document is the base of the wrapper.
+
+module: iso.inner
+version: 1
+title: "The ISO inner identifier face"
+description: >-
+  The inner ISO document face an adoption names: the ISO publisher token,
+  the document number with its part, and the year. The module carries the
+  face, not the ISO scheme — the edition/supplement wave and the joint
+  programs stay with the coded flavor (tier D, out of PFS scope).
+
+grammar:
+  iso_space: '" "'
+  iso_colon: '":"'
+  iso_dash: '"-"'
+  iso_year: '4*digit'
+  iso_part: '1*digit ["-" 1*digit]'
+  iso_number: '1*("0" %x31-39) *digit [iso_dash iso_part]'
+  iso_document: '"ISO" iso_space iso_number [iso_colon iso_year]'
+
+tokens:
+  - "ISO"
+
+identity:
+  composition: wrapper-with-adopted
+  base_module: iso.inner
+  adopted_field: adopted
+
+hooks:
+  inner_parse: >-
+    The adopted segment's parse. The inner ISO semantics (typed stages,
+    supplements, the Components::Code number) are tier-D coded machinery;
+    the v1 escape hatch is a coded hook beside the definition that the
+    generated builder calls — explicit, never implicit.

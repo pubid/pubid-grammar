@@ -1,0 +1,64 @@
+# PFS-generated grammar — DO NOT EDIT BY HAND.
+# Source: definitions/calconnect.pfs (pfs:1) sha256:2e864f0185a1a2f18a392f2f401ad3c9d65d1f32a9ec3f3f04f7dfca9b2226c4
+# Compiler: pubid/grammar/pfs 0.1.0
+# Flavor key: calconnect_pfs (grammar PubidCalconnectPfs)
+# Regenerate: ruby scripts/pfs compile definitions/calconnect.pfs --as calconnect_pfs
+
+grammar PubidCalconnectPfs version "0.1.0" edition 2 {
+
+  # Grammar fragments: named lexical terms declared under `grammar:`.
+  digit = %x30-39
+  letter = %x41-5A / %x61-7A
+  space = " "
+  slash = "/"
+  colon = ":"
+  dash = "-"
+
+  # Fields: one capture rule per declared field; the whole pattern
+  # is the capture.
+  calconnect_series = (1*letter) as series
+  calconnect_number = (1*digit [("." / "-") 1*digit]) as number
+  calconnect_year = (1*digit) as year
+  calconnect_month = (1*digit) as month
+  calconnect_day = (1*digit) as day
+
+  # Identifier rule: the canonical template first, then the
+  # declared alternates (parse-in spellings; they normalize to the
+  # canonical render face).
+  identifier = "CC" ["/" calconnect_series] " " calconnect_number [":" calconnect_year ["-" calconnect_month "-" calconnect_day]]
+  entry identifier: identifier
+
+  # Typed model bindings: every bound capture lands on the
+  # consumer model's field of the same name.
+  bindings identifier {
+    series -> series (string)
+    number -> number (string)
+    year -> year (string)
+    month -> month (string)
+    day -> day (string)
+  }
+
+  # REQUIRED examples from the definition — accepts, rejects, and
+  # the capture expectations the compiler replayed at compile time.
+  test {
+    accept "CC 18011"
+    accept "CC 18011:2018"
+    accept "CC 11001:2024"
+    accept "CC/DIR 10006:2019"
+    accept "CC/Adv 0707.1:2007"
+    accept "CC/A 0812-1:2008"
+    accept "CC/WD 51017:2024-07-23"
+    reject "nonsense"
+    reject "CC"
+    reject "CC/WD"
+    reject "CC 18011:"
+    reject "CC 18011:2024-"
+    example "CC 18011" { number: "18011" }
+    example "CC 18011:2018" { number: "18011" year: "2018" }
+    example "CC 11001:2024" { number: "11001" year: "2024" }
+    example "CC/DIR 10006:2019" { series: "DIR" number: "10006" year: "2019" }
+    example "CC/Adv 0707.1:2007" { series: "Adv" number: "0707.1" year: "2007" }
+    example "CC/A 0812-1:2008" { series: "A" number: "0812-1" year: "2008" }
+    example "CC/WD 51017:2024-07-23" { series: "WD" number: "51017" year: "2024" month: "07" day: "23" }
+  }
+}

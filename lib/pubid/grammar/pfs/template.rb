@@ -72,7 +72,11 @@ module Pubid
         end
 
         # The render face of a CANONICAL template: its single sequence with
-        # every optional segment omitted, fields substituted.
+        # fields substituted. An optional segment is a PRESENCE GUARD: it
+        # renders its inner face iff EVERY field inside captured (an absent
+        # optional leaves no bytes — no stray separators), which is the
+        # tier-A declarable rendering surface (#706 §2: presence guards,
+        # never value branches).
         # @param values [Hash{String => String}] capture name → value
         # @return [String]
         def render_sequence(sequence, values, rule:)
@@ -86,12 +90,45 @@ module Pubid
                       "no captured value for field {#{item.name}}"
               end
               value.to_s
-            when Opt then nil # optional segments never render
+            when Opt
+              next nil unless opt_present?(item, values)
+
+              render_sequence(item.inner.sequences.first, values, rule: rule)
             when Ref
               raise TemplateError.new(rule),
                     "grammar rule #{item.name} cannot appear in a render face"
             end
           end.join
+        end
+
+        # True when every field DIRECTLY inside +opt+ captured — the
+        # presence guard is top-down: an optional gates on its own direct
+        # fields, and a nested optional decides its own presence inside
+        # the rendered face. An optional with no direct fields renders
+        # unconditionally (a vacuous guard), letting the nested guards
+        # decide.
+        def opt_present?(opt, values)
+          direct_fields(opt).all? { |name| values[name] }
+        end
+
+        # Every {field} name anywhere inside an item — the validator's
+        # signal set (a canonical optional must reference a field).
+        def fields_in(item)
+          case item
+          when Field then [item.name]
+          when Opt then item.inner.sequences.flat_map { |seq| seq.flat_map { |i| fields_in(i) } }
+          else []
+          end
+        end
+
+        # The {field} names on an optional's own level: the fields of its
+        # sequences' items, NOT descending into nested optionals.
+        def direct_fields(opt)
+          opt.inner.sequences.flat_map do |seq|
+            seq.map do |item|
+              item.is_a?(Field) ? item.name : nil
+            end.compact
+          end
         end
 
         # A comparable structure for duplicate/overlap detection.

@@ -1,0 +1,30 @@
+# The edition operator as a module (issue #706 §4): the edition CORE
+# operator, bound — not redefined. `ed` is RESERVED (the machinery's
+# token); a body binds its edition spelling through this module's faces.
+#
+# An edition is an identity fact of one document (the second edition of
+# THIS document), not a wrapper: the module declares no identity
+# composition — the operator binds to the edition attribute of the
+# composing definition's type.
+
+module: edition.core
+version: 1
+title: "The edition operator"
+description: >-
+  The core edition operator as a binding: the edition ordinal of the
+  document itself. The module declares the generic edition faces; the
+  body's spelling (ed 2, Ed. 3, 2017-ed-2) binds through the composing
+  definition.
+
+grammar:
+  # edition_space (the separator between the operator word and the
+  # ordinal) is supplied by the composing definition's grammar: it is a
+  # body face, not a core one.
+  edition_ordinal: '1*digit'
+  edition_face: '"ed" edition_space edition_ordinal'
+
+hooks:
+  edition_semantics: >-
+    The edition-of relation (dated_version_of?, the edition attribute) is
+    core machinery. Bodies with edition-bearing legacy faces bind the
+    spelling, never the semantics.

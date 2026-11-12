@@ -1,0 +1,131 @@
+# CEN/CENELEC — the §4 NSB composition port (the natural first
+# national-adoption definition): the European Norm face composed from the
+# module library.
+#
+# This definition is the MEASURED boundary of what the v1 modules absorb.
+# The cen_cenelec coded flavor carries six pieces of machinery beyond
+# grammar composition, each measured against this definition's corpus in
+# the pubid parity harness (spec/pubid/cen_pfs/):
+#
+#   1. Multi-type emission is a v1 compiler boundary — CEN/CENELEC carry
+#      ~13 typed classes (TR, TS, CWA, HD, CR, ES, ENV, guides); the v1
+#      Ruby emission is single-type. This definition models the EN face.
+#   2. The draft-stage machinery (prEN/FprEN → typed stage + the
+#      compact-hash `"stage" => "pren"` serialization) is coded-model
+#      semantics, not a module parameter. This definition carries the
+#      accept faces (the overlay's en_draft) but the published model.
+#   3. The wrapper identity machinery (Amendment/Corrigendum with the
+#      slash/plus dispatch, ConsolidatedIdentifier, Fragment) is
+#      generated-class synthesis the compiler does not do in v1;
+#      supplements.core binds the operators, the classes stay coded.
+#   4. The adopted-base delegation (EN ISO/IEC → Pubid::Iso.parse /
+#      Pubid::Iec.parse, the ENV class switch, the implicit IEC adoption
+#      by number range) is value-dependent builder dispatch — the
+#      iso.inner hook's coded escape hatch.
+#   5. The publisher-type default-publisher rule (CWA/HD/CR/ES/ENV) and
+#      the EN-cannot-be-TR guard are builder value branches.
+#   6. The official URN composition (the adopted document's MR string as
+#      the number, plus-markers, stage segments) exceeds the ordered
+#      segment declaration.
+#
+# What the composition DOES absorb — and compiles here: the EN accept
+# surface with its parts, years, draft faces (en.overlay) and European
+# body tokens (national.prefix as data), with wrapper-with-adopted as
+# the declared identity of the adoption face.
+
+pfs: 1
+
+scheme: cen_cenelec
+title: "CEN/CENELEC European Norms (module composition)"
+
+organization:
+  name: "CEN/CENELEC"
+  publisher: "CEN"
+  # The head-dispatch tokens the composed flavor ACCEPTS: the published
+  # EN face (the overlay's draft faces are blocker 2, out of the
+  # composed model) and the European body tokens for the publisher-type
+  # forms. A module's token claims are its ambiguity scope, not
+  # automatic dispatch — the definition lists what its grammar accepts.
+  prefixes: ["EN", "CEN/", "CLC/"]
+
+# The §4 composition: the inner ISO face, the CEN adoption overlay over
+# it, the European body tokens as data, and the supplement operators as
+# bindings.
+modules:
+  - module: iso.inner
+    version: 1
+  - module: en.overlay
+    version: 1
+  - module: national.prefix
+    version: 1
+    parameters:
+      prefixes: ["CEN", "CLC", "CENELEC"]
+  - module: supplements.core
+    version: 1
+
+# The scheme's calendar: the publication year of the norm.
+date:
+  fields: [year]
+
+grammar:
+  digit: "%x30-39"
+  space: '" "'
+  slash: '"/"'
+  colon: '":"'
+  dash: '"-"'
+
+# The typed class this definition models: the published European Norm.
+# The scheme-canonical wire tag keeps to_hash byte-identical with the
+# coded flavor for the rows the composition absorbs.
+types:
+  european_norm:
+    key: en
+    web: european-norm
+    title: "European Norm"
+    short: "EN"
+    tag: "pubid:cencenelec:european-norm"
+    stage:
+      code: puben
+      stage_code: published
+      abbr: ["EN"]
+
+fields:
+  number:
+    pattern: '(%x31-39) *digit'
+  part:
+    pattern: '1*digit'
+  year:
+    pattern: '4*digit'
+
+templates:
+  # The canonical face: the printed EN form. The overlay's DRAFT faces
+  # (prEN/FprEN, the en_draft fragment) are deliberately NOT alternates:
+  # a draft is a different document, and normalizing one to the
+  # published face would be the semantic decode blocker 2 forbids —
+  # the draft rows are the measured gap (see the harness ledger).
+  canonical: '"EN" " " {number} ["-" {part}] [":" {year}]'
+
+urn:
+  namespace: cen
+  schema:
+    atoms:
+      - { path: part, prefix: part }
+      - { path: year, prefix: year }
+    types:
+      - { type: "pubid:cencenelec:identifier", token: id, core: [] }
+      - { type: "pubid:cencenelec:european-norm", token: en, core: [number] }
+
+# REQUIRED. The live test panel: the faces the composition absorbs.
+examples:
+  positives:
+    - input: "EN 1325"
+      renders: "EN 1325"
+    - input: "EN 12464-1:2011"
+      renders: "EN 12464-1:2011"
+    - input: "EN 1177:2018"
+      renders: "EN 1177:2018"
+  negatives:
+    - "EN"
+    - "EN ISO 9001:2015"
+    - "nonsense"
+    - "CEN/TS 12345"

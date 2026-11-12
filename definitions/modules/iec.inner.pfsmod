@@ -1,0 +1,38 @@
+# The IEC inner identifier module (issue #706 §4) — the inner IEC document
+# face as a referenceable library, NOT the declared IEC scheme (tier D
+# stays coded; the study draft data/iec/legacy-notation.md defines the
+# inner faces this module carries).
+#
+# `EN IEC 60335-1:2020` adoptions bind this module so the adopted segment
+# has a declared face and a declared identity.
+
+module: iec.inner
+version: 1
+title: "The IEC inner identifier face"
+description: >-
+  The inner IEC document face an adoption names: the IEC publisher token,
+  the document number with its part, and the year. The module carries the
+  face, not the IEC scheme — the typed-stage surface and the consolidated
+  wave stay with the coded flavor (tier D, out of PFS scope).
+
+grammar:
+  iec_space: '" "'
+  iec_colon: '":"'
+  iec_dash: '"-"'
+  iec_year: '4*digit'
+  iec_part: '1*digit'
+  iec_number: '("6" 4*digit / 5*digit / 1*digit) [iec_dash iec_part]'
+  iec_document: '"IEC" iec_space iec_number [iec_colon iec_year]'
+
+tokens:
+  - "IEC"
+
+identity:
+  composition: wrapper-with-adopted
+  base_module: iec.inner
+  adopted_field: adopted
+
+hooks:
+  inner_parse: >-
+    The adopted segment's parse — the coded-hook escape hatch, as for
+    iso.inner. An EN adoption of an IEC document parses this face.

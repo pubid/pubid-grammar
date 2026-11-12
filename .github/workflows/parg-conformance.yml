@@ -54,23 +54,25 @@ jobs:
         run: |
           gem install parsanol -v "$PARSANOL_VERSION" -N
           gem install rspec -N
-          ruby "$GITHUB_WORKSPACE/scripts/pfs" compile \
-            "$GITHUB_WORKSPACE/definitions/doi.pfs" --as doi_pfs \
-            --parsanol-version "$PARSANOL_VERSION"
           # A definition change must carry its regenerated outputs: the
           # compile is deterministic, so drift means the PR edited the
           # definition but committed neither the grammar nor the rebake.
-          git diff --exit-code -- grammars/doi_pfs.parg artifacts/doi_pfs.json || {
+          for def in doi etsi calconnect cen; do
+            ruby "$GITHUB_WORKSPACE/scripts/pfs" compile \
+              "$GITHUB_WORKSPACE/definitions/$def.pfs" --as "${def}_pfs" \
+              --parsanol-version "$PARSANOL_VERSION"
+          done
+          git diff --exit-code -- "grammars/doi_pfs.parg" "artifacts/doi_pfs.json" || {
             echo "::error::generated doi_pfs outputs are stale — run scripts/pfs compile and commit"
             exit 1
           }
-          ruby "$GITHUB_WORKSPACE/scripts/pfs" compile \
-            "$GITHUB_WORKSPACE/definitions/etsi.pfs" --as etsi_pfs \
-            --parsanol-version "$PARSANOL_VERSION"
-          git diff --exit-code -- grammars/etsi_pfs.parg artifacts/etsi_pfs.json || {
-            echo "::error::generated etsi_pfs outputs are stale — run scripts/pfs compile and commit"
-            exit 1
-          }
+          for def in etsi calconnect cen; do
+            git diff --exit-code -- "grammars/${def}_pfs.parg" "artifacts/${def}_pfs.json" || {
+              echo "::error::generated ${def}_pfs outputs are stale — run scripts/pfs compile and commit"
+              exit 1
+            }
+          done
+
           PARSANOL_VERSION="$PARSANOL_VERSION" \
             rspec spec --format progress
   rust:

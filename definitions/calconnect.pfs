@@ -1,0 +1,121 @@
+# CalConnect (CC) — the #706 §8 acceptance port (tier B): the v1 draft's
+# acceptance test, taken from the declarability matrix. The scheme is flat
+# (one type, string captures), so its only machinery beyond tier A is the
+# tier-B extension catalog's extension 6 — the decimal sub-numbering of
+# `CC/Adv 0707.1:2007` and `CC/A 0812-1:2008` — declared here at the
+# pattern level, and the calendar binding (`date:`), which folds the
+# year/month/day captures into the shared Components::Date the coded
+# flavor models.
+#
+# Accepts: CC[/<series>] <number>[.<sub>|-<sub>][:<year>[-<month>-<day>]].
+# The canonical face carries the CC publisher; the presence-guarded
+# segments render only what the input carried, so `CC 18011` renders
+# without a stray series or date.
+
+pfs: 1
+
+scheme: calconnect
+title: "CalConnect Standards"
+
+organization:
+  name: "CalConnect — The Calendaring and Scheduling Consortium"
+  publisher: "CC"
+  # The head-dispatch token: the printed id always carries the CC
+  # publisher ("CC 18011", "CC/DIR 10006:2019").
+  prefixes: ["CC"]
+
+# The scheme's calendar: year is always the printed tail when a date is
+# present, month/day only for the full-date form. Folded into the shared
+# ::Pubid::Components::Date, serialized flat as year/month/day.
+date:
+  fields: [year, month, day]
+
+grammar:
+  digit: "%x30-39"
+  letter: "%x41-5A / %x61-7A"
+  space: '" "'
+  slash: '"/"'
+  colon: '":"'
+  dash: '"-"'
+
+# Typed identifier type: the scheme's canonical wire tag, so the compiled
+# flavor's to_hash stays byte-identical with the coded flavor's.
+types:
+  standard:
+    key: cc
+    web: standard
+    title: "CalConnect Standard"
+    short: "CC"
+    tag: "pubid:calconnect:standard"
+    stage:
+      code: pubcc
+      stage_code: published
+      abbr: ["CC"]
+
+fields:
+  series:
+    # The optional series token after the slash: A, WD, R, S, CD, DIR,
+    # Adv, FDS. Any letter run — the token set is the body's data.
+    pattern: "1*letter"
+  number:
+    # The document number; extension 6 (sub-numbering) declares the
+    # decimal/dashed sub-number suffix at the pattern level. The capture
+    # stays WHOLE ("0707.1", "0812-1") — the model stores what the
+    # scheme prints.
+    pattern: "1*digit"
+    sub_numbering:
+      separators: [".", "-"]
+  year:
+    pattern: "1*digit"
+  month:
+    pattern: "1*digit"
+  day:
+    pattern: "1*digit"
+
+templates:
+  # The canonical face: the printed form. Every optional is a presence
+  # guard — it renders only when its fields captured.
+  canonical: '"CC" ["/" {series}] " " {number} [":" {year} ["-" {month} "-" {day}]]'
+
+urn:
+  # The scheme's official URN: urn:calconnect[:<series>]:<number>:<date>,
+  # declared as the generator's ordered segments — an absent field leaves
+  # no segment, the date group joins its fields with "-".
+  namespace: calconnect
+  official:
+    - series
+    - number
+    - date: [year, month, day]
+  schema:
+    atoms:
+      - { path: series, prefix: series }
+      - { path: year, prefix: year }
+      - { path: month, prefix: month }
+      - { path: day, prefix: day }
+    types:
+      - { type: "pubid:calconnect:identifier", token: id, core: [] }
+      - { type: "pubid:calconnect:standard", token: std, core: [number] }
+
+# REQUIRED. The live test panel: the faces of the scheme's printed forms.
+examples:
+  positives:
+    - input: "CC 18011"
+      renders: "CC 18011"
+    - input: "CC 18011:2018"
+      renders: "CC 18011:2018"
+    - input: "CC 11001:2024"
+      renders: "CC 11001:2024"
+    - input: "CC/DIR 10006:2019"
+      renders: "CC/DIR 10006:2019"
+    - input: "CC/Adv 0707.1:2007"
+      renders: "CC/Adv 0707.1:2007"
+    - input: "CC/A 0812-1:2008"
+      renders: "CC/A 0812-1:2008"
+    - input: "CC/WD 51017:2024-07-23"
+      renders: "CC/WD 51017:2024-07-23"
+  negatives:
+    - "nonsense"
+    - "CC"
+    - "CC/WD"
+    - "CC 18011:"
+    - "CC 18011:2024-"

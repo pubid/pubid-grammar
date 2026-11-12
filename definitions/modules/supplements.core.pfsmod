@@ -1,0 +1,39 @@
+# The supplement operators as a module (issue #706 §4): the amendment and
+# corrigendum CORE operators, bound — not redefined. A definition cannot
+# change what "amendment" does; it binds its body's vocabulary to the
+# operator through this module (the v1 sketch's `supplements:` section,
+# made composable).
+#
+# The `ed`, `amd` and `cor` tokens stay RESERVED: they belong to the core
+# machinery, and a module or definition may never claim them. What a body
+# binds is its own spelling (A1, AC, /A1:2005) through its grammar, with
+# the operator semantics carried by the core.
+
+module: supplements.core
+version: 1
+title: "The amendment and corrigendum operators"
+description: >-
+  The core supplement operators as bindings: a supplement is a wrapper
+  whose base is the document it amends, carrying its own ordinal and its
+  own date. The module declares the wrapper identity and the generic
+  supplement faces; the body's spellings bind through the composing
+  definition's grammar and templates.
+
+grammar:
+  supplement_number: '1*digit'
+  supplement_year: '4*digit'
+  supplement_month: '2*digit'
+
+identity:
+  composition: wrapper-with-adopted
+  adopted_field: base
+
+hooks:
+  supplement_semantics: >-
+    What the operator DOES (revision-of relations, the exclude keys
+    :supplement_year/:date on the wrapper) is core machinery; a body that
+    needs more drops to a coded hook beside its definition.
+  national_amendment: >-
+    The national irregularities (BS "+A1", consolidated "+") are
+    spellings bound by the composing definition, never redefinitions of
+    the operator.
