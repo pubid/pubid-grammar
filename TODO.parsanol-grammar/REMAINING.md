@@ -62,6 +62,24 @@ ancestor parsanol-ruby#399, is fixed there; 0.10.32 predates the fix).
       per-construct in pubid's `spec/pubid/etsi_pfs/parity_spec.rb` —
       progress turns the pins red). Dev-alias flavors only; cutover is
       a separate decision.
+- [x] **PFS — the module library + the two proof ports** (pubid#706 s4):
+      `definitions/modules/*.pfsmod` bound via `modules: {module:, version:,
+      parameters:}` — v1 set iso.inner/iec.inner/en.overlay/
+      national.prefix/supplements.core/edition.core; modules declare
+      IDENTITY (wrapper-with-adopted + base_module + adopted_field) and
+      hooks; fail-closed versioning; collision citations name both
+      claimants. Proofs: `calconnect_pfs` 400-example BYTE-PARITY over
+      the whole corpus (the acceptance test — forces the
+      sub-numbering extension, `fields.<n>.sub_numbering`);
+      `cen_pfs` 55 rows absorbed byte-identically, 134 pinned as the
+      unabsorbed ledger (the measured tier call). Also landed:
+      presence-guard rendering, `date:` calendar binding,
+      `urn.official` segments, type `web:`, publisher_prefixes —
+      additive; doi_pfs regenerates byte-identically.
+      (pubid-grammar#112 + pubid#714; phase-3 compiler needs named by
+      cen_pfs: multi-type emission, typed-stage serialization,
+      wrapper-class synthesis, adopted-base coded hooks,
+      publisher-type defaults, fused URN segments.)
 - [ ] **PFS v2 — the six compiler gaps** (the etsi bracket's pinned
       backlog): collection bindings; conditional render segments;
       supplement wrapper types; int-kind URN cores (+ the generator's
