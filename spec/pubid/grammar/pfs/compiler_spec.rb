@@ -221,41 +221,144 @@ RSpec.describe Pubid::Grammar::Pfs::Compiler do
         )
     end
 
-    it "rejects an :int core kind in urn.schema.types (cores carry bare " \
-       "paths in pfs:1) — the coded etsi schema's `core: [[\"number\", :int]]` " \
-       "supplement ordinal is not declarable" do
+    it "accepts the int-kind URN core (phase 3 gap d) and emits the coded " \
+       "schema's `core: [[\"number\", :int]]` shape" do
+      result = compile_definition(File.read(etsi_definition_path), flavor_key: "etsi_pfs")
+
+      schema = result.ruby_files
+        .find { |path| path.end_with?("etsi_pfs/pubid_urn_schema.rb") }
+        .then { |path| File.read(path) }
+      expect(schema).to include('type "pubid:etsi:amendment", "amd", core: [["number", :int]]')
+      expect(schema).to include('type "pubid:etsi:corrigendum", "cor", core: [["number", :int]]')
+      expect(schema).to include('type "pubid:etsi:etsi-standard", "es", core: []')
+    end
+
+    it "rejects an unknown core kind (fail-closed: only string and int exist)" do
       yaml = File.read(etsi_definition_path)
-        .sub('- { type: "pubid:etsi_pfs:identifier", token: id, core: [] }',
-             "- { type: \"pubid:etsi_pfs:identifier\", token: id, core: [[number, 1]] }")
+        .sub("- { type: \"pubid:etsi:amendment\", token: amd, core: [[number, int]] }",
+             "- { type: \"pubid:etsi:amendment\", token: amd, core: [[number, float]] }")
 
       expect { validate_definition(yaml) }
         .to raise_error(
           Pubid::Grammar::Pfs::InvalidDefinition,
-          /urn\.schema\.types\[0\]: core must be an array of field paths/,
+          /urn\.schema\.types\[1\]: unsupported core kind "float"/,
         )
     end
 
-    it "rejects a render face that claims a tail the core template cannot " \
-       "produce (the conditional-render gap, cited on the row)" do
+    it "rejects a render face that claims a tail the input did not carry " \
+       "(the render verification pins every conditional segment, cited on the row)" do
       yaml = File.read(etsi_definition_path)
-        .sub('      renders: "ETSI EG 200 053"', '      renders: "ETSI EG 200 053 V1.5.1 (2004-06)"')
+        .sub(%{- input: "ETSI EN 300 175"
+      renders: "ETSI EN 300 175"},
+             %{- input: "ETSI EN 300 175"
+      renders: "ETSI EN 300 175 V1.5.1"})
 
       expect { compile_definition(yaml) }
         .to raise_error(
           Pubid::Grammar::Pfs::ExampleFailure,
-          /renders "ETSI EG 200 053" under the canonical template, not the declared/,
+          /renders "ETSI EN 300 175" under the canonical template, not the declared/,
         )
     end
 
     it "rejects a template referencing an undeclared grammar rule" do
       yaml = File.read(etsi_definition_path)
-        .sub('[" (" {year} "-" {month} ")"]',
-             '[" /" letter "(" {year} "-" {month} ")"]')
+        .sub(' [{supplements}] [" V" {version} / " ed." {edition}] [" (" {year} "-" {month} ")"]\'',
+             ' [{supplements}] [" V" {version} / " ed." {edition}] [" (" {year} "-" letter "-" {month} ")"]\'')
 
       expect { validate_definition(yaml) }
         .to raise_error(
           Pubid::Grammar::Pfs::InvalidDefinition,
           %r{templates\.alternates\[0\]: unknown grammar rule letter},
+        )
+    end
+
+    it "rejects a grammar fragment carrying an unnamed capture (the " \
+       "named-segments rule: every segment carries a semantic name)" do
+      yaml = File.read(doi_definition_path)
+        .sub(%q{suffix_char: "%x30-39 / %x41-5A / %x61-7A / %x2E / %x5F / %x2D / %x2F / %x28 / %x29"},
+             %q{suffix_char: '("%x30-39" / "%x41-5A")'})
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /grammar\.suffix_char: unnamed capture: every grammar segment must carry a semantic/,
+        )
+    end
+
+    it "accepts a fragment whose captures are all named, and names every " \
+       "generated rule semantically (number, part, supplement_kind, ...)" do
+      result = compile_definition(File.read(etsi_definition_path), flavor_key: "etsi_pfs")
+      grammar = File.read(result.grammar_path)
+
+      # The compiler-generated rules all carry the scheme-prefixed
+      # semantic names; the definition's own fragments carry theirs.
+      grammar.scan(/^\s{2}(etsi_\w+)\s*=/).flatten.each do |rule|
+        expect(rule).to match(/\Aetsi_[a-z0-9_]+\z/),
+          "generated rule #{rule.inspect} carries no semantic name"
+      end
+      %w[etsi_type etsi_number etsi_part etsi_parts etsi_supplement
+         etsi_supplement_kind etsi_supplement_number etsi_supplements].each do |rule|
+        expect(grammar).to match(/^\s{2}#{rule} = /),
+          "the grammar carries no #{rule} rule"
+      end
+      expect(grammar).to include("etsi_part = (1*alnum_char) as part")
+      expect(grammar).to include("etsi_supplements = (1*etsi_supplement) as supplements")
+    end
+
+    it "rejects a list field whose item names no declared field" do
+      yaml = File.read(etsi_definition_path)
+        .sub("    item: part\n", "    item: phantom\n")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /fields\.parts\.item: must name a declared field/,
+        )
+    end
+
+    it "rejects a fold whose flag collides with a declared field" do
+      yaml = File.read(etsi_definition_path)
+        .sub("    fold: { into: version, flag: is_edition }",
+             "    fold: { into: version, flag: year }")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /fields\.edition\.fold\.flag: the boolean flag "year" must not collide/,
+        )
+    end
+
+    it "rejects a supplements face claimed by two wrapper kinds" do
+      yaml = File.read(etsi_definition_path)
+        .sub('      face: "C"', '      face: "A"')
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /supplements\.wrappers\.corrigendum\.face: ambiguity: face "A" is already claimed/,
+        )
+    end
+
+    it "rejects an mr hook on a segment the shared renderer does not expose" do
+      yaml = File.read(etsi_definition_path)
+        .sub("  edition: { field: version }\n", "  edition: { field: version }\n  volume: { field: type }\n")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /mr\.volume: unknown MR segment/,
+        )
+    end
+
+    it "rejects an edition affix on a segment that carries no fold" do
+      yaml = File.read(etsi_definition_path)
+        .sub("- { field: version, affix: \"v\", edition_affix: \"ed.\", lower: true }",
+             "- { field: type, affix: \"v\", edition_affix: \"ed.\", lower: true }")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /urn\.official\[\d+\]\.edition_affix: the segment field "type" carries no fold/,
         )
     end
 

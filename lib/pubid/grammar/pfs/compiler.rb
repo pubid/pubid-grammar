@@ -121,7 +121,8 @@ module Pubid
             captures[row.input] = bound
 
             render = Template.render_sequence(
-              canonical, bound.transform_keys(&:to_s), rule: "templates.canonical"
+              canonical, bound.transform_keys(&:to_s), rule: "templates.canonical",
+              fields: definition.fields
             )
             if row.renders && row.renders != render
               raise ExampleFailure.new(

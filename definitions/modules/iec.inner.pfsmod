@@ -21,7 +21,7 @@ grammar:
   iec_dash: '"-"'
   iec_year: '4*digit'
   iec_part: '1*digit'
-  iec_number: '("6" 4*digit / 5*digit / 1*digit) [iec_dash iec_part]'
+  iec_number: '(("6" 4*digit / 5*digit / 1*digit)) as iec_number_core [iec_dash iec_part]'
   iec_document: '"IEC" iec_space iec_number [iec_colon iec_year]'
 
 tokens:

@@ -1,5 +1,5 @@
 # PFS-generated grammar — DO NOT EDIT BY HAND.
-# Source: definitions/etsi.pfs (pfs:1) sha256:9343088bf087b55ea790057e6be0bbebe2272407ee81f035b52e5f9a4d5c7b76
+# Source: definitions/etsi.pfs (pfs:1) sha256:490ba9435f44dbd2d59429ae6d9527909c39444f19fec5a33a8cad91e89e3581
 # Compiler: pubid/grammar/pfs 0.1.0
 # Flavor key: etsi_pfs (grammar PubidEtsiPfs)
 # Regenerate: ruby scripts/pfs compile definitions/etsi.pfs --as etsi_pfs
@@ -16,18 +16,26 @@ grammar PubidEtsiPfs version "0.1.0" edition 2 {
   etsi_type = ("I-ETS" / "TCRTR" / "GTS" / "ETR" / "ETS" / "TBR" / "NET" / "EN" / "ES" / "EG" / "TS" / "GR" / "GS" / "SR" / "TR") as type
   etsi_number = (("GSM" " " 1*digit "." 1*digit) / (1*digit "." 1*digit) / (1*alnum_char [("-" 1*alnum_char)] " " 1*digit) / (1*digit)) as number
   etsi_minor = (1*digit) as minor
-  etsi_parts = (1*("-" 1*alnum_char)) as parts
-  etsi_supplements = (1*(("/A" / "/C") 1*digit)) as supplements
+  etsi_part = (1*alnum_char) as part
+  etsi_parts = (1*("-" etsi_part)) as parts
   etsi_version = (1*version_char) as version
   etsi_edition = (1*digit) as edition
   etsi_year = (4digit) as year
   etsi_month = (2digit) as month
 
+  # Supplement run (compiled from the supplements declaration):
+  # each item binds its kind face and ordinal; the builder folds
+  # the run into the declared wrapper classes.
+  etsi_supplement_kind = ("A" / "C") as supplement_kind
+  etsi_supplement_number = (1*digit) as supplement_number
+  etsi_supplement = ( "/" etsi_supplement_kind etsi_supplement_number ) as supplement
+  etsi_supplements = (1*etsi_supplement) as supplements
+
   # Identifier rule: the canonical template first, then the
   # declared alternates (parse-in spellings; they normalize to the
   # canonical render face).
   identifier = {
-    "ETSI " etsi_type " " etsi_number
+    "ETSI " etsi_type " " etsi_number [" " etsi_minor] [etsi_parts] etsi_supplements [( " V" etsi_version / " ed." etsi_edition )] [" (" etsi_year "-" etsi_month ")"]
     / "ETSI " etsi_type " " etsi_number [" " etsi_minor] [etsi_parts] [etsi_supplements] [( " V" etsi_version / " ed." etsi_edition )] [" (" etsi_year "-" etsi_month ")"]
   }
   entry identifier: identifier
@@ -38,12 +46,13 @@ grammar PubidEtsiPfs version "0.1.0" edition 2 {
     type -> type (string)
     number -> number (string)
     minor -> minor (string)
-    parts -> parts (string)
-    supplements -> supplements (string)
+    part -> part (string)
+    part -> parts[].part (string)
     version -> version (string)
     edition -> edition (string)
     year -> year (string)
     month -> month (string)
+    supplement -> supplements[].supplement (raw)
   }
 
   # REQUIRED examples from the definition — accepts, rejects, and
@@ -70,14 +79,14 @@ grammar PubidEtsiPfs version "0.1.0" edition 2 {
     reject "ETSI EN 300 175 (2004-6)"
     example "ETSI EG 200 053 V1.5.1 (2004-06)" { type: "EG" number: "200 053" version: "1.5.1" year: "2004" month: "06" }
     example "ETSI EN 300 175" { type: "EN" number: "300 175" }
-    example "ETSI EN 300 175-2" { type: "EN" number: "300 175" parts: "-2" }
-    example "ETSI EN 300 019-1-0 V2.1.2 (2003-09)" { type: "EN" number: "300 019" parts: "-1-0" version: "2.1.2" year: "2003" month: "09" }
+    example "ETSI EN 300 175-2" { type: "EN" number: "300 175" part: "2" }
+    example "ETSI EN 300 019-1-0 V2.1.2 (2003-09)" { type: "EN" number: "300 019" part: "1" version: "2.1.2" year: "2003" month: "09" }
     example "ETSI TS 103 702" { type: "TS" number: "103 702" }
     example "ETSI EG 201 880 V1.2.1" { type: "EG" number: "201 880" version: "1.2.1" }
     example "ETSI GTS GSM 02.01 V5.5.0 (1999-08)" { type: "GTS" number: "GSM 02.01" version: "5.5.0" year: "1999" month: "08" }
     example "ETSI GR NFV-EVE 008 V3.1.1 (2017-12)" { type: "GR" number: "NFV-EVE 008" version: "3.1.1" year: "2017" month: "12" }
     example "ETSI I-ETS 300 003 ed.1 (1991-08)" { type: "I-ETS" number: "300 003" edition: "1" year: "1991" month: "08" }
-    example "ETSI ETR 108/A1 ed.1 (1995-08)" { type: "ETR" number: "108" supplements: "/A1" edition: "1" year: "1995" month: "08" }
-    example "ETSI ETS 300 092-1/A1/C1 ed.1 (1994-04)" { type: "ETS" number: "300 092" parts: "-1" supplements: "/A1/C1" edition: "1" year: "1994" month: "04" }
+    example "ETSI ETR 108/A1 ed.1 (1995-08)" { type: "ETR" number: "108" edition: "1" year: "1995" month: "08" }
+    example "ETSI ETS 300 092-1/A1/C1 ed.1 (1994-04)" { type: "ETS" number: "300 092" part: "1" edition: "1" year: "1994" month: "04" }
   }
 }

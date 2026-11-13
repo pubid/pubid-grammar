@@ -22,7 +22,7 @@ grammar:
   iso_dash: '"-"'
   iso_year: '4*digit'
   iso_part: '1*digit ["-" 1*digit]'
-  iso_number: '1*("0" %x31-39) *digit [iso_dash iso_part]'
+  iso_number: '1*("0" %x31-39) as iso_zero_lead *digit [iso_dash iso_part]'
   iso_document: '"ISO" iso_space iso_number [iso_colon iso_year]'
 
 tokens:

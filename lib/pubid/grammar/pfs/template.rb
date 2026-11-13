@@ -73,32 +73,100 @@ module Pubid
 
         # The render face of a CANONICAL template: its single sequence with
         # fields substituted. An optional segment is a PRESENCE GUARD: it
-        # renders its inner face iff EVERY field inside captured (an absent
-        # optional leaves no bytes — no stray separators), which is the
-        # tier-A declarable rendering surface (#706 §2: presence guards,
-        # never value branches).
-        # @param values [Hash{String => String}] capture name → value
+        # renders its first alternative whose fields all captured (an
+        # absent optional leaves no bytes — no stray separators), which is
+        # the tier-A declarable rendering surface (#706 §2: presence
+        # guards, never value branches). Phase 3 adds the composition
+        # kinds the presence of a capture drives: a LIST field renders
+        # through its `render:` composition (prefix glues each item
+        # before itself, infix joins them), a fold's source capture
+        # renders when the run matched it, and the supplement run renders
+        # its notations ("/A1/C1").
+        #
+        # @param values [Hash{String => ...}] capture name → value
+        # @param fields [Array<Definition::Field>] the declared fields
         # @return [String]
-        def render_sequence(sequence, values, rule:)
+        def render_sequence(sequence, values, rule:, fields: [])
           sequence.filter_map do |item|
             case item
             when Lit then item.text
             when Field
-              value = values[item.name]
-              unless value
-                raise TemplateError.new(rule),
-                      "no captured value for field {#{item.name}}"
-              end
-              value.to_s
+              field_value(item.name, values, fields, rule)
             when Opt
-              next nil unless opt_present?(item, values)
+              face = selected_face(item, values, fields)
+              next nil unless face
 
-              render_sequence(item.inner.sequences.first, values, rule: rule)
+              render_sequence(face, values, rule: rule, fields: fields)
             when Ref
               raise TemplateError.new(rule),
                     "grammar rule #{item.name} cannot appear in a render face"
             end
           end.join
+        end
+        # The rendered value of one {field}: a plain capture renders whole,
+        # a list renders through its composition, the supplement run
+        # renders its notations. Absent at a TOP-LEVEL position is the
+        # compile error (the face needs the capture); inside an optional
+        # the presence guard already gated the call.
+        def field_value(name, values, fields, rule)
+          field = fields.find { |f| f.name == name }
+          value = values[name]
+          if field && field.kind == "list"
+            return list_render(field, value)
+          end
+          unless present?(value)
+            raise TemplateError.new(rule),
+                  "no captured value for field {#{name}}"
+          end
+          value.to_s
+        end
+
+        # A list capture's rendered composition: the item values pulled
+        # out of the bound rows, glued per the declared style. An empty
+        # run renders "" (a list's emptiness IS its absence).
+        def list_render(field, value)
+          return "" unless present_list?(value)
+
+          items = value.map { |row| list_item_value(field, row) }.compact
+          case field.render&.style
+          when "infix"
+            items.join(field.render.glue)
+          else # prefix (the default — the parts-run shape)
+            items.map { |item| "#{field.render&.glue}#{item}" }.join
+          end
+        end
+
+        # One bound list row's item value: a plain item capture's span, or
+        # the supplement run's "A1" (kind face + ordinal) for the
+        # compiler-generated run rows.
+        def list_item_value(field, row)
+          if field.builder_only
+            inner = row[:supplement] || row["supplement"] || {}
+            kind = inner[:supplement_kind] || inner["supplement_kind"]
+            number = inner[:supplement_number] || inner["supplement_number"]
+            return "#{kind}#{number}" if kind && number
+
+            return nil
+          end
+          key = field.item.to_sym
+          row[key] || row[key.to_s]
+        end
+
+        # The face an optional renders: its first alternative whose DIRECT
+        # fields all captured, else nil (nothing renders). Nested
+        # optionals do NOT gate the parent's selection — they decide
+        # their own presence inside the rendered face (an absent nested
+        # optional leaves no bytes). A single-sequence optional is the
+        # plain presence guard.
+        def selected_face(opt, values, fields)
+          opt.inner.sequences.find do |seq|
+            seq.all? do |item|
+              case item
+              when Field then present_value?(item.name, values, fields)
+              else true
+              end
+            end
+          end
         end
 
         # True when every field DIRECTLY inside +opt+ captured — the
@@ -106,9 +174,26 @@ module Pubid
         # fields, and a nested optional decides its own presence inside
         # the rendered face. An optional with no direct fields renders
         # unconditionally (a vacuous guard), letting the nested guards
-        # decide.
-        def opt_present?(opt, values)
-          direct_fields(opt).all? { |name| values[name] }
+        # decide. Lists are present when their items are non-empty.
+        def opt_present?(opt, values, fields = [])
+          direct_fields(opt).all? { |name| present_value?(name, values, fields) }
+        end
+
+        def present_value?(name, values, fields)
+          field = fields.find { |f| f.name == name }
+          value = values[name]
+          if field&.kind == "list"
+            return present_list?(value)
+          end
+          present?(value)
+        end
+
+        def present_list?(value)
+          value.is_a?(Array) && value.any?
+        end
+
+        def present?(value)
+          !(value.nil? || value == "" || (value.respond_to?(:empty?) && value.empty?))
         end
 
         # Every {field} name anywhere inside an item — the validator's

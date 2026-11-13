@@ -75,12 +75,64 @@ module Pubid
           lines
         end
 
+        # The supplement-run fields the compiler generated (run, item,
+        # kind, number): their rules come from the supplements section,
+        # not from the (partial) field patterns.
+        def supplements_generated?(field)
+          return false unless @definition.supplements
+
+          [@definition.supplements.run, @definition.supplements.item,
+           @definition.supplements.kind, @definition.supplements.number]
+            .include?(field.name)
+        end
+
         def field_rules
           lines = ["", "  # Fields: one capture rule per declared field; the whole pattern", "  # is the capture."]
+          claimed_items = @definition.fields
+            .select { |f| f.kind == "list" && f.item }.map(&:item)
           @definition.fields.each do |field|
-            lines << "  #{@definition.scheme}_#{field.name} = (#{field.pattern}) as #{field.name}"
+            next if supplements_generated?(field)
+            # A list's item capture emits with its list (one rule, then the
+            # repetition that binds it per match).
+            next if claimed_items.include?(field.name)
+
+            if field.kind == "list" && field.item
+              # A list field binds its item capture per repetition: the
+              # item rule first (the list's pattern references it), then
+              # the list rule — both carry semantic names (the
+              # named-segments rule).
+              item = @definition.fields.find { |f| f.name == field.item }
+              lines << "  #{@definition.scheme}_#{item.name} = (#{item.pattern}) as #{item.name}"
+              lines << "  #{@definition.scheme}_#{field.name} = (#{field.pattern}) as #{field.name}"
+            else
+              lines << "  #{@definition.scheme}_#{field.name} = (#{field.pattern}) as #{field.name}"
+            end
           end
+          lines.concat(supplement_run_rules)
           lines
+        end
+
+        # The supplement run's rules, generated whole from the
+        # supplements declaration (the declaration IS the run's shape —
+        # the grammar and the fold can never drift apart). Every rule
+        # carries its semantic name.
+        def supplement_run_rules
+          supplements = @definition.supplements
+          return [] unless supplements
+
+          scheme = @definition.scheme
+          faces = supplements.wrappers.map { |w| "\"#{w.face}\"" }.join(" / ")
+          [
+            "",
+            "  # Supplement run (compiled from the supplements declaration):",
+            "  # each item binds its kind face and ordinal; the builder folds",
+            "  # the run into the declared wrapper classes.",
+            "  #{scheme}_#{supplements.kind} = (#{faces}) as #{supplements.kind}",
+            "  #{scheme}_#{supplements.number} = (1*digit) as #{supplements.number}",
+            "  #{scheme}_#{supplements.item} = ( \"/\" #{scheme}_#{supplements.kind} " \
+              "#{scheme}_#{supplements.number} ) as #{supplements.item}",
+            "  #{scheme}_#{supplements.run} = (1*#{scheme}_#{supplements.item}) as #{supplements.run}",
+          ]
         end
 
         def identifier_rule
@@ -116,10 +168,28 @@ module Pubid
             "  bindings #{ENTRY} {",
           ]
           @definition.fields.each do |field|
-            lines << "    #{field.name} -> #{field.name} (#{field.kind})"
+            lines.concat(binding_lines(field))
           end
           lines << "  }"
           lines
+        end
+
+        # One field's binding rows. A list binds its ITEM capture per
+        # repetition (`item -> list[].item`); the supplement run binds its
+        # item capture as raw (the fold walks the rows); the run's
+        # internal captures bind only through that array — no flat rows
+        # for them.
+        def binding_lines(field)
+          if supplements_generated?(field)
+            supplements = @definition.supplements
+            return [] unless field.name == supplements.run
+
+            return ["    #{supplements.item} -> #{supplements.run}[].#{supplements.item} (raw)"]
+          end
+          if field.kind == "list" && field.item
+            return ["    #{field.item} -> #{field.name}[].#{field.item} (string)"]
+          end
+          ["    #{field.name} -> #{field.name} (#{field.kind})"]
         end
 
         def test_block
@@ -139,7 +209,15 @@ module Pubid
             captures = @captures[row.input]
             next unless captures
 
-            body = captures.map { |k, v| "#{k}: #{JSON.generate(v)}" }.join(" ")
+            # The test block's example rows carry scalar capture
+            # expectations (the engines' test-object syntax is flat) — a
+            # row whose bound shape nests (the supplement run's items, a
+            # list's rows) is verified at COMPILE time (verify_examples)
+            # and left out of the embedded panel.
+            scalars = captures.select { |_k, v| v.is_a?(String) || v.is_a?(Integer) }
+            next if scalars.empty?
+
+            body = scalars.map { |k, v| "#{k}: #{JSON.generate(v)}" }.join(" ")
             lines << "    example #{quote(row.input)} { #{body} }"
           end
           lines << "  }"

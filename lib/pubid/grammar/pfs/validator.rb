@@ -29,8 +29,18 @@ module Pubid
 
         TOP_LEVEL_KEYS = %w[
           pfs scheme title organization grammar types fields templates
-          urn examples modules date
+          urn examples modules date supplements mr
         ].freeze
+
+        # The kinds a field's list render may declare.
+        LIST_RENDER_STYLES = %w[prefix infix].freeze
+        # The kinds a urn.schema.types[] core entry may carry.
+        CORE_KINDS = %w[string int].freeze
+        # The MR segments a definition may hook (the shared
+        # Renderers::MrString segment order minus the hooks the shared
+        # model already answers: publisher reads the publisher attribute,
+        # the rest are value slots a flavor fills).
+        MR_SEGMENTS = %w[type number year edition].freeze
 
         module_function
 
@@ -57,8 +67,10 @@ module Pubid
           grammar = merged_grammar(modules, grammar)
           types = check_types(raw, scheme)
           fields = check_fields(raw, scheme, grammar)
+          supplements, fields = check_supplements(raw["supplements"], fields)
           templates = check_templates(raw, fields, grammar)
-          urn = check_urn(raw, fields)
+          mr = check_mr(raw["mr"], fields)
+          urn = check_urn(raw, fields, supplements)
 
           Definition::Root.new(
             source_path: source_path,
@@ -75,6 +87,8 @@ module Pubid
             modules: modules.freeze,
             module_bindings: module_bindings.freeze,
             date: check_date(raw.fetch("date", nil), fields),
+            supplements: supplements,
+            mr: mr,
           )
         end
 
@@ -338,6 +352,15 @@ module Pubid
         # The shared fragment checks (rule names, single-line terms,
         # balanced quotes/brackets), citable under any prefix — the
         # definition's `grammar:` and a module's `grammar:` both use it.
+        #
+        # The NAMED-SEGMENTS rule (owner directive 2026-11-13, PFS v2):
+        # a fragment's term may not carry an UNNAMED capture — a
+        # parenthesized group without an explicit `as name`. The grammar
+        # is read by every consuming body, so every segment it produces
+        # carries a semantic name (number, publisher, copublisher, ...);
+        # the compiler names its own generated rules the same way, and an
+        # anonymous group in a hand-written fragment is a compile-time
+        # rejection citing the rule, never an anonymous node on the wire.
         def check_grammar_map(fragments, prefix)
           fragments.each do |name, term|
             unless name.is_a?(String) && NAME.match?(name)
@@ -358,7 +381,43 @@ module Pubid
               raise InvalidDefinition.new("#{prefix}.#{name}",
                                           "unbalanced quotes or brackets")
             end
+            unnamed_capture = unnamed_capture_in(term)
+            if unnamed_capture
+              raise InvalidDefinition.new(
+                "#{prefix}.#{name}",
+                "unnamed capture: every grammar segment must carry a semantic " \
+                "name (… ) as number … — the generated grammar is read by the " \
+                "consuming bodies, so an anonymous group is rejected at compile " \
+                "time (owner directive 2026-11-13: PFS names every segment)",
+              )
+            end
           end
+        end
+
+        # The offset of the first parenthesized group in +term+ that
+        # carries no `as name` — the named-segments rejection's witness.
+        # Quote-aware; a group is named iff the run after its closing
+        # paren is `as <name>` (a nested group must be named too — the
+        # rule names every segment, not only the outermost).
+        def unnamed_capture_in(term)
+          depth = 0
+          quote = false
+          term.each_char.with_index do |char, i|
+            case char
+            when '"' then quote = !quote
+            when "("
+              depth += 1 unless quote
+            when ")"
+              next if quote
+
+              depth -= 1
+              next if depth.positive?
+
+              rest = term[(i + 1)..].to_s.lstrip
+              return i unless rest.match?(/\Aas\s+[a-z][a-z0-9_]*(?![a-z0-9_])/)
+            end
+          end
+          nil
         end
 
         def check_types(raw, scheme)
@@ -470,7 +529,7 @@ module Pubid
             raise InvalidDefinition.new("fields", "at least one field is required")
           end
 
-          fields.map do |name, body|
+          list = fields.map do |name, body|
             unless name.is_a?(String) && NAME.match?(name)
               raise InvalidDefinition.new("fields.#{name}", "field name must be snake_case")
             end
@@ -482,7 +541,8 @@ module Pubid
                 "but the bare name stays reserved for the fragment",
               )
             end
-            check_keys("fields.#{name}", body, %w[pattern kind sub_numbering])
+            check_keys("fields.#{name}", body,
+                       %w[pattern kind sub_numbering item render fold builder_only])
 
             pattern = body["pattern"]
             unless pattern.is_a?(String) && !pattern.empty?
@@ -502,15 +562,147 @@ module Pubid
             pattern = apply_sub_numbering(name, pattern, body["sub_numbering"])
 
             kind = body["kind"] || "string"
-            unless %w[string].include?(kind)
+            unless %w[string list].include?(kind)
               raise InvalidDefinition.new(
                 "fields.#{name}.kind",
                 "unsupported field kind #{kind.inspect} — pfs:1 carries `string` " \
-                "(int patterns are a later extension)",
+                "and `list` (a list binds its `item` capture per repetition)",
               )
             end
 
-            Definition::Field.new(name: name, pattern: pattern, kind: kind)
+            Definition::Field.new(
+              name: name,
+              pattern: pattern,
+              kind: kind,
+              item: body["item"],
+              render: check_list_render(name, kind, body["render"]),
+              fold: check_fold(name, body["fold"]),
+              builder_only: body["builder_only"] || false,
+            )
+          end
+
+          check_field_references(list)
+          list
+        end
+
+        # The list render declaration: REQUIRED on a list field (the render
+        # face composes the array through it), refused on a plain field.
+        def check_list_render(name, kind, render)
+          return nil if render.nil?
+
+          unless kind == "list"
+            raise InvalidDefinition.new(
+              "fields.#{name}.render",
+              "only a `kind: list` field renders a composition — a plain " \
+              "string capture renders whole",
+            )
+          end
+          unless render.is_a?(Hash)
+            raise InvalidDefinition.new("fields.#{name}.render", "must be a map")
+          end
+          check_keys("fields.#{name}.render", render, %w[glue style])
+          glue = render["glue"]
+          unless glue.is_a?(String) && !glue.empty?
+            raise InvalidDefinition.new("fields.#{name}.render.glue",
+                                        "must be a separator string")
+          end
+          style = render["style"] || "prefix"
+          unless LIST_RENDER_STYLES.include?(style)
+            raise InvalidDefinition.new(
+              "fields.#{name}.render.style",
+              "unsupported style #{style.inspect} — known: " \
+              "#{LIST_RENDER_STYLES.join(', ')} (`prefix` glues each item " \
+              "before itself, `infix` joins the items)",
+            )
+          end
+          Definition::ListRender.new(glue: glue, style: style)
+        end
+
+        # The ed.N-style fold: the capture folds into another field's
+        # column plus a boolean flag (the coded flavors'
+        # `ed.N → version + is_edition` shape). Fail-closed on unknown
+        # targets, self-folds and flag names.
+        def check_fold(name, fold)
+          return nil if fold.nil?
+
+          unless fold.is_a?(Hash)
+            raise InvalidDefinition.new("fields.#{name}.fold", "must be a map")
+          end
+          check_keys("fields.#{name}.fold", fold, %w[into flag])
+          into = fold["into"]
+          unless into.is_a?(String) && NAME.match?(into)
+            raise InvalidDefinition.new("fields.#{name}.fold.into",
+                                        "must be a field name")
+          end
+          if into == name
+            raise InvalidDefinition.new("fields.#{name}.fold.into",
+                                        "a fold cannot target its own capture")
+          end
+          flag = fold["flag"]
+          unless flag.is_a?(String) && NAME.match?(flag)
+            raise InvalidDefinition.new("fields.#{name}.fold.flag",
+                                        "must be a boolean flag name")
+          end
+          Definition::Fold.new(into: into, flag: flag)
+        end
+
+        # Cross-field reference checks: a list's `item` names a declared
+        # field (and only one list claims it); a fold's target is a
+        # declared plain field and its flag name is free; a builder-only
+        # field is never referenced by a render surface (the render face
+        # guards below refuse it in the template check).
+        def check_field_references(fields)
+          by_name = fields.each_with_object({}) { |field, map| map[field.name] = field }
+          claimed_items = {}
+          fields.each do |field|
+            next unless field.kind == "list"
+
+            item_name = field.item
+            unless item_name.is_a?(String) && by_name.key?(item_name)
+              raise InvalidDefinition.new(
+                "fields.#{field.name}.item",
+                "must name a declared field — the item capture the list " \
+                "binds per repetition, got #{item_name.inspect}",
+              )
+            end
+            item = by_name[item_name]
+            unless item.kind == "string" && item.render.nil? && item.fold.nil?
+              raise InvalidDefinition.new(
+                "fields.#{field.name}.item",
+                "must name a plain string field without fold or render",
+              )
+            end
+            if claimed_items.key?(item_name)
+              raise InvalidDefinition.new(
+                "fields.#{field.name}.item",
+                "ambiguity: item capture #{item_name.inspect} is already " \
+                "claimed by the list field #{claimed_items[item_name].inspect}",
+              )
+            end
+            claimed_items[item_name] = field.name
+          end
+          fields.each do |field|
+            next if field.fold.nil?
+
+            target = by_name[field.fold.into]
+            unless target && target.kind == "string" && target.fold.nil?
+              raise InvalidDefinition.new(
+                "fields.#{field.name}.fold.into",
+                "must name a declared plain string field, got " \
+                "#{field.fold.into.inspect}",
+              )
+            end
+            flag = field.fold.flag
+            collides = by_name.key?(flag) || fields.any? do |other|
+              other != field && other.fold&.flag == flag
+            end
+            if collides
+              raise InvalidDefinition.new(
+                "fields.#{field.name}.fold.flag",
+                "the boolean flag #{flag.inspect} must not collide with a " \
+                "declared field or another fold flag",
+              )
+            end
           end
         end
 
@@ -602,13 +794,44 @@ module Pubid
         end
 
         def check_refs(template, fields, grammar, rule)
+          # The captures a face may never reference: a list's item capture
+          # (the list renders whole through its `render:` composition) and
+          # the supplement run's generated internals. Renderable
+          # exceptions: a fold's SOURCE capture (its render presence is
+          # the fold flag) and the run list itself.
+          item_names = fields.select { |f| f.kind == "list" && f.item }.map(&:item)
+          run_name = fields.find { |f| f.builder_only && f.kind == "list" }&.name
+          unrenderable = fields.select do |f|
+            next true if item_names.include?(f.name)
+            next false if f.fold
+            next false if f.name == run_name
+
+            f.builder_only
+          end.map(&:name)
           walk(template) do |item|
             case item
             when Template::Field
-              unless fields.any? { |f| f.name == item.name }
+              field = fields.find { |f| f.name == item.name }
+              unless field
                 raise InvalidDefinition.new(rule,
                                             "unknown field {#{item.name}}")
               end
+              next unless unrenderable.include?(item.name)
+
+              if item_names.include?(item.name)
+                list_name = fields.find { |f| f.item == item.name }&.name
+                raise InvalidDefinition.new(
+                  rule,
+                  "{#{item.name}} is a list's item capture — the list " \
+                  "{#{list_name}} renders whole through its `render:` " \
+                  "composition; items are not a render surface",
+                )
+              end
+              raise InvalidDefinition.new(
+                rule,
+                "{#{item.name}} is a compiler-generated supplement-run " \
+                "capture — only the run itself is a render surface",
+              )
             when Template::Ref
               unless grammar.key?(item.name)
                 raise InvalidDefinition.new(
@@ -639,7 +862,7 @@ module Pubid
           end
         end
 
-        def check_urn(raw, fields)
+        def check_urn(raw, fields, supplements)
           urn = raw["urn"]
           unless urn.is_a?(Hash)
             raise InvalidDefinition.new("urn", "section is required")
@@ -684,15 +907,7 @@ module Pubid
             unless token.is_a?(String) && NAME.match?(token)
               raise InvalidDefinition.new(rule, "token must be a lower-case token")
             end
-            core = type["core"] || []
-            unless core.is_a?(Array) && core.all?(String)
-              raise InvalidDefinition.new(rule, "core must be an array of field paths")
-            end
-            core.each do |path|
-              unless fields.any? { |f| f.name == path }
-                raise InvalidDefinition.new(rule, "unknown core field #{path.inspect}")
-              end
-            end
+            core = check_urn_core(rule, type["core"] || [], fields)
             Definition::UrnType.new(type: type_str, token: token, core: core)
           end
 
@@ -704,6 +919,46 @@ module Pubid
 
           Definition::Urn.new(namespace: namespace, atoms: atoms, types: types,
                               official: official)
+        end
+
+        # The core declaration of a urn.schema.types[] row: bare field
+        # paths (string-kind) or `[path, kind]` pairs — pfs:1 phase 3 adds
+        # the `int` kind (the coded schemas' `core: [["number", :int]]`
+        # supplement rows). The normalized rows carry the pairs; the
+        # generator emits them verbatim.
+        def check_urn_core(rule, core, fields)
+          unless core.is_a?(Array)
+            raise InvalidDefinition.new(rule, "core must be an array of field paths")
+          end
+          core.map do |entry|
+            path, kind =
+              case entry
+              when String then [entry, "string"]
+              when Array
+                unless entry.size == 2
+                  raise InvalidDefinition.new(rule,
+                                              "a typed core entry must be [path, kind]")
+                end
+                entry
+              else
+                raise InvalidDefinition.new(
+                  rule,
+                  "core entries are field paths or [path, kind] pairs, " \
+                  "got #{entry.inspect}",
+                )
+              end
+            unless fields.any? { |f| f.name == path }
+              raise InvalidDefinition.new(rule, "unknown core field #{path.inspect}")
+            end
+            unless CORE_KINDS.include?(kind)
+              raise InvalidDefinition.new(
+                rule,
+                "unsupported core kind #{kind.inspect} — known: " \
+                "#{CORE_KINDS.join(', ')}",
+              )
+            end
+            [path, kind]
+          end
         end
 
         # The calendar binding (`date:`): the declared fields fold into the
@@ -741,6 +996,214 @@ module Pubid
           Definition::Date.new(fields: date_fields)
         end
 
+        # The SUPPLEMENT WRAPPER machinery (pubid#706 phase 3, gap c): the
+        # printed supplement run (`/A1/C1`) parses as a builder-only
+        # capture, and the builder folds it into SYNTHESIZED wrapper
+        # classes (Amendment/Corrigendum over the base standard — the
+        # coded flavors' own shape), one per declared wrapper kind. The
+        # compiler GENERATES the run grammar from the declaration, so the
+        # run's shape and the fold can never drift apart, and it
+        # registers the generated capture names as fields so the
+        # templates reference them like any other segment.
+        #
+        #   supplements:
+        #     run: supplements       # the builder-only capture
+        #     item: supplement       # the run's item capture
+        #     kind: supplement_kind  # the item's kind face capture
+        #     number: supplement_number  # the item's ordinal capture
+        #     wrappers:
+        #       amendment:   { face: "A", tag: "pubid:etsi:amendment" }
+        #       corrigendum: { face: "C", tag: "pubid:etsi:corrigendum" }
+        def check_supplements(raw, fields)
+          return [nil, fields] if raw.nil?
+
+          unless raw.is_a?(Hash)
+            raise InvalidDefinition.new("supplements", "must be a map")
+          end
+          check_keys("supplements", raw, %w[run item kind number wrappers])
+          names = %w[run item kind number].map do |key|
+            value = raw[key]
+            unless value.is_a?(String) && NAME.match?(value)
+              raise InvalidDefinition.new("supplements.#{key}",
+                                          "must be a lower-case capture name")
+            end
+            value
+          end
+          run_name, item_name, kind_name, number_name = names
+          if names.uniq.size != names.size
+            raise InvalidDefinition.new(
+              "supplements",
+              "the generated capture names (run, item, kind, number) must " \
+              "be distinct — two of #{names.map(&:inspect).join(', ')} collide",
+            )
+          end
+          collides = fields.select do |field|
+            names.include?(field.name) || names.include?(field.fold&.flag)
+          end
+          unless collides.empty?
+            raise InvalidDefinition.new(
+              "supplements",
+              "the generated capture name(s) #{collides.map(&:name).map(&:inspect).join(', ')} " \
+              "collide with declared fields — the run grammar's names must be free",
+            )
+          end
+
+          wrappers = raw["wrappers"]
+          unless wrappers.is_a?(Hash) && !wrappers.empty?
+            raise InvalidDefinition.new("supplements.wrappers",
+                                        "at least one wrapper kind is required")
+          end
+          faces = {}
+          tags = {}
+          rows = wrappers.map do |name, body|
+            unless name.is_a?(String) && NAME.match?(name)
+              raise InvalidDefinition.new("supplements.wrappers.#{name}",
+                                          "wrapper name must be snake_case")
+            end
+            check_keys("supplements.wrappers.#{name}", body, %w[face tag title])
+            face = body["face"]
+            unless face.is_a?(String) && face.match?(/\A[A-Z]\z/)
+              raise InvalidDefinition.new(
+                "supplements.wrappers.#{name}.face",
+                "must be a single upper-case kind face letter, got #{face.inspect}",
+              )
+            end
+            if faces.key?(face)
+              raise InvalidDefinition.new(
+                "supplements.wrappers.#{name}.face",
+                "ambiguity: face #{face.inspect} is already claimed by wrapper " \
+                "#{faces[face].inspect} — the run grammar cannot dispatch two " \
+                "kinds on one face",
+              )
+            end
+            faces[face] = name
+            tag = body["tag"]
+            unless tag.is_a?(String) && TAG.match?(tag)
+              raise InvalidDefinition.new(
+                "supplements.wrappers.#{name}.tag",
+                "must match pubid:<flavor>:<type>, got #{tag.inspect}",
+              )
+            end
+            if tags.key?(tag)
+              raise InvalidDefinition.new(
+                "supplements.wrappers.#{name}.tag",
+                "ambiguity: wire tag #{tag.inspect} already claimed",
+              )
+            end
+            tags[tag] = name
+            Definition::Wrapper.new(
+              name: name, face: face, tag: tag,
+              title: body["title"] || name.capitalize,
+            )
+          end
+
+          wrapper = Definition::Supplements.new(
+            run: run_name, item: item_name, kind: kind_name, number: number_name,
+            wrappers: rows.freeze,
+          )
+
+          # The generated capture names join the field list: the run as the
+          # builder-only list the fold consumes, the item/kind/number as
+          # the generated grammar's internal captures (never model columns,
+          # never render faces — the templates may reference the run).
+          generated = [
+            Definition::Field.new(
+              name: run_name,
+              pattern: generated_run_pattern(wrapper),
+              kind: "list",
+              item: item_name,
+              # The notations render as the printed run: "/" before each
+              # kind face + ordinal ("/A1/C1").
+              render: Definition::ListRender.new(glue: "/", style: "prefix"),
+              builder_only: true,
+            ),
+            Definition::Field.new(name: item_name, pattern: "", kind: "string",
+                                  builder_only: true),
+            Definition::Field.new(name: kind_name, pattern: generated_kind_pattern(wrapper),
+                                  kind: "string", builder_only: true),
+            Definition::Field.new(name: number_name, pattern: "1*digit",
+                                  kind: "string", builder_only: true),
+          ]
+          [wrapper, fields + generated]
+        end
+
+        # The run pattern the compiler generates from the wrapper faces:
+        # `1*( "/" ("A" / "C") 1*digit )`-shaped, in declared face order.
+        def generated_run_pattern(wrapper)
+          inner = "(\"/\" #{wrapper.wrappers.map { |w| "\"#{w.face}\"" }.join(' / ')}) " \
+                  "1*digit"
+          "1*(#{inner})"
+        end
+
+        # The kind face alternation the item rule captures.
+        def generated_kind_pattern(wrapper)
+          wrapper.wrappers.map { |w| "\"#{w.face}\"" }.join(" / ")
+        end
+
+        # The MR-slug hooks (`mr:`): a map of MR segment name → hook
+        # declaration over the declared fields. The shared MrString
+        # renderer reads the hooks off the model in its fixed segment
+        # order; the declared hooks REPLACE the base hooks for their
+        # segments (an undeclared segment keeps the shared model's
+        # answer). The charset sanitize is the generated method's job
+        # (lowercase, [a-z0-9-], runs collapsed) — the declaration only
+        # says WHICH fields feed the segment.
+        def check_mr(raw, fields)
+          return nil if raw.nil?
+
+          unless raw.is_a?(Hash)
+            raise InvalidDefinition.new("mr", "must be a map of segment → hook")
+          end
+          known = fields.map(&:name)
+          segments = raw.map do |segment, hook|
+            unless MR_SEGMENTS.include?(segment.to_s)
+              raise InvalidDefinition.new(
+                "mr.#{segment}",
+                "unknown MR segment — the shared renderer's hookable " \
+                "segments are: #{MR_SEGMENTS.join(', ')} (publisher and the " \
+                "supplement suffix are the shared model's)",
+              )
+            end
+            unless hook.is_a?(Hash)
+              raise InvalidDefinition.new("mr.#{segment}", "must be a map")
+            end
+            check_keys("mr.#{segment}", hook, %w[field join glue])
+            if hook.key?("field")
+              name = hook["field"]
+              unless known.include?(name)
+                raise InvalidDefinition.new("mr.#{segment}.field",
+                                            "unknown field #{name.inspect}")
+              end
+              [segment, Definition::MrField.new(field: name)]
+            else
+              join = hook["join"]
+              glue = hook["glue"] || "-"
+              unless join.is_a?(Array) && !join.empty? && join.all? do |f|
+                known.include?(f) || list_fields(fields).include?(f)
+              end
+                raise InvalidDefinition.new(
+                  "mr.#{segment}.join",
+                  "must be a non-empty array of known field names, got " \
+                  "#{join.inspect}",
+                )
+              end
+              unless glue.is_a?(String) && !glue.empty?
+                raise InvalidDefinition.new("mr.#{segment}.glue",
+                                            "must be a separator string")
+              end
+              [segment, Definition::MrJoin.new(join: join, glue: glue)]
+            end
+          end
+          if segments.map(&:first).uniq.size != segments.size
+            raise InvalidDefinition.new("mr", "a segment is declared twice")
+          end
+          Definition::Mr.new(segments: segments.to_h)
+        end
+
+        def list_fields(fields)
+          fields.select { |f| f.kind == "list" }.map(&:name)
+        end
+
         # The OFFICIAL URN's ordered segments (`urn.official`): the scheme's
         # registered form (`urn:calconnect:<series>:<number>:<date>`) is the
         # generator's composition, declared — not inherited from a base
@@ -749,12 +1212,23 @@ module Pubid
         # `{date: [fields...]}` group (the fields joined with `-`, the
         # group omitted when none captured). A definition without
         # `official:` keeps the shared base generator (doi's shape).
+        # The OFFICIAL URN's ordered segments (`urn.official`): the scheme's
+        # registered form is the generator's composition, declared — not
+        # inherited from a base template that knows nothing of the scheme.
+        # A segment is a field name (omitted when it did not capture), a
+        # `{field:, lower:, affix:, edition_affix:}` row (lower downcases,
+        # affix prefixes the value, edition_affix replaces the affix while
+        # the fold flag holds), a fused `{date: [fields]}` group (the
+        # fields joined with `-`), or a `{compose: [...]}` code (ordered
+        # slots, each glued before the previously rendered). A definition
+        # without `official:` keeps the shared base generator (doi's shape).
         def check_urn_official(official, fields)
           unless official.is_a?(Array)
             raise InvalidDefinition.new("urn.official",
                                         "must be an array of ordered segments")
           end
           known = fields.map(&:name)
+          fold_targets = fields.select { |f| f.fold }.map { |f| f.fold.into }
           official.map.with_index do |segment, i|
             rule = "urn.official[#{i}]"
             case segment
@@ -764,21 +1238,94 @@ module Pubid
               end
               Definition::UrnField.new(name: segment)
             when Hash
-              check_keys(rule, segment, %w[date])
-              date_fields = segment["date"]
-              unless date_fields.is_a?(Array) && !date_fields.empty? &&
-                  date_fields.all? { |f| known.include?(f) }
-                raise InvalidDefinition.new(
-                  "#{rule}.date",
-                  "must be a non-empty array of known field names",
+              check_keys(rule, segment, %w[field date compose lower affix edition_affix])
+              if segment.key?("field")
+                name = segment["field"]
+                unless known.include?(name)
+                  raise InvalidDefinition.new(rule, "unknown field #{name.inspect}")
+                end
+                edition_affix = segment["edition_affix"]
+                if edition_affix && !fold_targets.include?(name)
+                  raise InvalidDefinition.new(
+                    "#{rule}.edition_affix",
+                    "the segment field #{name.inspect} carries no fold — an " \
+                    "edition affix replaces the affix only where a fold flag " \
+                    "decides the face",
+                  )
+                end
+                Definition::UrnField.new(
+                  name: name,
+                  lower: segment["lower"] || false,
+                  affix: segment["affix"],
+                  edition_affix: edition_affix,
+                )
+              elsif segment.key?("date")
+                date_fields = segment["date"]
+                unless date_fields.is_a?(Array) && !date_fields.empty? &&
+                    date_fields.all? { |f| known.include?(f) }
+                  raise InvalidDefinition.new(
+                    "#{rule}.date",
+                    "must be a non-empty array of known field names",
+                  )
+                end
+                Definition::UrnDate.new(fields: date_fields)
+              else
+                slots = segment["compose"]
+                unless slots.is_a?(Array) && !slots.empty?
+                  raise InvalidDefinition.new(
+                    "#{rule}.compose",
+                    "must be a non-empty array of {field:, glue:, style:} slots",
+                  )
+                end
+                Definition::UrnCompose.new(
+                  slots: slots.map.with_index do |slot, j|
+                    check_urn_compose_slot("#{rule}.compose[#{j}]", slot, known,
+                                           first: j.zero?)
+                  end,
                 )
               end
-              Definition::UrnDate.new(fields: date_fields)
             else
-              raise InvalidDefinition.new(rule,
-                                          "must be a field name or {date: [fields]}")
+              raise InvalidDefinition.new(
+                rule,
+                "must be a field name, {field: ...}, {date: [fields]} or " \
+                "{compose: [...]}",
+              )
             end
           end
+        end
+
+        # One compose slot: the field it reads, the glue rendered before it
+        # (or before each of its items, under `style: prefix`), and the
+        # join style (default prefix — the parts-run shape).
+        def check_urn_compose_slot(rule, slot, known, first: false)
+          unless slot.is_a?(Hash)
+            raise InvalidDefinition.new(rule, "must be a map")
+          end
+          check_keys(rule, slot, %w[field glue style])
+          name = slot["field"]
+          unless known.include?(name)
+            raise InvalidDefinition.new(rule, "unknown field #{name.inspect}")
+          end
+          glue = slot["glue"]
+          if first
+            unless glue.nil?
+              raise InvalidDefinition.new(
+                "#{rule}.glue",
+                "the first slot carries no glue — nothing renders before it",
+              )
+            end
+          elsif !(glue.is_a?(String) && !glue.empty?)
+            raise InvalidDefinition.new("#{rule}.glue", "must be a separator string")
+          end
+          style = slot["style"] || "prefix"
+          unless LIST_RENDER_STYLES.include?(style)
+            raise InvalidDefinition.new(
+              "#{rule}.style",
+              "unsupported style #{style.inspect} — known: " \
+              "#{LIST_RENDER_STYLES.join(', ')}",
+            )
+          end
+          Definition::UrnSlot.new(field: name, glue: glue, style: style)
         end
 
         def check_examples_shape(raw)
