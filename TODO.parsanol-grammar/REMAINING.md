@@ -85,7 +85,13 @@ ancestor parsanol-ruby#399, is fixed there; 0.10.32 predates the fix).
       supplement wrapper types; int-kind URN cores (+ the generator's
       `core.map(&:to_sym)` load crash on non-empty cores); URN-generator
       declaration surface (namespace-only today); MR-slug `mr_*` hooks.
-      Each is the precise blocker for full byte-parity on etsi rows
+      Named segments (owner directive 2026-11-13): PFS grammar fragments and
+      generated rules must carry SEMANTIC names (`number`, `publisher`,
+      `copublisher`, ...) so the grammar is self-understandable to the
+      bodies reading it — anonymous/combinator-soup names are a v2
+      validation rejection (the generator names every segment; user
+      fragments with unnamed captures are rejected citing the rule).
+Each is the precise blocker for full byte-parity on etsi rows
       (3,772 collection-part / 1,833 ed.N / 168 supplement-wrapper
       rows) and for the tier-B extension catalog's conditional-segment
       item. Phase 3 also owes: the module library (iso.inner/iec.inner/
