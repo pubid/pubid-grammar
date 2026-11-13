@@ -880,12 +880,330 @@ preprocess publisher_names {
 
 derive urn "urn:iso:std:{number_with_part}:{date}"
 
+# F6 render spec, #116: every bound field, in a join order that re-parses
+# to the same bound map (the rs#459 round-trip oracle). The rules the
+# segments obey, checked line-by-line against the identifier rules above:
+#
+# - The publisher joins the number with a SPACE (`prefix_sole_publisher =
+#   publisher [space] ...`); the dash the old spec emitted is never
+#   grammar-valid there. Shapes with no publisher at all (bare TC
+#   documents, the ISO/R forms) render no prefix and no separator.
+# - `copublishers` captures WITH its leading slash, so `publisher`
+#   + `copublishers` needs no separator between them.
+# - A typed stage after the prefix is joined with a space: the copublisher
+#   spine accepts `[space] [slash] [type_with_stage]`, and the space form
+#   re-parses to the same map for every stage-bearing shape ("ISO/WD Study
+#   42010" renders as "ISO WD Study 42010" — the bound map is identical).
+# - A ballot stage always renders slash-prefixed: the TYPE-first ballot
+#   branch takes `[space] [slash] ballot_type_with_stage` after the
+#   prefix, so "ISO/IEC PDAM 2 10646:2012" renders as
+#   "ISO/IEC/PDAM 2 10646:2012" and re-parses through the same branch to
+#   the same map; the space-attached ballot face re-parses through the
+#   same branch too.
+# - The ballot stamp's abbrev token is decode-away (matched uncaptured),
+#   so the stamp renders the canonical "/Amd" spelling: the re-parse binds
+#   stamp number/date only, and the abbrev spelling is not identity. The
+#   dot-number stamp alternative is a different bound field
+#   (ballot_stamp_dot_number), so the number renders in the spaced form.
+# - Supplements join with "/" + the bound abbrev; the ISO/R supplement
+#   layer takes the slash separator alternative of
+#   iso_r_supplement_separator.
+# - The joint renders " | " (the `[space] "|" [space]` join, house form).
+# - The undated marker renders after its colon (`date = (colon / dash)
+#   [date_core]`), and bare-TC documents keep the glued `N<number>` the
+#   bare_tc_document rule accepts.
+# - Graduation gaps (fields left unpinned — the oracle counts only what
+#   renders): `nsb_stage` (the stage-to-publisher separator is "/" for the
+#   WD form but nothing for Fpr — one literal cannot serve both), and the
+#   tc_document face that carries a publisher (its (slash / space) join to
+#   tc_type is uncaptured and variable). `publisher_name` is a derived
+#   preprocess field the re-parse recomputes, never an emitted face.
 render default {
-  field publisher
-  literal "-"
-  field number_with_part
+  cond type_with_stage_fr {
+    field type_with_stage_fr
+    literal " "
+  }
+  cond iso_r_prefix {
+    field iso_r_prefix
+  }
+  cond publisher {
+    field publisher
+  }
+  cond copublishers {
+    field copublishers
+  }
+  cond subgroup {
+    literal " "
+    field subgroup
+  }
+  cond tc_number {
+    field tc_number
+    literal "/"
+    field sc_type
+    literal " "
+    field sc_number
+    cond wg_type {
+      literal "/"
+      field wg_type
+      literal " "
+      field wg_number
+    }
+    literal " N"
+    field number
+    cond year {
+      literal ":"
+      field year
+    }
+  }
+  cond ballot_type_with_stage {
+    literal "/"
+    field ballot_type_with_stage
+    cond ballot_number {
+      literal " "
+      field ballot_number
+    }
+  }
+  cond type_with_stage {
+    literal " "
+    field type_with_stage
+  }
+  cond number_with_part {
+    literal " "
+    field number_with_part
+  }
+  cond stage_iteration {
+    literal "."
+    field stage_iteration
+  }
   cond date {
     literal ":"
     field date
+  }
+  cond undated_marker {
+    literal ":"
+    field undated_marker
+  }
+  cond base_edition {
+    literal " "
+    field base_edition
+  }
+  cond ballot_stamp_number {
+    literal "/Amd "
+    field ballot_stamp_number
+    cond ballot_stamp_date {
+      literal ":"
+      field ballot_stamp_date
+    }
+    cond ballot_stamp_undated_marker {
+      literal ":"
+      field ballot_stamp_undated_marker
+    }
+  }
+  cond ballot_stamp_dot_number {
+    literal "/Amd."
+    field ballot_stamp_dot_number
+  }
+  cond supp_type_with_stage {
+    literal "/"
+    field supp_type_with_stage
+    cond supp_number_with_part {
+      literal " "
+      field supp_number_with_part
+    }
+    cond supp_stage_iteration {
+      literal "."
+      field supp_stage_iteration
+    }
+    cond supp_number {
+      literal "."
+      field supp_number
+    }
+    cond supp_date {
+      literal ":"
+      field supp_date
+    }
+    cond supp_undated_marker {
+      literal ":"
+      field supp_undated_marker
+    }
+  }
+  cond supp2_type_with_stage {
+    literal "/"
+    field supp2_type_with_stage
+    cond supp2_number_with_part {
+      literal " "
+      field supp2_number_with_part
+    }
+    cond supp2_stage_iteration {
+      literal "."
+      field supp2_stage_iteration
+    }
+    cond supp2_number {
+      literal "."
+      field supp2_number
+    }
+    cond supp2_date {
+      literal ":"
+      field supp2_date
+    }
+    cond supp2_undated_marker {
+      literal ":"
+      field supp2_undated_marker
+    }
+  }
+  cond supp3_type_with_stage {
+    literal "/"
+    field supp3_type_with_stage
+    cond supp3_number_with_part {
+      literal " "
+      field supp3_number_with_part
+    }
+    cond supp3_stage_iteration {
+      literal "."
+      field supp3_stage_iteration
+    }
+    cond supp3_number {
+      literal "."
+      field supp3_number
+    }
+    cond supp3_date {
+      literal ":"
+      field supp3_date
+    }
+    cond supp3_undated_marker {
+      literal ":"
+      field supp3_undated_marker
+    }
+  }
+  cond isor_supp_type_with_stage {
+    literal "/"
+    field isor_supp_type_with_stage
+    cond isor_supp_number_with_part {
+      literal " "
+      field isor_supp_number_with_part
+    }
+    cond isor_supp_stage_iteration {
+      literal "."
+      field isor_supp_stage_iteration
+    }
+    cond isor_supp_date {
+      literal ":"
+      field isor_supp_date
+    }
+    cond isor_supp_undated_marker {
+      literal ":"
+      field isor_supp_undated_marker
+    }
+  }
+  cond idf_publisher {
+    literal " | "
+    field idf_publisher
+    cond idf_type_with_stage {
+      literal "/"
+      field idf_type_with_stage
+    }
+    cond idf_stage_iteration {
+      literal "."
+      field idf_stage_iteration
+    }
+    cond idf_number_with_part {
+      literal " "
+      field idf_number_with_part
+    }
+    cond idf_date {
+      literal ":"
+      field idf_date
+    }
+    cond idf_languages {
+      literal "("
+      field idf_languages
+      literal ")"
+    }
+    cond idf_all_parts {
+      literal " "
+      field idf_all_parts
+    }
+  }
+  cond edition {
+    literal " "
+    field edition
+  }
+  cond languages {
+    literal "("
+    field languages
+    literal ")"
+  }
+  cond all_parts {
+    literal " "
+    field all_parts
+  }
+  cond dsupp_publisher {
+    literal " "
+    field dsupp_publisher
+    literal " "
+    field dsupp_type_with_stage
+    cond dsupp_date {
+      literal ":"
+      field dsupp_date
+    }
+    cond dsupp_undated_marker {
+      literal ":"
+      field dsupp_undated_marker
+    }
+    cond dsupp_edition {
+      literal " "
+      field dsupp_edition
+    }
+    cond dsupp_languages {
+      literal "("
+      field dsupp_languages
+      literal ")"
+    }
+    cond dsupp_all_parts {
+      literal " "
+      field dsupp_all_parts
+    }
+  }
+  cond bs1_publisher {
+    literal " + "
+    field bs1_publisher
+    literal " "
+    field bs1_type_with_stage
+    cond bs1_date {
+      literal ":"
+      field bs1_date
+    }
+    cond bs1_undated_marker {
+      literal ":"
+      field bs1_undated_marker
+    }
+  }
+  cond bs2_publisher {
+    literal " + "
+    field bs2_publisher
+    literal " "
+    field bs2_type_with_stage
+    cond bs2_date {
+      literal ":"
+      field bs2_date
+    }
+    cond bs2_undated_marker {
+      literal ":"
+      field bs2_undated_marker
+    }
+  }
+  cond bs3_publisher {
+    literal " + "
+    field bs3_publisher
+    literal " "
+    field bs3_type_with_stage
+    cond bs3_date {
+      literal ":"
+      field bs3_date
+    }
+    cond bs3_undated_marker {
+      literal ":"
+      field bs3_undated_marker
+    }
   }
 }
