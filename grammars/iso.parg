@@ -190,13 +190,17 @@ grammar PubidIso version "0.5.0" edition 2 {
   jcgm_identifier = "JCGM" as publisher space second_part third_part
 
   # ---- NSB stage prefixes: "FprISO 105-A03", "WD/ISO 10360-5:2000" ----
+  ## #118: the stage-to-publisher join differs per branch — the Fpr form
+  ## glues onto the publisher, the WD form carries a slash. The slash
+  ## captures as nsb_stage_slash so the render emits the join per shape
+  ## (the Fpr branch binds nothing to join with).
   nsb_iso_identifier = {
     (
       ("Fpr" as nsb_stage) prefix_sole_publisher [space] [copublishers] [space] [type_with_stage] [space] second_part third_part
     )
     /
     (
-      ("WD" as nsb_stage) slash prefix_sole_publisher [space] [copublishers] [space] [type_with_stage] [space] second_part third_part
+      ("WD" as nsb_stage) (slash as nsb_stage_slash) prefix_sole_publisher [space] [copublishers] [space] [type_with_stage] [space] second_part third_part
     )
   }
 
@@ -213,7 +217,11 @@ grammar PubidIso version "0.5.0" edition 2 {
       slash sc_type space (1*digit) as sc_number
     )
   }
-  tc_document = prefix_sole_publisher (slash / space) tc_type space (1*digit) as tc_number [tc_subcommittee_part] space "N" [space] (1*digit) as number [(colon (("19" / "20") 2*digit !digit) as year)]
+  ## #118: the publisher-to-type join is "/" or a space per the input's
+  ## own spelling; it captures as tc_join so the render emits the
+  ## captured join back (a canonical slash would re-bind a space-joined
+  ## input to the other alternative's value).
+  tc_document = prefix_sole_publisher ((slash / space) as tc_join) tc_type space (1*digit) as tc_number [tc_subcommittee_part] space "N" [space] (1*digit) as number [(colon (("19" / "20") 2*digit !digit) as year)]
   bare_tc_document = {
     (1*digit) as tc_number
     slash sc_type space (1*digit) as sc_number
@@ -723,6 +731,7 @@ grammar PubidIso version "0.5.0" edition 2 {
     type_with_stage_fr -> type_with_stage_fr (string)
     base_edition -> base_edition (string)
     nsb_stage -> nsb_stage (string)
+    nsb_stage_slash -> nsb_stage_slash (string)
     iso_r_prefix -> iso_r_prefix (string)
     number_with_part -> number_with_part (string)
     stage_iteration -> stage_iteration (string)
@@ -733,6 +742,7 @@ grammar PubidIso version "0.5.0" edition 2 {
     all_parts -> all_parts (string)
     year -> year (string)
     tc_type -> tc_type (string)
+    tc_join -> tc_join (string)
     tc_number -> tc_number (string)
     sc_type -> sc_type (string)
     sc_number -> sc_number (string)
@@ -871,6 +881,49 @@ bs3_undated_marker -> bs3_undated_marker (string)
       ballot_stamp_number: "1"
       ballot_stamp_date: "2006"
     }
+    # #118: the nsb_stage face — the Fpr branch glues onto the publisher,
+    # the WD branch carries the captured slash (nsb_stage_slash).
+    accept "FprISO 10140-4"
+    accept "FprISO 13679"
+    accept "FprISO/IEC 17029"
+    accept "WD/ISO 10360-2"
+    example "FprISO 105-A03" {
+      nsb_stage: "Fpr"
+      publisher: "ISO"
+      number_with_part: "105-A03"
+    }
+    example "WD/ISO 10360-5:2000" {
+      nsb_stage: "WD"
+      nsb_stage_slash: "/"
+      date: "2000"
+    }
+    # #118: the publisher-bearing tc_document face — the join captures as
+    # tc_join, the type as tc_type (the bare-TC face binds neither).
+    accept "ISO/TC 184/SC 4 N 789"
+    accept "ISO/TC 184/SC/QC 4 N246"
+    accept "ISO/TC 184 N 100"
+    accept "ISO/TC 184 N 100:2024"
+    accept "ISO TC 46 N 3064"
+    example "ISO/TC 184/SC 4/WG 3 N 123" {
+      tc_join: "/"
+      tc_type: "TC"
+      tc_number: "184"
+      sc_number: "4"
+      wg_number: "3"
+      number: "123"
+    }
+    example "ISO TC 46 N 3064" {
+      tc_join: " "
+      tc_type: "TC"
+      tc_number: "46"
+      number: "3064"
+    }
+    example "ISO/JTC 1 N 456" {
+      tc_join: "/"
+      tc_type: "JTC"
+      tc_number: "1"
+      number: "456"
+    }
   }
 }
 
@@ -912,13 +965,27 @@ derive urn "urn:iso:std:{number_with_part}:{date}"
 # - The undated marker renders after its colon (`date = (colon / dash)
 #   [date_core]`), and bare-TC documents keep the glued `N<number>` the
 #   bare_tc_document rule accepts.
-# - Graduation gaps (fields left unpinned — the oracle counts only what
-#   renders): `nsb_stage` (the stage-to-publisher separator is "/" for the
-#   WD form but nothing for Fpr — one literal cannot serve both), and the
-#   tc_document face that carries a publisher (its (slash / space) join to
-#   tc_type is uncaptured and variable). `publisher_name` is a derived
-#   preprocess field the re-parse recomputes, never an emitted face.
+# - The NSB stage renders BEFORE the publisher, with the join its own
+#   branch bound (#118): the Fpr branch binds no join face, so "FprISO
+#   105-A03" renders glued ("FprISO 105-A03"); the WD branch captures the
+#   slash as nsb_stage_slash, so "WD/ISO 10360-5:2000" renders
+#   "WD/ISO 10360-5:2000". (The coded flavor decodes the NSB stage onto
+#   the modern stage face — "ISO/PRF 105-A03" — which would re-bind a
+#   different map; the render keeps the bound faces instead.)
+# - The publisher-bearing tc_document face renders the join AS CAPTURED
+#   (#118): a canonical slash would re-bind a space-joined input to the
+#   other alternative, so `field tc_join` emits "/" or " " per the input.
+#   The type follows space-joined (the rule's own `tc_type space`), then
+#   the shared bare-TC cluster — "ISO/TC 184/SC 4/WG 3 N 123" renders as
+#   "ISO/TC 184/SC 4/WG 3 N123", the glued N the cluster already uses
+#   (spelling, not identity; the re-parse binds the identical map).
 render default {
+  cond nsb_stage {
+    field nsb_stage
+    cond nsb_stage_slash {
+      field nsb_stage_slash
+    }
+  }
   cond type_with_stage_fr {
     field type_with_stage_fr
     literal " "
@@ -929,6 +996,16 @@ render default {
   cond publisher {
     field publisher
   }
+  # #118: the tc_document face — the join renders as captured, the type
+  # space-joined per the rule's own `tc_type space`. Neither face is
+  # bound by any other spine, so the segments are inert everywhere else.
+  cond tc_join {
+    field tc_join
+  }
+  cond tc_type {
+    field tc_type
+    literal " "
+  }
   cond copublishers {
     field copublishers
   }
@@ -938,15 +1015,21 @@ render default {
   }
   cond tc_number {
     field tc_number
-    literal "/"
-    field sc_type
-    literal " "
-    field sc_number
-    cond wg_type {
+    # #118: the subcommittee tail is OPTIONAL on the publisher-bearing
+    # tc_document face (the bare face always carries it), so the slash
+    # rides on the SC's presence — "ISO/TC 184 N 100" renders without a
+    # dangling "/".
+    cond sc_type {
       literal "/"
-      field wg_type
+      field sc_type
       literal " "
-      field wg_number
+      field sc_number
+      cond wg_type {
+        literal "/"
+        field wg_type
+        literal " "
+        field wg_number
+      }
     }
     literal " N"
     field number
