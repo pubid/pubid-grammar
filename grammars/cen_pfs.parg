@@ -3,8 +3,8 @@
 # Compiler: pubid/grammar/pfs 0.1.0
 # Flavor key: cen_pfs (grammar PubidCenPfs)
 # Regenerate: ruby scripts/pfs compile definitions/cen.pfs --as cen_pfs
-# Module: iso.inner v1 (sha256:6f04cf475f1c...)
-# Module: en.overlay v1 (sha256:851af8c5f31b...)
+# Module: iso.inner v1 (sha256:7a088d2a7814...)
+# Module: en.overlay v1 (sha256:b92ac2b27544...)
 # Module: national.prefix v1 (sha256:c7aa2f2442e8...)
 # Module: supplements.core v1 (sha256:9fa9656375c7...)
 
@@ -16,10 +16,10 @@ grammar PubidCenPfs version "0.1.0" edition 2 {
   iso_dash = "-"
   iso_year = 4*digit
   iso_part = 1*digit ["-" 1*digit]
-  iso_number = 1*("0" %x31-39) *digit [iso_dash iso_part]
+  iso_number = 1*("0" %x31-39) as iso_zero_lead *digit [iso_dash iso_part]
   iso_document = "ISO" iso_space iso_number [iso_colon iso_year]
   en_space = " "
-  en_draft = ("pr" / "Fpr")
+  en_draft = ("pr" / "Fpr") as en_draft_kind
   en_face = [en_draft] "EN"
   en_adoption = en_face en_space iso_document
   supplement_number = 1*digit

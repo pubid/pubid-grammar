@@ -194,19 +194,51 @@ extension 6, at the pattern level: the field's pattern gains
 `0707.1` is part of the number, exactly as the coded flavor models it).
 The wizard offers it as a form field.
 
-### v1 boundaries
+### The phase-3 constructs (pubid#706 phase 3, all fail-closed)
 
-Declared for later versions, rejected (or unimplemented) in v1, so a
-definition using them fails closed rather than compiling halfway:
+The six compiler gaps the etsi bracket pinned are now declarations:
 
-- field kinds other than `string` (int-kind patterns are a later extension);
-- multiple `types:` per scheme for the Ruby emission (the PARG grammar
-  handles the general shape; the generated flavor is single-type);
-- free-standing `stages:` maps (body→harmonized mappings without a type)
-  and `supplements:` declarations — the edition/supplement machinery's
-  tokens (`ed`, `amd`, `cor`) are RESERVED in v1 and cannot be claimed as
-  type keys, publisher/prefix tokens, or stage abbreviations;
-- semantic decode rules (the DAM-family problem) — v1 alternates are
+- **collection bindings** — a `kind: list` field binds its `item:` capture
+  per repetition (`parts` binds `part` into `["1", "0"]`, dropped when
+  empty). The list's `render:` composition drives the face (`prefix`
+  glues each item before itself: "-1-0"; `infix` joins).
+- **conditional render segments** — canonical optionals render as
+  presence guards, and an ALTERNATED optional renders its first
+  alternative whose fields captured (`[" V" {version} / " ed." {edition}]`)
+  — the compiled renderer and the compiler's own verifier share the
+  semantics, and the `renders:` rows pin them.
+- **the fold** — a builder-only capture folds onto another field's
+  column plus a boolean flag (`edition` → `version` + `is_edition`); the
+  source's render presence is the flag, the target's is suppressed
+  while it holds.
+- **supplement wrappers** — the `supplements:` declaration generates the
+  run grammar from the declared kind faces and the builder folds the run
+  into SYNTHESIZED wrapper classes (`{_type, number, base}`, outermost
+  last — the printed order IS the nesting).
+- **int-kind URN cores** — `urn.schema.types[].core` entries may be
+  `[path, kind]` pairs (`[[number, int]]`, the coded schemas' supplement
+  ordinals); bare paths stay string-kind (the legacy emission).
+- **the official URN surface** — `urn.official` segments may carry
+  `lower:`, an `affix:`, an `edition_affix:` (replaces the affix while
+  the fold flag holds), or a `compose:` of glued slots (the composed
+  document code).
+- **MR hooks** — the `mr:` declaration fills the shared MrString
+  renderer's slots (`type` / `number` / `year` / `edition`) from the
+  columns; undeclared segments keep the shared model's answer, and the
+  wrapper classes carry the supplement suffix themselves.
+- **named segments** (owner directive 2026-11-13) — every grammar
+  segment carries a semantic name; a `grammar:` fragment with an
+  UNNAMED capture is a compile-time rejection citing the rule, and the
+  compiler names every generated rule the same way (`number`,
+  `part`, `supplement_kind`, ...).
+
+### v1 boundaries (still)
+
+- multiple declared `types:` per scheme for the Ruby emission (the PARG
+  grammar handles the general shape; the generated flavor is single-type
+  — the supplements declaration is the one multi-class shape);
+- free-standing `stages:` maps (body→harmonized mappings without a type);
+- semantic decode rules (the DAM-family problem) — alternates are
   spelling-only, per the facets ruling.
 
 ## What the compiler enforces (all at compile time, all cited)
@@ -226,7 +258,10 @@ declaration that failed.
 | duplicate field names | rejected by the strict loader with the duplicate's line; field names colliding with `grammar:` rule names are rejected in validation |
 | unknown references | templates referencing an undeclared `{field}` or `grammar:` rule; URN atoms/types/official segments referencing undeclared fields |
 | malformed terms | multi-line `grammar:` fragments or field patterns (line discipline is the compiler's job), unbalanced quotes/brackets |
-| render faces | a canonical optional with no field inside cannot render (presence undecidable) |
+| render faces | a canonical optional with no field inside cannot render (presence undecidable); a list's item capture and the supplement run's internals are not render surfaces |
+| named segments | a `grammar:` fragment with an unnamed capture (`( … )` without `as name`) is rejected citing the rule (owner directive 2026-11-13) |
+| lists | a `kind: list` field requires a declared `item:` (plain string, unclaimed) and a `render:` composition; a fold requires a plain `into:` target and a collision-free `flag:` |
+| supplements | the run/item/kind/number names must be free; two wrappers claiming one kind face, or one wire tag, cite both |
 | examples | REQUIRED: at least one positive; every positive must parse against the generated grammar, render as its declared `renders:`, and bind identically through the BAKED artifact; every negative must fail to parse |
 
 The examples double as the grammar's embedded `test` block (accept /

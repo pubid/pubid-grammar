@@ -22,7 +22,7 @@ description: >-
 
 grammar:
   en_space: '" "'
-  en_draft: '("pr" / "Fpr")'
+  en_draft: '("pr" / "Fpr") as en_draft_kind'
   en_face: '[en_draft] "EN"'
   # The adoption face composes the overlay's own tokens with the identity
   # base's face (iso.inner, the declared base_module). An EN IEC adoption
