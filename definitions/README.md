@@ -12,21 +12,29 @@ construction, because the generated code enters pubid through the same
 doors.
 
 This is the v1 language reference: what a `.pfs` file may declare, and what
-the compiler enforces. v1 expresses the tier-A surface (issue #706's
-declarability matrix): publishers, type tokens, field patterns, canonical/
-alternate templates, typed-stage bindings, the URN schema, examples.
+the compiler enforces. v1 grew past the tier-A first wave (issue #706's
+declarability matrix: publishers, type tokens, field patterns, canonical/
+alternate templates, typed-stage bindings, the URN schema, examples) into
+the full declared-emission surface — multi-type emission, draft-stage
+serialization, the wrapper shapes, the adopted-base dispatch, publisher
+defaults and the fused URN segments (the phase-3 constructs below).
 
 ## A worked example
 
 [`doi.pfs`](doi.pfs) is the reference definition — the smallest tier-A
 scheme, compiled as the dev-alias flavor `doi_pfs`. Read it alongside this
-document. The two Phase-2 ports are worked examples of the extensions:
+document. The Phase-2 ports are worked examples of the extensions:
 [`calconnect.pfs`](calconnect.pfs) (the §8 acceptance port — the
 sub-numbering extension, the calendar binding, the official URN segments
-and the presence-guarded render face) and [`cen.pfs`](cen.pfs) (the §4
-module-composition port — the measured boundary of what the module
-library absorbs; its header documents the six coded-machinery blockers
-the pubid harness `spec/pubid/cen_pfs/` pins as a ledger).
+and the presence-guarded render face) and [`etsi.pfs`](etsi.pfs) (the
+language bracket at the largest corpus — 24,718 rows, byte-identical on
+every identity surface since the phase-3 constructs landed).
+[`cen.pfs`](cen.pfs) began as the §4 module-composition port and is now
+the full declared-emission absorption: the nine CEN/CENELEC deliverable
+families declared as types on the six compiler features of
+pubid-grammar#121 (merged as #122), 189/189 corpus rows byte-identical
+with the coded flavor, zero rows pinned (pubid#721); its header
+documents the features and the honest non-corpus boundaries.
 
 ## The file
 
@@ -69,11 +77,13 @@ types:                          # REQUIRED — at least one
       code: pubdoi              # body-local code
       stage_code: published     # harmonized stage
       abbr: ["DOI"]             # parse-in spellings
+    # a type may also carry tokens: (the spellings that select it),
+    # publisher_default: and adopted: — the phase-3 constructs below
 
 fields:                         # REQUIRED — at least one
   prefix:
     pattern: '"10" "." 2*digit' # one PARG term; the whole pattern is the capture
-    kind: string                # v1 carries `string`
+    kind: string                # string, or list (the collection bindings)
     sub_numbering:              # OPTIONAL — extension 6 (calconnect 0707.1)
       separators: [".", "-"]    # folds `[ (sep…) 1*digit ]` onto the pattern
 
@@ -89,7 +99,7 @@ urn:                            # REQUIRED
     - date: [year, month, day]  # a fused date group (joined with "-")
   schema:                       # the pubid-scheme schema (PubidUrn.define)
     atoms:
-      - { path: prefix, prefix: prefix }
+      - { path: prefix, prefix: prefix }   # kind: list / id / ids (string default)
     types:
       - { type: "pubid:<key>:identifier", token: id, core: [] }
 
@@ -103,7 +113,7 @@ examples:                       # REQUIRED — the live test panel
 
 ### Template language
 
-Templates carry four kinds of segments; nothing else:
+Templates carry these kinds of segments; nothing else:
 
 - `"literal"` — a quoted literal face (no quotes/backslashes inside).
 - `{field}` — a declared `fields:` entry; compiles to its capture rule,
@@ -112,6 +122,11 @@ Templates carry four kinds of segments; nothing else:
 - `[ … ]` — an optional segment (nested templates allowed; parse-only:
   optionals never render).
 - `a / b` — alternation, split on ` / ` outside quotes and brackets.
+- `( … )` — a required group: the parenthesized alternation of whole
+  faces. Parse accepts the first alternative that matches; render emits
+  the first alternative whose fields captured, and a group whose faces
+  all miss is an error — cen's head dispatch picks the draft face, the
+  Guide face, the adopted face, else the publisher face.
 
 The `canonical:` template must be a single sequence (it is the render
 face); `alternates:` are additional accept spellings that normalize to it.
@@ -157,7 +172,8 @@ A module document (`.pfsmod`) carries the same strict surface: `module:`
 (a dotted lower-case name), `version:`, optional `grammar:` fragments,
 `tokens:` it claims, `parameters:` (typed; v1 carries `tokens`),
 `identity:` (v1 carries `wrapper-with-adopted` with `base_module` and
-`adopted_field`) and `hooks:`. A definition binds it with `{module:,
+`adopted_field`) and `hooks:` (plus the informational `title:` /
+`description:`). A definition binds it with `{module:,
 version:[, parameters:]}` — a bare name would let the version drift
 silently.
 
@@ -196,7 +212,9 @@ The wizard offers it as a form field.
 
 ### The phase-3 constructs (pubid#706 phase 3, all fail-closed)
 
-The six compiler gaps the etsi bracket pinned are now declarations:
+The compiler gaps the brackets pinned are now declarations — the six
+etsi-bracket gaps first, then the six cen-bracket declared-emission
+features (pubid-grammar#121, merged as #122). All fail-closed:
 
 - **collection bindings** — a `kind: list` field binds its `item:` capture
   per repetition (`parts` binds `part` into `["1", "0"]`, dropped when
@@ -231,15 +249,51 @@ The six compiler gaps the etsi bracket pinned are now declarations:
   UNNAMED capture is a compile-time rejection citing the rule, and the
   compiler names every generated rule the same way (`number`,
   `part`, `supplement_kind`, ...).
+- **multi-type declared emission** (#121 feature 1) — a type's
+  `tokens:` names the spellings that SELECT it (type-position `TR`/
+  `Guide`, publisher-position `CR`/`ENV`); the generated builder
+  dispatches the class from the captured token, and the token-free
+  non-adopted type is the scheme default (cen declares nine families).
+- **draft-stage serialization** (#121 feature 2) — a free-standing
+  `stages:` map names each draft stage's accepted spellings and its
+  official-URN stage code (`pren: {tokens: ["prEN"], urn: proposal}`).
+  A field's `map:` folds the captured spelling to the stored code and
+  its `render:`/`urn:` map the stored value back to the spelling / the
+  URN code; the typed-stage trio compacts to `"stage" => "pren"` by the
+  class hook.
+- **the cen wrapper shapes** (#121 feature 3) — the supplements
+  declaration extends to a string `number_kind:` ordinal, the
+  per-wrapper `number_optional:` (the unnumbered "/AC"), the
+  wrapper-owned date columns (`date:` on the run, `fields:` on the
+  wrapper), the slash-vs-plus run dispatch (standalone wrapper chain
+  vs the synthesized consolidated bundle) and the `fragment:` wrapper
+  (the FRAG face); the bundle's members serialize under the
+  compiler-generated `identifiers` column.
+- **the adopted-base dispatch** (#121 feature 4) — `adopted:
+  {field:, hook: coded}` is the §4 coded escape hatch: the generated
+  builder calls the hook vendored beside the flavor at two explicit
+  points (the captured adopted run; the hook's implicit probe). Without
+  the section the capture builds nothing.
+- **publisher-type defaults** (#121 feature 5) — a type's
+  `publisher_default:` names the token the publisher column defaults
+  to; `to_hash` drops the column when its value equals the default.
+- **fused URN segments** (#121 feature 6) — `urn.official` gains the
+  `pub_group` segment (publisher + copublishers fused and downcased:
+  "cen-clc-etsi"), the `adopted_mr` segment (the adopted document's MR
+  string, its separators fused to colons) and the `stage_code` segment
+  ("stage.proposal"), with the wrappers' declared `mr:`/`urn:` chains
+  and the consolidated plus marker.
 
 ### v1 boundaries (still)
 
-- multiple declared `types:` per scheme for the Ruby emission (the PARG
-  grammar handles the general shape; the generated flavor is single-type
-  — the supplements declaration is the one multi-class shape);
-- free-standing `stages:` maps (body→harmonized mappings without a type);
 - semantic decode rules (the DAM-family problem) — alternates are
   spelling-only, per the facets ruling.
+
+Per-scheme boundaries live in the definition's own header: cen documents
+the loose coded forms its declared accept surface does not carry (the
+bare `prEN`, the numberless `CEN/TR`, the `EN ... ED1` edition face, the
+`GUID` spelling — none occurs in the pinned corpus) and the coded
+`EN cannot be TR` builder guard the declaration does not carry.
 
 ## What the compiler enforces (all at compile time, all cited)
 
@@ -252,7 +306,9 @@ declaration that failed.
 | `pfs` | exactly `1`; a higher major fails closed (additive versioning, the engine's `binding_version` precedent) |
 | unknown keys | any key the compiler does not know is an error — a key it does not know means a dialect newer than `pfs: 1` |
 | reserved tokens | `ed` / `amd` / `cor` cannot be claimed as type keys, publisher or prefix tokens, or stage abbreviations — nor by a module's tokens or its parameters |
-| ambiguity: types | two types claiming the same key, the same wire tag, or the same stage abbreviation are an error citing both |
+| ambiguity: types | two types claiming the same key, the same wire tag, the same stage abbreviation, the same spelling token (one spelling selects exactly one class; a token doubling as another type's stage abbreviation is an error), or the same publisher default are an error citing both |
+| ambiguity: stages | two stages claiming one accepted spelling cite both |
+| adopted | the declared field must be a builder-only string capture; the hook must be `coded` — the escape hatch calls the hook vendored beside the generated flavor |
 | ambiguity: templates | two accept templates that are structurally identical (an alternate that matches exactly what the canonical form matches) are an error citing both |
 | ambiguity: modules | fragment/token collisions across the composition cite both claimants (see the module table above) |
 | duplicate field names | rejected by the strict loader with the duplicate's line; field names colliding with `grammar:` rule names are rejected in validation |
