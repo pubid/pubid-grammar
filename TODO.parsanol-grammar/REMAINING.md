@@ -80,6 +80,25 @@ ancestor parsanol-ruby#399, is fixed there; 0.10.32 predates the fix).
       cen_pfs: multi-type emission, typed-stage serialization,
       wrapper-class synthesis, adopted-base coded hooks,
       publisher-type defaults, fused URN segments.)
+- [x] **PFS cen_pfs full absorption — the six declared-emission
+      features** (pubid-grammar#121, 2026-11-14): multi-type declared
+      emission (type `tokens:`, builder token dispatch, the token-free
+      default class); draft-stage serialization (`stages:` spellings +
+      URN codes, the field `map:`/`render:` value maps, the compact
+      "stage" => "pren" class hook); cen's wrapper shapes (string
+      ordinals, the per-wrapper optional ordinal, wrapper-owned date
+      columns, the slash-vs-plus run dispatch, the consolidated bundle
+      and the fragment wrapper); the adopted-base dispatch
+      (`adopted: {field:, hook: coded}` — the section-4 escape hatch,
+      two explicit call points, the hook vendored in pubid); publisher
+      -type defaults (`publisher_default:`); fused URN segments
+      (`pub_group`, `adopted_mr`, `stage_code`, the wrapper chains and
+      the plus marker); plus the template language's required group.
+      cen_pfs absorbs 189/189 corpus rows byte-identically on all five
+      identity surfaces, zero rows pinned (the pubid flip rides the
+      same issue); doi_pfs/calconnect_pfs/etsi_pfs regenerate
+      byte-identically (the regression net), contracts re-pinned at
+      1.3.126, the wasm gate green at 0.10.46.
 - [ ] **PFS v2 — the six compiler gaps** (the etsi bracket's pinned
       backlog): collection bindings; conditional render segments;
       supplement wrapper types; int-kind URN cores (+ the generator's
