@@ -25,6 +25,12 @@ module Pubid
         Ref = Struct.new(:name)
         # A `[ … ]` optional segment holding a nested template.
         Opt = Struct.new(:inner)
+        # A `( … )` REQUIRED group holding a nested template — the head
+        # dispatch whose alternatives each capture (issue #121): the face
+        # renders the first alternative whose direct fields captured, and
+        # an all-miss group is a compile error (the examples panel pins
+        # it), never a silent empty render.
+        Group = Struct.new(:inner)
         # The whole template: alternatives (each a sequence of items).
         Alt = Struct.new(:sequences)
 
@@ -51,7 +57,8 @@ module Pubid
         end
 
         # The PARG term for one template item. An optional whose inner
-        # template alternates is parenthesized: `[( a / b )]`.
+        # template alternates is parenthesized: `[( a / b )]`; a required
+        # group emits its alternation directly: `( a / b )`.
         # @return [String]
         def emit_item(item, field_namer)
           case item
@@ -62,6 +69,10 @@ module Pubid
             inner = emit_alternatives(item.inner, field_namer: field_namer)
             body = inner.size == 1 ? inner.first : "( #{inner.join(' / ')} )"
             "[#{body}]"
+          when Group
+            inner = emit_alternatives(item.inner, field_namer: field_namer)
+            body = inner.size == 1 ? inner.first : "( #{inner.join(' / ')} )"
+            body
           end
         end
 
@@ -97,17 +108,27 @@ module Pubid
               next nil unless face
 
               render_sequence(face, values, rule: rule, fields: fields)
+            when Group
+              face = selected_face(item, values, fields)
+              if face.nil?
+                raise TemplateError.new(rule),
+                      "the required head group matched no alternative — every " \
+                      "face alternative missed its fields"
+              end
+
+              render_sequence(face, values, rule: rule, fields: fields)
             when Ref
               raise TemplateError.new(rule),
                     "grammar rule #{item.name} cannot appear in a render face"
             end
           end.join
         end
-        # The rendered value of one {field}: a plain capture renders whole,
-        # a list renders through its composition, the supplement run
-        # renders its notations. Absent at a TOP-LEVEL position is the
-        # compile error (the face needs the capture); inside an optional
-        # the presence guard already gated the call.
+        # The rendered value of one {field}: a plain capture renders whole
+        # (through its `map:` token→value and value→face maps — the
+        # draft-stage spellings), a list renders through its composition,
+        # the supplement run renders its notations. Absent at a TOP-LEVEL
+        # position is the compile error (the face needs the capture);
+        # inside an optional the presence guard already gated the call.
         def field_value(name, values, fields, rule)
           field = fields.find { |f| f.name == name }
           value = values[name]
@@ -118,6 +139,8 @@ module Pubid
             raise TemplateError.new(rule),
                   "no captured value for field {#{name}}"
           end
+          value = field.map.fetch(value.to_s) if field&.map
+          value = field.render.fetch(value.to_s) if field&.render.is_a?(Hash)
           value.to_s
         end
 
@@ -137,16 +160,25 @@ module Pubid
         end
 
         # One bound list row's item value: a plain item capture's span, or
-        # the supplement run's "A1" (kind face + ordinal) for the
-        # compiler-generated run rows.
+        # the supplement run's printed notation. The flat run row (etsi:
+        # kind face + ordinal) composes "A1"; the per-wrapper row (cen:
+        # separator + kind face + optional ordinal + date columns)
+        # composes "/A1:2005" / "+AC:2016-11" — the wrapper node descends
+        # one level, and every absent piece leaves no bytes.
         def list_item_value(field, row)
           if field.builder_only
             inner = row[:supplement] || row["supplement"] || {}
-            kind = inner[:supplement_kind] || inner["supplement_kind"]
-            number = inner[:supplement_number] || inner["supplement_number"]
-            return "#{kind}#{number}" if kind && number
+            inner = inner.values.first if inner.is_a?(Hash) && inner.values.all?(Hash)
 
-            return nil
+            kind = inner[:supplement_kind] || inner["supplement_kind"]
+            return nil unless kind
+
+            number = inner[:supplement_number] || inner["supplement_number"]
+            sep = inner[:supplements_slash] || inner["supplements_slash"] ||
+                  (inner[:supplements_plus] || inner["supplements_plus"] ? "+" : "")
+            year = inner[:supplements_year] || inner["supplements_year"]
+            month = inner[:supplements_month] || inner["supplements_month"]
+            return "#{sep}#{kind}#{number}#{year ? ":#{year}" : ''}#{month ? "-#{month}" : ''}"
           end
           key = field.item.to_sym
           row[key] || row[key.to_s]
@@ -201,7 +233,7 @@ module Pubid
         def fields_in(item)
           case item
           when Field then [item.name]
-          when Opt then item.inner.sequences.flat_map { |seq| seq.flat_map { |i| fields_in(i) } }
+          when Opt, Group then item.inner.sequences.flat_map { |seq| seq.flat_map { |i| fields_in(i) } }
           else []
           end
         end
@@ -227,6 +259,7 @@ module Pubid
           when Field then [:field, item.name]
           when Ref then [:ref, item.name]
           when Opt then [:opt, structural_key(item.inner)]
+          when Group then [:group, structural_key(item.inner)]
           end
         end
 
@@ -240,6 +273,7 @@ module Pubid
           parts = []
           current = +""
           depth = 0
+          paren = 0
           quote = false
           i = 0
           while i < text.length
@@ -253,8 +287,14 @@ module Pubid
               raise TemplateError.new(rule), "unbalanced ']'" if depth.negative?
 
               current << text[i]
+            when "(" then paren += 1; current << text[i]
+            when ")"
+              paren -= 1
+              raise TemplateError.new(rule), "unbalanced ')'" if paren.negative?
+
+              current << text[i]
             when " "
-              if depth.zero? && !quote && text[i, 3] == " / "
+              if depth.zero? && paren.zero? && !quote && text[i, 3] == " / "
                 parts << current
                 current = +""
                 i += 3
@@ -268,6 +308,7 @@ module Pubid
           end
           raise TemplateError.new(rule), "unbalanced quote" if quote
           raise TemplateError.new(rule), "unclosed '['" if depth.positive?
+          raise TemplateError.new(rule), "unclosed '('" if paren.positive?
 
           parts << current
           parts
@@ -308,6 +349,13 @@ module Pubid
 
               items << Opt.new(parse(inner, rule: rule))
               i = close + 1
+            when "("
+              close = matching_paren(text, i, rule)
+              inner = text[(i + 1)...close]
+              raise TemplateError.new(rule), "empty required group" if inner.strip.empty?
+
+              items << Group.new(parse(inner, rule: rule))
+              i = close + 1
             when /[A-Za-z]/
               word = text[i..].sub(/\A([A-Za-z][A-Za-z0-9_]*).*/, '\1')
               unless NAME.match?(word)
@@ -325,6 +373,24 @@ module Pubid
           raise TemplateError.new(rule), "empty template" if items.empty?
 
           items
+        end
+
+        def matching_paren(text, open, rule)
+          depth = 0
+          quote = false
+          text[open..].each_char.with_index do |char, offset|
+            case char
+            when '"' then quote = !quote
+            when "("
+              depth += 1 unless quote
+            when ")"
+              unless quote
+                depth -= 1
+                return open + offset if depth.zero?
+              end
+            end
+          end
+          raise TemplateError.new(rule), "unclosed '('"
         end
 
         def matching_bracket(text, open, rule)

@@ -13,8 +13,16 @@ module Pubid
       # unified error namespace, registry registration — so every
       # cross-flavor contract applies to it unchanged.
       #
-      # v1 emits single-type schemes (one `types:` entry). Multi-type
-      # dispatch is a later extension.
+      # v1 emits single-type schemes (one `types:` entry). Issue #121 adds
+      # the scheme-canonical mode: a definition using the six
+      # declared-emission features (multi-type, draft stages, cen wrapper
+      # shapes, the adopted-base dispatch, publisher-type defaults, fused
+      # URN segments) emits the coded flavor's own class shape — typed
+      # leaves over a shared base, synthesized supplement wrappers, the
+      # consolidated bundle and the fragment wrapper, serialization through
+      # the shared ::Pubid::Identifier tables (flat scalars, the stage
+      # compaction hook) so to_hash is byte-identical with the coded
+      # flavor.
       class RubyGenerator
         # @return [Array<String>] the written file paths
         def self.emit(definition, flavor_key:, dir:, parsanol_version:)
@@ -31,7 +39,14 @@ module Pubid
           @module_name = PargGenerator.module_name(flavor_key)
           @parsanol_version = parsanol_version
           @type = definition.types.first or raise Error, "at least one type is required"
-          raise Error, "v1 emits single-type schemes" if definition.types.size > 1
+          raise Error, "v1 emits single-type schemes" if definition.types.size > 1 && !scheme_mode?
+        end
+
+        # The issue-#121 scheme-canonical mode: any of the six features on.
+        def scheme_mode?
+          definition.stages.any? || !definition.adopted.nil? ||
+            definition.types.size > 1 ||
+            definition.supplements&.consolidated || definition.supplements&.fragment
         end
 
         # The phase-3 machinery (pubid#706): supplement wrappers, list
@@ -63,6 +78,8 @@ module Pubid
         end
 
         def emit_to(dir)
+          return scheme_emit_to(dir) if scheme_mode?
+
           files = {
             "#{key}.rb" => module_file,
             "#{key}/identifier.rb" => identifier_file,
@@ -79,6 +96,47 @@ module Pubid
               files["#{key}/identifiers/#{wrapper.name}.rb"] = wrapper_file(wrapper)
             end
             files["#{key}/identifiers/supplement.rb"] = supplement_file
+          end
+          files.filter_map do |rel, content|
+            path = File.join(dir, rel)
+            FileUtils.mkdir_p(File.dirname(path))
+            File.binwrite(path, content)
+            path
+          end
+        end
+
+        # The scheme-canonical emission (issue #121): the coded flavor's
+        # class shape. The shared base carries the flat-scalar tables and
+        # the stage compaction hook; every declared type is a leaf over it
+        # (with its declared publisher default); the supplement wrappers,
+        # the consolidated bundle and the fragment are synthesized; the
+        # adopted dispatch calls the vendored hook class.
+        def scheme_emit_to(dir)
+          files = {
+            "#{key}.rb" => scheme_module_file,
+            "#{key}/identifier.rb" => scheme_identifier_file,
+            "#{key}/builder.rb" => scheme_builder_file,
+            "#{key}/parser.rb" => parser_file,
+            "#{key}/renderer.rb" => scheme_renderer_file,
+            "#{key}/urn_generator.rb" => scheme_urn_generator_file,
+            "#{key}/pubid_urn_schema.rb" => scheme_urn_schema_file,
+            "#{key}/identifiers.rb" => scheme_identifiers_file,
+          }
+          definition.types.each do |type|
+            files["#{key}/identifiers/#{type.name}.rb"] = scheme_type_file(type)
+          end
+          if definition.supplements
+            definition.supplements.wrappers.each do |wrapper|
+              files["#{key}/identifiers/#{wrapper.name}.rb"] = scheme_wrapper_file(wrapper)
+            end
+            files["#{key}/identifiers/supplement.rb"] = scheme_supplement_file
+            if definition.supplements.consolidated
+              files["#{key}/identifiers/consolidated_identifier.rb"] =
+                scheme_consolidated_file
+            end
+            if definition.supplements.fragment
+              files["#{key}/identifiers/fragment.rb"] = scheme_fragment_file
+            end
           end
           files.filter_map do |rel, content|
             path = File.join(dir, rel)
@@ -787,6 +845,25 @@ module Pubid
         # a compose slots its fields with the declared glue.
         def urn_segment_source(segment)
           case segment
+          when Definition::UrnPubGroup
+            lower = segment.lower ? ".downcase" : ""
+            [
+              "group = [@identifier.publisher&.respond_to?(:body) ? @identifier.publisher.body : @identifier.publisher,",
+              "        *Array(@identifier.copublishers).map { |p| p.respond_to?(:body) ? p.body : p }].compact.map(&:to_s)",
+              "        segments << group.map(&:#{'downcase'}).join(#{segment.glue.inspect}) unless group.empty?",
+            ].join("\n        ").sub(".map(&:downcase)", segment.lower ? ".map(&:downcase)" : "")
+          when Definition::UrnAdoptedMr
+            [
+              "adopted = @identifier.respond_to?(:adopted) ? @identifier.adopted : nil",
+              "        mr = adopted&.to_mr_string",
+              "        segments << mr.tr(\"._\", \"::\") unless mr.nil? || mr.empty?",
+            ].join("\n        ")
+          when Definition::UrnStageCode
+            [
+              "stage = @identifier.typed_stage",
+              "        code = stage&.stage_code",
+              "        segments << #{segment.marker.inspect} + code.to_s if code && code.to_s != \"published\"",
+            ].join("\n        ")
           when Definition::UrnField
             if segment.edition_affix
               edition_affix_source(segment)
@@ -858,7 +935,11 @@ module Pubid
         end
 
         def urn_field_reader(name)
-          root = wrapper_mode? ? "subject" : "@identifier"
+          root = if scheme_mode?
+            "@identifier"
+          else
+            wrapper_mode? ? "subject" : "@identifier"
+          end
           if date_binding && date_binding.fields.include?(name)
             "#{root}.date&.#{name}"
           else
@@ -1195,18 +1276,442 @@ module Pubid
           RUBY
         end
 
-        # Trim the trailing newline variance: heredoc bodies end with a
-        # newline; files end with exactly one.
-        def body(text)
-          text.sub(/\A\n+/, "").sub(/\n*\z/, "\n")
+        # === The issue-#121 scheme-canonical emission =====================
+
+        def scheme_module_file
+          autoloads = []
+          if definition.adopted
+            autoloads << "    # The adopted-base dispatch hook (the §4 coded escape hatch):"
+            autoloads << "    # vendored beside the generated classes — a missing hook file"
+            autoloads << "    # fails loudly on the first adoption, never silently."
+            autoloads << "    autoload :AdoptedBase, \"#{__dir_placeholder__}/#{key}/adopted_base\""
+            autoloads << ""
+          end
+          body("#{header}#{scheme_module_body(autoloads)}")
         end
 
-        # The canonical render face as a Ruby expression over the
-        # identifier's fields: literals + interpolation, with optional
-        # segments as PRESENCE GUARDS — an optional renders its face iff
-        # every field inside captured (the same semantics the compiler's
-        # own template verifier applies, so the emitted renderer and the
-        # verified examples cannot disagree).
+        def scheme_module_body(autoloads)
+          <<~RUBY
+            require "pubid"
+
+            module Pubid
+              # #{definition.title || definition.scheme} flavor, compiled from its PFS definition
+              # (pubid/pubid#706). A compiled flavor is a peer of the coded
+              # flavors: same registry, same input guards, same error
+              # namespace, same URN contracts.
+              module #{module_name}
+                extend Pubid::PrefixesSupport
+
+                PREFIXES = #{ruby_array(definition.organization.prefixes)}.freeze
+            #{autoloads.join("\n").chomp}
+                autoload :Builder, "#{__dir_placeholder__}/#{key}/builder"
+                autoload :Identifier, "#{__dir_placeholder__}/#{key}/identifier"
+                autoload :Identifiers, "#{__dir_placeholder__}/#{key}/identifiers"
+                autoload :Parser, "#{__dir_placeholder__}/#{key}/parser"
+                autoload :Renderer, "#{__dir_placeholder__}/#{key}/renderer"
+                autoload :PubidUrnSchema, "#{__dir_placeholder__}/#{key}/pubid_urn_schema"
+                autoload :UrnGenerator, "#{__dir_placeholder__}/#{key}/urn_generator"
+
+                def self.parse(identifier)
+                  Identifier.parse(identifier)
+                end
+
+                Identifier.format_registry = FormatRegistry.new(parent: Identifier.format_registry)
+                Identifier.format_registry.register(:human, renderer: #{module_name}::Renderer)
+
+                def self.identifier_types
+                  @identifier_types ||= Identifiers.constants
+                    .filter_map { |c| begin; Identifiers.const_get(c); rescue NameError; nil; end }
+                    .select { |c| c.is_a?(Class) && c.singleton_methods(false).include?(:type) }
+                    .select { |c| c.type.is_a?(Hash) }
+                end
+
+                def self.all_typed_stages
+                  @all_typed_stages ||= identifier_types.flat_map do |klass|
+                    klass.const_defined?(:TYPED_STAGES) ? klass.const_get(:TYPED_STAGES) : []
+                  end
+                end
+
+                def self.locate_type(code)
+                  identifier_types.find { |t| t.type[:key].to_s == code.to_s }
+                end
+
+                def self.locate_stage(abbr)
+                  abbr_str = abbr.to_s.upcase
+                  all_typed_stages.find { |s| s.abbr.any? { |a| a.to_s.upcase == abbr_str } }
+                end
+              end
+            end
+
+            Pubid::Registry.register(:#{key}, Pubid::#{module_name})
+          RUBY
+        end
+
+        # The default type: the declared type with no selection tokens that
+        # is not an adopted wrapper (the hook builds those).
+        def default_type
+          @default_type ||= begin
+            defaults = definition.types.select { |t| Array(t.tokens).empty? && !t.adopted }
+            raise Error, "exactly one token-free non-adopted type is required " \
+                         "(the default class)" if defaults.size != 1
+
+            defaults.first
+          end
+        end
+
+        def type_by_name(name)
+          definition.types.find { |t| t.name == name } or raise Error, "unknown type #{name.inspect}"
+        end
+
+        # The shared base: the version column, the flat-scalar tables, the
+        # stage compaction hook (the coded CenCenelec::Identifier shape),
+        # the draft-aware mr_type, the publisher-prefix cut and the parse
+        # funnel.
+        def scheme_identifier_file
+          stages = definition.stages
+          stage_table = stages.map do |stage|
+            "        #{stage.name.inspect} => { stage_code: :#{stage.urn} },"
+          end.join("\n")
+          body(<<~RUBY)
+            module Pubid
+              module #{module_name}
+                # The shared base of every concrete #{module_name} class. The
+                # serialization is the shared ::Pubid::Identifier's (the coded
+                # flavor's own shape): flat publisher/copublishers scalars, the
+                # date flattened to its fields, and the draft stage compacted
+                # to its code by the class hooks below.
+                class Identifier < ::Pubid::Identifier
+                  # The ETSI-style version suffix ("EN 302 326-2 V2.2.1").
+                  attribute :version, :string
+
+                  # A published document holds no type, stage or typed stage, so
+                  # a nil one means "published", not "any stage": `EN 1325` is
+                  # not `prEN 1325`. The three components repeat one entry of
+                  # the stage registry, so they move together.
+                  subset_strict :type, :stage, :typed_stage
+
+                  # The bodies that print as a publisher prefix. The publisher
+                  # attribute also holds the deliverable types that ARE the
+                  # designation ("CR 954"); those stay under
+                  # with_publisher: false, as `BS` does for BSI.
+                  PUBLISHER_PREFIXES = #{ruby_array(definition.organization.prefixes.map { |p| p.sub(%r{/\\z}, "") }.uniq)}.freeze
+
+                  def publisher_prefixes
+                    super.select do |prefix|
+                      PUBLISHER_PREFIXES.include?(prefix.split("/").first)
+                    end
+                  end
+
+                  # The publisher serializes as a bare string, the copublishers
+                  # as a list of strings (the coded flavor's flat-scalar table).
+                  def self.flat_scalar_components
+                    super.merge(publisher: "publisher", copublishers: "copublishers")
+                  end
+
+                  def self.flat_scalar_fields
+                    super.merge(publisher: :body, copublishers: :body)
+                  end
+
+                  # The declared draft stages: the serialized code is the key,
+                  # the official-URN code the declared `urn:` value.
+                  STAGE_CODES = {
+            #{stage_table}
+                  }.freeze
+
+                  # A draft stage serializes as its typed-stage code
+                  # ("stage" => "pren"); #inflate_scalar_components rebuilds
+                  # the three components from it (the coded compact-hash shape).
+                  def self.compact_hash(model, hash)
+                    stage = model.typed_stage
+                    return unless stage && hash.key?("typed_stage")
+                    return unless model.type == stage.to_type &&
+                                  model.stage == stage.to_stage
+
+                    hash.delete("type")
+                    hash.delete("typed_stage")
+                    hash["stage"] = stage.code.to_s
+                  end
+
+                  # Reads the short stage form back; the nested form still
+                  # reads as before.
+                  def self.inflate_scalar_components(data)
+                    data = super
+                    return data unless data.is_a?(::Hash) && component_attribute?(:stage)
+
+                    key = data.key?("stage") ? "stage" : :stage
+                    value = data[key]
+                    return data unless value.is_a?(::String) || value.is_a?(::Symbol)
+
+                    stage = locate_stage_by_code(value)
+                    return data unless stage
+
+                    data = data.dup
+                    data.delete(key)
+                    data["type"] = stage.to_type.to_hash
+                    data["stage"] = stage.to_stage.to_hash
+                    data["typed_stage"] = stage.to_hash
+                    data
+                  end
+
+                  # The stage entry by serialized code, or nil.
+                  def self.locate_stage_by_code(code)
+                    Builder.stage_by_code(code.to_s)
+                  end
+
+                  # The draft stage's own code is the MR type segment
+                  # ("en.pren.10160"); a published identifier has no typed
+                  # stage, so the shared hook answers nil.
+                  def mr_type
+                    stage = typed_stage
+                    return super unless stage && stage.stage_code.to_s != "published"
+
+                    stage.code.to_s.downcase
+                  end
+
+                  def self.parse(identifier)
+                    unless identifier.is_a?(String)
+                      raise Pubid::Errors::InvalidInputError,
+                            Pubid::INPUT_NOT_A_STRING_MESSAGE
+                    end
+
+                    if identifier.length > Pubid::MAX_INPUT_LENGTH
+                      raise Pubid::Errors::InvalidInputError, Pubid::INPUT_TOO_LONG_MESSAGE
+                    end
+
+                    identifier = ::Pubid.utf8_input(identifier)
+
+                    parsed = Pubid::Parg::Model.bound(:#{key}, identifier)
+                    Builder.build(parsed)
+                  end
+
+                  private
+
+                  # "amd.1.2005" from ("amd", "1", 2005). A nil or blank
+                  # segment is left out.
+                  def mr_join_segments(*segments)
+                    segments.map(&:to_s).reject(&:empty?).join(".").downcase
+                  end
+                end
+              end
+            end
+          RUBY
+        end
+
+        # The builder: type dispatch over the declared tokens, the column
+        # assignment (the coded cast's shape), the supplement fold (the
+        # slash run standalone, the plus run consolidated), the fragment
+        # wrapper, and the two adopted-dispatch call points.
+        def scheme_builder_file
+          token_map = definition.types.flat_map do |type|
+            Array(type.tokens).map { |token| "          #{token.inspect} => \"#{camelize(type.name)}\"," }
+          end
+          # The declared draft stages: the serialized code is the key, the
+          # declared URN code is the harmonized stage code, and the
+          # stage's type is the scheme's token-free default class.
+          stage_rows = definition.stages.map do |stage|
+            "        \"#{stage.name}\" => { code: :#{stage.name}, " \
+              "stage_code: :#{stage.urn}, type_code: :#{default_type.key}, " \
+              "abbr: #{ruby_array(stage.tokens)} },"
+          end.join("\n")
+          stage_map = definition.stages.flat_map do |stage|
+            stage.tokens.map { |token| "          #{token.inspect} => #{stage.name.inspect}," }
+          end.join("\n")
+          supplements = definition.supplements
+          adopted = !definition.adopted.nil?
+
+          lines = []
+          lines << "module Pubid"
+          lines << "  module #{module_name}"
+          lines << "    class Builder"
+          lines << "      # The type each declared token selects (feature 1); the"
+          lines << "      # token-free type is the default class."
+          lines << "      TYPE_TOKENS = {"
+          lines << token_map.join("\n").chomp
+          lines << "      }.freeze"
+          lines << ""
+          lines << "      DEFAULT_TYPE = \"#{camelize(default_type.name)}\""
+          lines << ""
+          lines << "      # The declared draft stages (feature 2): code → the"
+          lines << "      # typed-stage row the trio builds from."
+          lines << "      STAGES = {"
+          lines << stage_rows.chomp
+          lines << "      }.freeze"
+          lines << ""
+          lines << "      # The captured spelling → the serialized stage code."
+          lines << "      STAGE_MAP = {"
+          lines << stage_map.chomp
+          lines << "      }.freeze"
+          lines << ""
+          lines << "      def self.build(parsed_data)"
+          lines << "        new.build(parsed_data)"
+          lines << "      end"
+          lines << ""
+          lines << "      def self.stage_by_code(code)"
+          lines << "        row = STAGES[code.to_s]"
+          lines << "        return nil unless row"
+          lines << ""
+          lines << "        ::Pubid::Components::TypedStage.new("
+          lines << "          code: row[:code], stage_code: row[:stage_code],"
+          lines << "          type_code: row[:type_code], abbr: row[:abbr],"
+          lines << "        )"
+          lines << "      end"
+          lines << ""
+          lines << "      def build(data)"
+          lines << "        base = build_base_document(data)"
+          lines << "        wrapped = wrap_supplements(base, data)"
+          if supplements&.fragment
+            lines << "        wrap_fragment(wrapped, data)"
+          else
+            lines << "        wrapped"
+          end
+          lines << "      end"
+          lines << ""
+          lines << "      # The document the supplements apply to. The adopted-base"
+          lines << "      # dispatch (feature 4) calls the vendored hook at two explicit"
+          lines << "      # points: the captured adopted run, and the hook's own implicit"
+          lines << "      # probe — never implicitly."
+          lines << "      def build_base_document(data)"
+          if adopted
+            lines << "        return AdoptedBase.build(self, data) if data[:#{definition.adopted.field}]"
+            lines << ""
+            lines << "        implicit = AdoptedBase.implicit(self, data)"
+            lines << "        return implicit if implicit"
+            lines << ""
+          end
+          lines << "        identifier = locate_identifier_klass(data).new"
+          lines << "        assign_attributes(identifier, data)"
+          lines << "        identifier"
+          lines << "      end"
+          lines << ""
+          lines << "      # The class each reference selects: the type-position token"
+          lines << "      # first, then the publisher-position token (the publisher-type"
+          lines << "      # faces CR/CWA/…), then the token-free default class."
+          lines << "      def locate_identifier_klass(data)"
+          lines << "        token = data[:guide] || data[:type]"
+          lines << "        token ||= data[:publisher] if TYPE_TOKENS.key?(data[:publisher].to_s)"
+          lines << "        name = token ? TYPE_TOKENS.fetch(token.to_s, DEFAULT_TYPE) : DEFAULT_TYPE"
+          lines << "        Identifiers.const_get(name)"
+          lines << "      end"
+          lines << ""
+          lines << "      # The columns, as the coded builder's cast writes them."
+          lines << "      def assign_attributes(identifier, data)"
+          if date_binding
+            lines << "        if data[:#{date_binding.fields.first}]"
+            lines << "          identifier.date = ::Pubid::Components::Date.new("
+            lines << "            #{date_binding.fields.map { |f| "#{f}: data[:#{f}]&.to_s" }.join(', ')},"
+            lines << "          )"
+            lines << "        end"
+          end
+          lines << "        identifier.number = data[:number]&.to_s"
+          lines << "        identifier.part = data[:part]&.to_s"
+          lines << "        identifier.version = present_string(data[:version])"
+          lines << "        if data[:publisher]"
+          lines << "          identifier.publisher = ::Pubid::Components::Publisher.new(body: data[:publisher].to_s)"
+          lines << "        end"
+          lines << "        copubs = Array(data[:copublishers]).map do |row|"
+          lines << "          value = row[:copublisher] || row[\"copublisher\"]"
+          lines << "          ::Pubid::Components::Publisher.new(body: unwrap(value).to_s)"
+          lines << "        end"
+          lines << "        identifier.copublishers = copubs unless copubs.empty?"
+          lines << "        type_token = data[:guide] || data[:type]"
+          lines << "        identifier.type = ::Pubid::Components::Type.new(abbr: type_token.to_s) if type_token"
+          lines << "        captured = data[:stage]"
+          lines << "        return unless captured"
+          lines << ""
+          lines << "        typed_stage = Builder.stage_by_code(STAGE_MAP.fetch(captured.to_s))"
+          lines << "        identifier.typed_stage = typed_stage"
+          lines << "        identifier.type = typed_stage.to_type"
+          lines << "        identifier.stage = typed_stage.to_stage"
+          lines << "      end"
+          lines << ""
+          lines << "      # A capture the grammar bound as an empty string stores as nil:"
+          lines << "      # to_hash drops the empty string, so from_hash would give nil and"
+          lines << "      # the two identifiers would not be ==."
+          lines << "      def present_string(value)"
+          lines << "        str = unwrap(value)&.to_s"
+          lines << "        str unless str.nil? || str.empty?"
+          lines << "      end"
+          lines << ""
+          lines << "      # The run's internal captures bind only through the item row, so"
+          lines << "      # unbound ones arrive as raw leaves — a Parsanol::Slice or a"
+          lines << "      # {value:, offset: ...} span. Unwrap the captured value."
+          lines << "      def unwrap(capture)"
+          lines << "        return capture.content if capture.is_a?(Parsanol::Slice)"
+          lines << "        return capture[:value] if capture.is_a?(Hash) && capture.key?(:value)"
+          lines << ""
+          lines << "        capture"
+          lines << "      end"
+          lines.concat(scheme_supplement_fold_lines(supplements)) if supplements
+          lines << "    end"
+          lines << "  end"
+          lines << ""
+          lines << "  Pubid::#{module_name}::Builder.prepend(Pubid::Builder::AllPartsWrap)"
+          lines << "end"
+          body(lines.join("\n") << "\n")
+        end
+
+        # The supplement fold: the plus run synthesizes the declared
+        # consolidated bundle (the base first, members baseless); the
+        # slash run makes the outermost-last standalone chain.
+        def scheme_supplement_fold_lines(supplements)
+          wrapper_map = supplements.wrappers.map do |wrapper|
+            "        \"#{wrapper.face}\" => Identifiers::#{camelize(wrapper.name)},"
+          end
+          integer = supplements.number_kind == "integer"
+          lines = [
+            "",
+            "      # The wrapper classes by kind face: the run's dispatch.",
+            "      SUPPLEMENT_WRAPPERS = {",
+            *wrapper_map,
+            "      }.freeze",
+            "",
+            "      def wrap_supplements(base, data)",
+            "        rows = Array(data[:supplements])",
+            "        return base if rows.empty?",
+            "",
+            "        items = rows.map do |row|",
+            "          inner = row[:supplement] || row[\"supplement\"] || {}",
+            "          inner = inner.values.first if inner.values.all?(Hash)",
+            "          inner",
+            "        end",
+            "        if items.any? { |item| item[:supplements_plus] || item[\"supplements_plus\"] }",
+            "          members = items.map { |item| supplement_from(item) }",
+            "          Identifiers::ConsolidatedIdentifier.new(identifiers: [base] + members)",
+            "        else",
+            "          supplement_from(items.first, base: base)",
+            "        end",
+            "      end",
+            "",
+            "      def supplement_from(item, base: nil)",
+            "        kind = unwrap(item[:supplement_kind] || item[\"supplement_kind\"])",
+            "        number = unwrap(item[:supplement_number] || item[\"supplement_number\"])",
+            "        attrs = {}",
+            "        attrs[:base] = base if base",
+            integer ? "        attrs[:number] = number.to_i" : "        attrs[:number] = present_string(number)",
+          ]
+          supplements.date.each do |column|
+            capture = "supplements_#{column}"
+            lines << "        attrs[:#{column}] = present_string(unwrap(item[:#{capture}] || item[\"#{capture}\"]))"
+          end
+          lines.concat([
+            "        SUPPLEMENT_WRAPPERS.fetch(kind.to_s).new(**attrs)",
+            "      end",
+          ])
+          if supplements.fragment
+            lines.concat([
+              "",
+              "      def wrap_fragment(identifier, data)",
+              "        return identifier unless data[:#{supplements.fragment.field}]",
+              "",
+              "        Identifiers::Fragment.new(",
+              "          number: unwrap(data[:#{supplements.fragment.field}]).to_s, base: identifier,",
+              "        )",
+              "      end",
+            ])
+          end
+          lines
+        end
+
         def render_expression
           sequence = definition.templates[:canonical].sequences.first
           parts = sequence.map { |item| render_item_source(item) }
@@ -1359,6 +1864,651 @@ module Pubid
 
         def __dir_placeholder__
           "\#{__dir__}"
+        end
+
+# The canonical render face as the emitted renderer's interpolation
+        # over the field view, with the required head group as the face
+        # selection the compiler's verifier applies.
+        def scheme_render_expression
+          sequence = definition.templates[:canonical].sequences.first
+          sequence.map { |item| scheme_view_item_source(item) }.join
+        end
+
+        def scheme_view_item_source(item)
+          case item
+          when Template::Lit
+            item.text.gsub("\\\\") { "\\\\\\" }.gsub('"') { '\\"' }.gsub('#{') { '\\#{' }
+          when Template::Field
+            "\#{f[:#{item.name}]}"
+          when Template::Opt, Template::Group
+            alternatives = item.inner.sequences
+            faces = alternatives.map { |seq| scheme_view_sequence_source(seq) }
+            guards = alternatives.map do |seq|
+              seq.filter_map { |i| "f[:#{i.name}]" if Template::Field === i }
+            end
+            required = Template::Group === item
+            if faces.size == 1
+              body = faces.first
+              guard = guards.first.any? ? guards.first.join(" && ") : "true"
+              if required
+                "\#{(\"#{body}\") if #{guard} || true}"
+              else
+                "\#{(\"#{body}\") if #{guard}}"
+              end
+            else
+              branches = faces.each_with_index.map do |face_body, i|
+                guard = guards[i].any? ? guards[i].join(" && ") : "true"
+                "#{i.zero? ? 'if' : 'elsif'} #{guard}; \"#{face_body}\""
+              end
+              "\#{#{branches.join(' ')}; end}"
+            end
+          else
+            raise Error, "render face may only carry literals and fields"
+          end
+        end
+
+        def scheme_view_sequence_source(sequence)
+          sequence.map { |item| scheme_view_item_source(item) }.join
+        end
+
+        # The field view lines: the identifier's columns, with the declared
+        # value maps applied (the stored stage code renders as its
+        # spelling) and the date binding read through the calendar.
+        def scheme_view_lines
+          adopted_field = definition.adopted&.field
+          fragment_field = definition.supplements&.fragment&.field
+          run_name = definition.supplements&.run
+          item_names = definition.fields
+            .select { |f| f.kind == "list" && f.item }.map(&:item)
+          lines = []
+          definition.fields.each do |field|
+            next if item_names.include?(field.name)
+            next if field.builder_only && field.name != adopted_field &&
+                    field.name != fragment_field && field.name != run_name
+
+            if field.name == run_name
+              next # the run is composed by the walker; set after the view
+            elsif field.name == definition.adopted&.field
+              lines << "          #{field.name}: root.respond_to?(:adopted) ? root.adopted : nil,"
+            elsif field.name == definition.supplements&.fragment&.field
+              next # the fragment face is composed by the walker
+            elsif field.name == "stage"
+              lines << "          #{field.name}: FACE_stage.fetch(root.typed_stage&.code&.to_s, root.typed_stage&.code&.to_s),"
+            elsif token_position_field?(field)
+              tokens = field_pattern_tokens(field)
+              lines << "          #{field.name}: (v = root.type&.abbr) && #{ruby_array(tokens)}.include?(v) ? v : nil,"
+            elsif field.kind == "list"
+              glue = field.render&.glue || "-"
+              lines << "          #{field.name}: root.#{field.name}.to_a.any? ? root.#{field.name}.map { |item| \"#{glue}\#{item.respond_to?(:body) ? item.body : item}\" }.join : nil,"
+            elsif date_binding&.fields&.include?(field.name)
+              lines << "          #{field.name}: root.date&.#{field.name},"
+            elsif field.render.is_a?(Hash)
+              # A mapped column: the stored value renders through the
+              # declared face map ("pren" renders "prEN").
+              lines << "          #{field.name}: FACE_#{field.name}.fetch(root.#{field.name}, root.#{field.name}),"
+            elsif field.name == "publisher"
+              lines << "          #{field.name}: root.publisher&.respond_to?(:body) ? root.publisher.body : root.publisher,"
+            else
+              lines << "          #{field.name}: root.#{field.name},"
+            end
+          end
+          lines
+        end
+
+        # The fields the face reads from the type component's abbreviation
+        # (the type/guide dispatch captures — the classes carry the token
+        # as their type, never as a column).
+        def token_position_field?(field)
+          %w[type guide].include?(field.name)
+        end
+
+        # The literal spellings a field's pattern alternates over (the
+        # quoted tokens of the type/guide patterns).
+        def field_pattern_tokens(field)
+          field.pattern.scan(/"([^"]+)"/).flatten
+        end
+
+        # The face maps a mapped column carries, emitted as constants the
+        # renderer reads ("pren" → "prEN").
+        def scheme_face_map_lines
+          definition.fields.select { |f| f.render.is_a?(Hash) }.map do |field|
+            rows = field.render.map { |k, v| "        #{k.inspect} => #{v.inspect}," }.join("\n")
+            ["      FACE_#{field.name} = {", rows, "      }.freeze"].join("\n")
+          end
+        end
+
+        def scheme_renderer_file
+          lines = []
+          lines << "module Pubid"
+          lines << "  module #{module_name}"
+          lines << "    # Human renderer, generated from the canonical template."
+          lines << "    class Renderer < ::Pubid::Renderers::Base"
+          scheme_face_map_lines.each { |block| lines << block }
+          lines << "      def render(**_opts)"
+          lines << "        f = render_fields(@id)"
+          lines << "        \"#{scheme_render_expression}\""
+          lines << "      end"
+          lines << ""
+          lines << "      private"
+          lines << ""
+          lines << "      # The field view: a wrapper reads through to the wrapped"
+          lines << "      # standard and composes the printed run once — the standalone"
+          lines << "      # chain behind its slash, the consolidated members behind the"
+          lines << "      # plus — and the fragment face follows its base."
+          lines << "      def render_fields(id)"
+          lines << "        root = id"
+          lines << "        run = +\"\""
+          lines << "        members = nil"
+          lines << "        frag = nil"
+          if definition.supplements&.fragment
+            lines << "        if root.is_a?(Identifiers::Fragment)"
+            lines << "          frag = root.number"
+            lines << "          root = root.base"
+            lines << "        end"
+          end
+          if definition.supplements&.consolidated
+            lines << "        if root.is_a?(Identifiers::ConsolidatedIdentifier)"
+            lines << "          base, *consolidated = root.identifiers"
+            lines << "          members = consolidated"
+            lines << "          root = base"
+            lines << "        end"
+          end
+          if definition.supplements
+            lines << "        while root.is_a?(Identifiers::Supplement)"
+            lines << "          run.prepend(\"/\#{root.supplement_notation}\")"
+            lines << "          root = root.base"
+            lines << "        end"
+            if definition.supplements.consolidated
+              lines << "        members&.each do |member|"
+              lines << "          run << \"+\#{member.supplement_notation}\""
+              lines << "        end"
+            end
+          end
+          lines << "        view = {"
+          lines.concat(scheme_view_lines)
+          lines << "        }"
+          run_name = definition.supplements&.run
+          if run_name
+            lines << "        view[:#{run_name}] = run.empty? ? nil : run"
+          end
+          if fragment_field = definition.supplements&.fragment&.field
+            lines << "        view[:#{fragment_field}] = frag"
+          end
+          lines << "        view"
+          lines << "      end"
+          lines << "    end"
+          lines << "  end"
+          lines << "end"
+          body(lines.join("\n") << "\n")
+        end
+
+        def scheme_urn_generator_file
+          segments = definition.urn.official || []
+          wrapper_urns = definition.supplements&.wrappers&.select(&:urn)
+          lines = []
+          lines << "module Pubid"
+          lines << "  module #{module_name}"
+          lines << "    # The official URN generator: the scheme's declared namespace"
+          lines << "    # (#{definition.urn.namespace.inspect}) and the ordered fused segments"
+          lines << "    # (feature 6) — the publisher group, the adopted document's"
+          lines << "    # fused MR string, the composed code, the year, the draft"
+          lines << "    # stage. A wrapper reads through to its subject and appends"
+          lines << "    # its declared chain; the consolidated bundle marks each"
+          lines << "    # member with the plus marker."
+          lines << "    class UrnGenerator < ::Pubid::UrnGenerator::Base"
+          lines << "      def urn_namespace"
+          lines << "        #{definition.urn.namespace.inspect}"
+          lines << "      end"
+          lines << ""
+          lines << "      def generate"
+          lines << "        id = @identifier"
+          lines << "        members = nil"
+          lines << "        frag_segments = []"
+          lines << "        wrapper = []"
+          if definition.supplements&.fragment
+            lines << "        if id.is_a?(Identifiers::Fragment)"
+            lines << "          frag_segments = wrapper_segments(id)"
+            lines << "          id = id.base"
+            lines << "        end"
+          end
+          if definition.supplements&.consolidated
+            lines << "        if id.is_a?(Identifiers::ConsolidatedIdentifier)"
+            lines << "          base, *consolidated = id.identifiers"
+            lines << "          members = consolidated"
+            lines << "          id = base"
+            lines << "        end"
+          end
+          if definition.supplements
+            lines << "        while id.is_a?(Identifiers::Supplement)"
+            lines << "          wrapper.prepend(*wrapper_segments(id))"
+            lines << "          id = id.base"
+            lines << "        end"
+          end
+          lines << "        @identifier = id"
+          lines << "        parts = [\"urn\", urn_namespace]"
+          lines << "        parts.concat(official_segments)"
+          lines << "        parts.concat(wrapper)"
+          if definition.supplements&.consolidated
+            lines << "        members&.each do |member|"
+            lines << "          parts << \"plus\""
+            lines << "          parts.concat(wrapper_segments(member))"
+            lines << "        end"
+          end
+          lines << "        parts.concat(frag_segments)"
+          lines << "        parts.join(\":\")"
+          lines << "      end"
+          lines << ""
+          lines << "      private"
+          lines << ""
+          lines << "      def official_segments"
+          lines << "        segments = []"
+          lines << "        " + segments.map { |segment| urn_segment_source(segment) }.join("\n        ")
+          lines << "        segments"
+          lines << "      end"
+          lines << ""
+          lines << "      # One wrapper's declared URN chain: the kind word, then the"
+          lines << "      # wrapper's columns (the ordinal, the year-month date)."
+          lines << "      def wrapper_segments(id)"
+          lines << "        segments = case id"
+          wrapper_urns&.each do |wrapper|
+            lines << "        when Identifiers::#{camelize(wrapper.name)}"
+            lines << "          #{wrapper_segment_source(wrapper.urn)}"
+          end
+          if (fragment = definition.supplements&.fragment)&.urn
+            lines << "        when Identifiers::Fragment"
+            lines << "          #{wrapper_segment_source(fragment.urn)}"
+          end
+          lines << "        else"
+          lines << "          []"
+          lines << "        end"
+          lines << "        segments.map(&:to_s).reject(&:empty?)"
+          lines << "      end"
+          lines << "    end"
+          lines << "  end"
+          lines << "end"
+          body(lines.join("\n") << "\n")
+        end
+
+        # The wrapper's chain segments: lowercase words are literals, the
+        # column refs read the wrapper (`number`, a date column, or the
+        # composed `date`).
+        def wrapper_segment_source(segments)
+          parts = segments.map do |segment|
+            case segment
+            when "number" then "id.number"
+            when "date" then "(id.respond_to?(:supplement_date) ? id.supplement_date : [id.year, id.month].compact.join(\"-\") )"
+            when "year" then "id.year"
+            when "month" then "id.month"
+            else "\"#{segment}\""
+            end
+          end
+          "[#{parts.join(', ')}]"
+        end
+
+        def scheme_urn_schema_file
+          atoms = definition.urn.atoms.map do |atom|
+            kind = atom.kind == "string" ? "" : ", kind: :#{atom.kind}"
+            "        atom #{atom.path.inspect}, #{atom.prefix.inspect}#{kind}"
+          end.join("\n")
+          types = definition.urn.types.map do |type|
+            "        type #{type.type.inspect}, #{type.token.inspect}, core: #{core_literal(type.core)}"
+          end.join("\n")
+
+          body(<<~RUBY)
+            module Pubid
+              module #{module_name}
+                # The pubid-scheme URN schema, registered under the compiled
+                # flavor key. The definition's declared namespace
+                # (#{definition.urn.namespace.inspect}) is the scheme's canonical
+                # namespace; identifiers carry the scheme's wire tag, so their
+                # pubid URNs encode through the scheme's own schema.
+                PubidUrnSchema = Pubid::PubidUrn.define("#{key}") do
+          #{atoms.chomp}
+          #{types.chomp}
+                end
+              end
+            end
+          RUBY
+        end
+
+        def scheme_identifiers_file
+          rows = definition.types.map { |type| camelize(type.name) }
+          if definition.supplements
+            rows += ["Supplement"] +
+              definition.supplements.wrappers.map { |w| camelize(w.name) }
+            rows << "ConsolidatedIdentifier" if definition.supplements.consolidated
+            rows << "Fragment" if definition.supplements.fragment
+          end
+          rows_source = rows.map do |name|
+            "          autoload :#{name}, \"#{__dir_placeholder__}/identifiers/#{snake_file(name)}\""
+          end.join("\n")
+          body(<<~RUBY)
+            module Pubid
+              module #{module_name}
+                module Identifiers
+              #{rows_source.chomp}
+                end
+              end
+            end
+          RUBY
+        end
+
+        # The autoload file name: the camelized constant back to its
+        # snake_case file ("ConsolidatedIdentifier" → "consolidated_identifier").
+        def snake_file(name)
+          name.gsub(/([A-Z\d]+)([A-Z][a-z])/, '\1_\2')
+            .gsub(/([a-z\d])([A-Z])/, '\1_\2')
+            .downcase
+        end
+
+        # One concrete type class: the typed stages (the declared draft
+        # stages for the default type, the declared type stage else), the
+        # publisher default (feature 5), the scheme-canonical wire tag,
+        # and — for the adopted wrapper types (feature 4) — the adopted
+        # attribute and the MR/URN hooks the adopted identity reads.
+        def scheme_type_file(type)
+          stages = if type == default_type
+            rows = []
+            if (published = type.stage)
+              rows << [
+                "          ::Pubid::Components::TypedStage.new(",
+                "            code: :#{published.code}, stage_code: :#{published.stage_code},",
+                "            type_code: :#{type.key}, abbr: #{ruby_array(published.abbr)},",
+                "            name: #{type.title.inspect}, harmonized_stages: [],",
+                "          ),",
+              ]
+            end
+            definition.stages.each do |stage|
+              rows << [
+                "          ::Pubid::Components::TypedStage.new(",
+                "            code: :#{stage.name}, stage_code: :#{stage.urn},",
+                "            type_code: :#{default_type.key}, abbr: #{ruby_array(stage.tokens)},",
+                "            name: #{stage.name.inspect}, harmonized_stages: [],",
+                "          ),",
+              ]
+            end
+            rows.flatten
+          elsif type.stage
+            [
+              "          ::Pubid::Components::TypedStage.new(",
+              "            code: :#{type.stage.code}, stage_code: :#{type.stage.stage_code},",
+              "            type_code: :#{type.key}, abbr: #{ruby_array(type.stage.abbr)},",
+              "            name: #{type.title.inspect}, harmonized_stages: [],",
+              "          ),",
+            ]
+          else
+            []
+          end
+          typed_stages = ["          TYPED_STAGES = [", *stages, "          ].freeze"].join("\n")
+
+          lines = []
+          lines << "module Pubid"
+          lines << "  module #{module_name}"
+          lines << "    module Identifiers"
+          lines << "      # Concrete #{type.title} identifier type (PFS type `#{type.name}`)."
+          lines << "      class #{camelize(type.name)} < Identifier"
+          lines << typed_stages
+          lines << ""
+          lines << "        def self.type"
+          lines << "          { key: #{symbol_literal(type.key)}, web: #{symbol_literal(type.web)}, title: #{type.title.inspect}, short: #{type.short.inspect} }"
+          lines << "        end"
+          lines << ""
+          lines << "        # The publisher default (feature 5): the type's own token"
+          lines << "        # when the type is its designation, else the scheme default."
+          lines << "        def self.default_publisher"
+          lines << "          ::Pubid::Components::Publisher.new(body: #{(type.publisher_default || definition.organization.publisher).inspect})"
+          lines << "        end"
+          lines << ""
+          lines << "        attribute :publisher, ::Pubid::Components::Publisher, default: -> { self.class.default_publisher }"
+          lines << "        attribute :type, ::Pubid::Components::Type, default: -> { self.class.default_type }"
+          lines << ""
+          lines << "        def self.default_type"
+          lines << "          ::Pubid::Components::Type.new(abbr: type[:short])"
+          lines << "        end"
+          if adopted_type?(type)
+            lines << ""
+            lines << "        # The adopted document (feature 4): the whole identity lives"
+            lines << "        # on the nested ISO/IEC identifier."
+            lines << "        attribute :adopted, ::Pubid::Identifier, polymorphic: true"
+            lines << ""
+            lines << "        def root"
+            lines << "          adopted ? adopted.root : self"
+            lines << "        end"
+            lines << ""
+            lines << "        # MR \"cen.iso.ts.21003-7\": the publisher group fused, then the"
+            lines << "        # adopted document's own MR string in place of a number."
+            lines << "        def mr_publisher"
+            lines << "          mr_join(*([publisher] + Array(copublishers)).compact"
+            lines << "            .map { |p| p.to_s.downcase })"
+            lines << "        end"
+            lines << ""
+            lines << "        def mr_number_with_part"
+            lines << "          adopted ? adopted.to_mr_string : super"
+            lines << "        end"
+          end
+          lines << ""
+          lines << "        # The scheme-canonical wire tag declared in the definition:"
+          lines << "        # to_hash stays byte-identical with the scheme's coded"
+          lines << "        # flavor, and this flavor's own from_hash routes the tag"
+          lines << "        # to this class."
+          lines << "        def self.polymorphic_name"
+          lines << "          #{type.tag.inspect}"
+          lines << "        end"
+          lines << "      end"
+          lines << "    end"
+          lines << "  end"
+          lines << "end"
+          body(lines.join("\n") << "\n")
+        end
+
+        # The types the adopted dispatch builds (feature 4): those the
+        # definition declares `adopted: true` — the adoption wrapper class
+        # and the ENV switch.
+        def adopted_type?(type)
+          type.adopted == true
+        end
+
+        def scheme_wrapper_file(wrapper)
+          body(<<~RUBY)
+            module Pubid
+              module #{module_name}
+                module Identifiers
+                  # The synthesized #{wrapper.title} wrapper (PFS supplements
+                  # declaration, issue #121 feature 3): the kind face
+                  # "#{wrapper.face}" is the run's dispatch token and the
+                  # printed notation's face.
+                  class #{camelize(wrapper.name)} < Supplement
+                    FACE = "#{wrapper.face}".freeze
+
+                    def self.face
+                      FACE
+                    end
+
+                    def self.polymorphic_name
+                      #{wrapper.tag.inspect}
+                    end
+                    #{wrapper_suffix_source(wrapper).strip.empty? ? '' : wrapper_suffix_source(wrapper)}
+                  end
+                end
+              end
+            end
+          RUBY
+        end
+
+        # The wrapper subclass's MR suffix from its declared segments:
+        # lowercase words are literals; the column refs read the wrapper.
+        def wrapper_suffix_source(wrapper)
+          return "" unless wrapper.mr
+
+          segs = wrapper.mr.map do |segment|
+            case segment
+            when "number" then "number"
+            when "date" then "supplement_date"
+            when "year" then "year"
+            when "month" then "month"
+            else "\"#{segment}\""
+            end
+          end
+          [
+            "",
+            "        # The MR slug's supplement suffix: the shared MrString",
+            "        # recurses into base and appends this.",
+            "        def mr_supplement_suffix",
+            "          mr_join_segments(#{segs.join(', ')})",
+            "        end",
+          ].join("\n").gsub(/^/, "                    ")
+        end
+
+        # The supplement wrapper base: the base identifier, the ordinal
+        # (declared kind), the wrapper-owned year/month columns, and the
+        # declared MR suffix segments.
+        def scheme_supplement_file
+          wrappers = definition.supplements.wrappers
+          integer = definition.supplements.number_kind == "integer"
+          kind_attr = wrappers.any?(&:number_optional) ? "        attribute :number, :#{integer ? 'integer' : 'string'}" : "        attribute :number, :#{integer ? 'integer' : 'string'}"
+          lines = []
+          lines << "module Pubid"
+          lines << "  module #{module_name}"
+          lines << "    module Identifiers"
+          lines << "      # The supplement wrapper base: the wrapper owns its ordinal"
+          lines << "      # and the base identifier; every delegated attribute reads"
+          lines << "      # through (the coded SupplementIdentifier shape)."
+          lines << "      class Supplement < ::Pubid::#{module_name}::Identifier"
+          lines << "        attribute :base, ::Pubid::#{module_name}::Identifier"
+          lines << kind_attr
+          definition.supplements.date.each do |column|
+            lines << "        attribute :#{column}, :#{integer ? 'integer' : 'string'}"
+          end
+          lines << ""
+          lines << "        def base_document"
+          lines << "          base&.base_document || self"
+          lines << "        end"
+          lines << ""
+          lines << "        def drop_supplements"
+          lines << "          base || self"
+          lines << "        end"
+          if definition.supplements.date.include?("year") &&
+             definition.supplements.date.include?("month")
+            lines << ""
+            lines << "        # The wrapper's date: \"2016-11\", \"2003\", or nil."
+            lines << "        def supplement_date"
+            lines << "          return nil unless year"
+            lines << ""
+            lines << "          [year, month].compact.reject(&:empty?).join(\"-\")"
+            lines << "        end"
+          end
+          lines << ""
+          lines << "        # The printed notation: the kind face, the ordinal (absent"
+          lines << "        # for an unnumbered corrigendum) and the declared date tail."
+          lines << "        # The bare notation; the renderer's walkers add the"
+          lines << "        # standalone slash and the consolidated plus themselves."
+          lines << "        def supplement_notation"
+          lines << "          \"\#{self.class.face}\#{number}#{notation_date_tail}\""
+          lines << "        end"
+          lines << ""
+          lines << "      end"
+          lines << "    end"
+          lines << "  end"
+          lines << "end"
+          body(lines.join("\n") << "\n")
+        end
+
+        def notation_date_tail
+          tail = +""
+          if definition.supplements.date.include?("year")
+            tail << '#{year ? ":#{year}" : \'\'}'
+          end
+          if definition.supplements.date.include?("month")
+            tail << '#{month ? "-#{month}" : \'\'}'
+          end
+          tail
+        end
+
+        def scheme_consolidated_file
+          consolidated = definition.supplements.consolidated
+          body(<<~RUBY)
+            module Pubid
+              module #{module_name}
+                module Identifiers
+                  # The consolidated (plus-run) bundle: the base document is
+                  # the first member; the supplements carry no base.
+                  class ConsolidatedIdentifier < ::Pubid::#{module_name}::Identifier
+                    attribute :identifiers, ::Pubid::#{module_name}::Identifier,
+                              polymorphic: true, collection: true
+
+                    # The origin document. Members live in `identifiers`, so
+                    # walk the first member to its root.
+                    def root
+                      identifiers&.first&.root || self
+                    end
+
+                    def base_document
+                      identifiers&.first&.base_document || self
+                    end
+
+                    def drop_supplements
+                      identifiers&.first || self
+                    end
+
+                    # The base document, then each member's own supplement
+                    # suffix behind the plus marker — the coded shape.
+                    def to_mr_string
+                      base, *supplements = identifiers
+                      return "" unless base
+
+                      ([base.to_mr_string] +
+                        supplements.map { |s| "plus-\#{s.mr_supplement_suffix}" })
+                        .join(::Pubid::Renderers::MrString::SEPARATOR_SUPPLEMENT)
+                    end
+
+                    def self.polymorphic_name
+                      #{consolidated.tag.inspect}
+                    end
+                  end
+                end
+              end
+            end
+          RUBY
+        end
+
+        def scheme_fragment_file
+          fragment = definition.supplements.fragment
+          body(<<~RUBY)
+            module Pubid
+              module #{module_name}
+                module Identifiers
+                  # The fragment wrapper: a fragment of the amendment it
+                  # wraps; the fragment ordinal is its own `number`.
+                  class Fragment < ::Pubid::#{module_name}::Identifier
+                    attribute :base, ::Pubid::#{module_name}::Identifier
+                    attribute :number, :string
+
+                    def base_document
+                      base&.base_document || self
+                    end
+
+                    def drop_supplements
+                      base || self
+                    end
+
+                    def mr_supplement_suffix
+                      mr_join_segments("frag", number)
+                    end
+
+                    def self.polymorphic_name
+                      #{fragment.tag.inspect}
+                    end
+                  end
+                end
+              end
+            end
+          RUBY
+        end
+
+        # Trim the trailing newline variance: heredoc bodies end with a
+        # newline; files end with exactly one.
+        def body(text)
+          text.sub(/\A\n+/, "").sub(/\n*\z/, "\n")
         end
       end
     end
