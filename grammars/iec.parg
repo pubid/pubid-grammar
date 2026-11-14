@@ -123,6 +123,13 @@ grammar PubidIec version "0.1.0" edition 2 {
     1*word_ext_char
     *((dash / comma) 1*word_ext_char)
   }
+  # The dot sub-number run is 1*digit (pubid#725): the draft ballot faces
+  # print dotted supplement numbers ("/DAM 2.3:2022", "/DCOR 1.3") and the
+  # ballot-prefix faces print dotted base designations ("IEC/FDAM
+  # 60038-2.3"); a single digit lost every sub-number past ".3"-style
+  # shapes and rejected the multi-digit ones outright. The run is safe to
+  # leave unguarded: every segment that may follow (date, third_part,
+  # consolidated/vap tails) starts with a non-digit.
   # number and part_and_subpart are inlined fully to raw terms at every
   # capture site: a capture wrapping a bare rule ref expands to a list
   # of element hashes, while the inlined body binds as one scalar
@@ -147,7 +154,7 @@ grammar PubidIec version "0.1.0" edition 2 {
     ) as number_with_part
   }
   trf_org_number = ("CISPR" space) as trf_org number_with_part
-  stage_iteration = dot digit as stage_iteration
+  stage_iteration = dot 1*digit as stage_iteration
 
   undated = "--" / "—"
   # year_digits is inlined ("19" / "20" 2*digit !digit) at every capture
@@ -218,7 +225,7 @@ grammar PubidIec version "0.1.0" edition 2 {
         ) as supp_number_with_part
       )
     )
-    [ dot digit as supp_stage_iteration ]
+    [ dot 1*digit as supp_stage_iteration ]
     [
       [space] (
         (colon / dash) (
@@ -268,7 +275,7 @@ grammar PubidIec version "0.1.0" edition 2 {
         ) as supp2_number_with_part
       )
     )
-    [ dot digit as supp2_stage_iteration ]
+    [ dot 1*digit as supp2_stage_iteration ]
     [
       [space] (
         (colon / dash) (
@@ -431,6 +438,12 @@ grammar PubidIec version "0.1.0" edition 2 {
         ]
       ) as legacy_base_number_with_part
     )
+    # The ballot face's base designation carries the same dotted
+    # sub-number the plain base does ("IEC/FDAM 60038-2.3" — base 60038-2,
+    # stage iteration 3; pubid#725): without it the dot fell to the
+    # standalone/typed branches' supplement-number token and the
+    # designation did not stay whole on the ballot rule.
+    [ dot 1*digit as stage_iteration ]
     [
       [space] (
         (colon / dash) (
@@ -547,11 +560,18 @@ grammar PubidIec version "0.1.0" edition 2 {
     accept "IEC DCOR 60038-1"
     accept "IEC 60038-1/FDAM 1"
     accept "ISO/IEC 19772:2009(en)/DAM1:2019"
+    accept "IEC 60038-2/DAM 2.3:2022"
+    accept "IEC 60038-2/DCOR 1.3"
+    accept "IEC/FDAM 60038-2.3"
+    accept "IEC 60038-2.3"
     example "ISO/IEC 19772:2009(en)/DAM1:2019" { publisher: "ISO", languages: "en", supp_type_with_stage: "DAM", supp_number_with_part: "1", date: "2009", supp_date: "2019" }
     reject "nonsense"
     example "IEC/FDAM 60038-1" { publisher: "IEC", legacy_stage: "FDAM", legacy_base_number_with_part: "60038-1" }
     example "ISO/IEC PDAM 2 10646:2012" { publisher: "ISO", legacy_stage: "PDAM", legacy_supplement_number: "2", legacy_base_number_with_part: "10646", date: "2012" }
     example "ISO/IEC FPDAM 9075/1" { publisher: "ISO", legacy_stage: "FPDAM", legacy_base_number: "9075", legacy_base_part: "1" }
     example "ISO/IEC FDAM 1 14496-12:2004" { publisher: "ISO", legacy_stage: "FDAM", legacy_supplement_number: "1", legacy_base_number_with_part: "14496-12", date: "2004" }
+    example "IEC 60038-2/DAM 2.3:2022" { publisher: "IEC", number_with_part: "60038-2", supp_type_with_stage: "DAM", supp_number_with_part: "2", supp_stage_iteration: "3", supp_date: "2022" }
+    example "IEC/FDAM 60038-2.3" { publisher: "IEC", legacy_stage: "FDAM", legacy_base_number_with_part: "60038-2", stage_iteration: "3" }
+    example "IEC 60038-2.3" { publisher: "IEC", number_with_part: "60038-2", stage_iteration: "3" }
   }
 }
