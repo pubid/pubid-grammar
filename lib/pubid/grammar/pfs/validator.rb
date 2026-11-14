@@ -29,7 +29,7 @@ module Pubid
 
         TOP_LEVEL_KEYS = %w[
           pfs scheme title organization grammar types fields templates
-          urn examples modules date supplements mr
+          urn examples modules date supplements mr stages adopted
         ].freeze
 
         # The kinds a field's list render may declare.
@@ -66,11 +66,14 @@ module Pubid
           # (`en_face`) exactly like its own fragment.
           grammar = merged_grammar(modules, grammar)
           types = check_types(raw, scheme)
+          stages = check_stages(raw["stages"])
           fields = check_fields(raw, scheme, grammar)
           supplements, fields = check_supplements(raw["supplements"], fields)
-          templates = check_templates(raw, fields, grammar)
+          adopted = check_adopted(raw["adopted"], fields)
+          templates = check_templates(raw, fields, grammar, adopted,
+                                      raw.dig("supplements", "fragment", "field"))
           mr = check_mr(raw["mr"], fields)
-          urn = check_urn(raw, fields, supplements)
+          urn = check_urn(raw, fields, supplements, adopted)
 
           Definition::Root.new(
             source_path: source_path,
@@ -89,6 +92,8 @@ module Pubid
             date: check_date(raw.fetch("date", nil), fields),
             supplements: supplements,
             mr: mr,
+            stages: stages,
+            adopted: adopted,
           )
         end
 
@@ -429,11 +434,14 @@ module Pubid
           seen_keys = {}
           seen_tags = {}
           seen_abbrs = {}
+          seen_tokens = {}
+          seen_publisher_defaults = {}
           types.map do |name, body|
             unless name.is_a?(String) && NAME.match?(name)
               raise InvalidDefinition.new("types.#{name}", "type name must be snake_case")
             end
-            check_keys("types.#{name}", body, %w[key web title short tag stage])
+            check_keys("types.#{name}", body,
+                       %w[key web title short tag stage tokens publisher_default adopted])
 
             key = body["key"]
             unless key.is_a?(String) && NAME.match?(key)
@@ -466,6 +474,31 @@ module Pubid
             seen_tags[tag] = name
 
             stage = check_stage(name, body["stage"], seen_abbrs)
+            adopted = body["adopted"] || false
+            unless [true, false].include?(adopted)
+              raise InvalidDefinition.new("types.#{name}.adopted",
+                                          "must be a boolean")
+            end
+            tokens = check_type_tokens(name, body["tokens"], seen_tokens,
+                                       seen_abbrs)
+            publisher_default = body["publisher_default"]
+            if publisher_default && !adopted
+              unless publisher_default.is_a?(String) && TOKEN.match?(publisher_default)
+                raise InvalidDefinition.new(
+                  "types.#{name}.publisher_default",
+                  "must be the publisher token the type defaults to, " \
+                  "got #{publisher_default.inspect}",
+                )
+              end
+              if seen_publisher_defaults.key?(publisher_default)
+                raise InvalidDefinition.new(
+                  "types.#{name}.publisher_default",
+                  "ambiguity: publisher default #{publisher_default.inspect} is " \
+                  "already claimed by type #{seen_publisher_defaults[publisher_default].inspect}",
+                )
+              end
+              seen_publisher_defaults[publisher_default] = name
+            end
 
             Definition::Type.new(
               name: name,
@@ -475,8 +508,134 @@ module Pubid
               short: body["short"] || key,
               tag: tag,
               stage: stage,
+              tokens: tokens,
+              publisher_default: publisher_default,
+              adopted: adopted,
             )
           end
+        end
+
+        # The grammar spellings that select a type (issue #121 feature 1,
+        # multi-type declared emission): a type-position token ("TR") or a
+        # publisher-position token ("CR"). Tokens are unique across types,
+        # and a type's stage abbreviations may not double as another type's
+        # tokens — one spelling selects exactly one class.
+        def check_type_tokens(type_name, tokens, seen_tokens, seen_abbrs)
+          return [].freeze if tokens.nil?
+
+          unless tokens.is_a?(Array) && tokens.all?(String) && !tokens.empty?
+            raise InvalidDefinition.new(
+              "types.#{type_name}.tokens",
+              "must be a non-empty array of grammar spellings, got #{tokens.inspect}",
+            )
+          end
+          tokens.each_with_index do |token, i|
+            unless TOKEN.match?(token)
+              raise InvalidDefinition.new("types.#{type_name}.tokens[#{i}]",
+                                          "must be a grammar spelling, got #{token.inspect}")
+            end
+            owner = seen_tokens[token.upcase]
+            if owner
+              raise InvalidDefinition.new(
+                "types.#{type_name}.tokens[#{i}]",
+                "ambiguity: token #{token.inspect} already selects type " \
+                "#{owner.inspect} — one spelling selects exactly one class",
+              )
+            end
+            stage_owner = seen_abbrs[token.upcase]
+            if stage_owner && stage_owner != type_name
+              raise InvalidDefinition.new(
+                "types.#{type_name}.tokens[#{i}]",
+                "ambiguity: token #{token.inspect} is also a draft-stage " \
+                "abbreviation of type #{stage_owner.inspect}",
+              )
+            end
+            seen_tokens[token.upcase] = type_name
+          end
+          tokens.freeze
+        end
+
+        # The declared draft stages (issue #121 feature 2): `stages.<key>`
+        # names the serialized code ("pren"), its accepted spellings
+        # ("prEN") and the official-URN stage code ("proposal"). The
+        # spellings are unique across stages and never collide with a
+        # type token.
+        def check_stages(raw)
+          return {}.freeze if raw.nil?
+
+          unless raw.is_a?(Hash) && !raw.empty?
+            raise InvalidDefinition.new("stages", "must be a map of stage keys")
+          end
+
+          seen_tokens = {}
+          raw.map do |name, body|
+            unless name.is_a?(String) && NAME.match?(name)
+              raise InvalidDefinition.new("stages.#{name}", "stage key must be snake_case")
+            end
+            check_keys("stages.#{name}", body, %w[tokens urn])
+            tokens = body["tokens"]
+            unless tokens.is_a?(Array) && tokens.all?(String) && !tokens.empty?
+              raise InvalidDefinition.new(
+                "stages.#{name}.tokens",
+                "must be a non-empty array of accepted spellings, got #{tokens.inspect}",
+              )
+            end
+            tokens.each_with_index do |token, i|
+              unless TOKEN.match?(token)
+                raise InvalidDefinition.new("stages.#{name}.tokens[#{i}]",
+                                            "must be a spelling, got #{token.inspect}")
+              end
+              if seen_tokens.key?(token.upcase)
+                raise InvalidDefinition.new(
+                  "stages.#{name}.tokens[#{i}]",
+                  "ambiguity: spelling #{token.inspect} already claimed by stage " \
+                  "#{seen_tokens[token.upcase].inspect}",
+                )
+              end
+              seen_tokens[token.upcase] = name
+            end
+            urn = body["urn"]
+            unless urn.is_a?(String) && !urn.empty?
+              raise InvalidDefinition.new("stages.#{name}.urn",
+                                          "must be the official-URN stage code")
+            end
+
+            Definition::StageDecl.new(name: name, tokens: tokens.freeze, urn: urn)
+          end
+        end
+
+        # The adopted-base dispatch (issue #121 feature 4, the §4 coded
+        # escape hatch): `adopted.field` names the builder-only capture
+        # carrying the adopted run; `hook` must be `coded` — the generated
+        # builder calls the vendored hook class, which parses the adopted
+        # string with the owning schemes' flavors. Never implicit: without
+        # the section the capture builds nothing.
+        def check_adopted(raw, fields)
+          return nil if raw.nil?
+
+          unless raw.is_a?(Hash)
+            raise InvalidDefinition.new("adopted", "must be a map")
+          end
+          check_keys("adopted", raw, %w[field hook])
+          field = raw["field"]
+          declared = fields.find { |f| f.name == field }
+          unless declared && declared.builder_only && declared.kind == "string"
+            raise InvalidDefinition.new(
+              "adopted.field",
+              "must name a declared builder-only string capture — the run " \
+              "the hook parses, got #{field.inspect}",
+            )
+          end
+          hook = raw["hook"]
+          unless hook == "coded"
+            raise InvalidDefinition.new(
+              "adopted.hook",
+              "must be `coded` — the escape hatch calls the vendored hook " \
+              "class beside the generated flavor, got #{hook.inspect}",
+            )
+          end
+
+          Definition::Adopted.new(field: field, hook: hook)
         end
 
         def check_stage(type_name, stage, seen_abbrs)
@@ -542,7 +701,7 @@ module Pubid
               )
             end
             check_keys("fields.#{name}", body,
-                       %w[pattern kind sub_numbering item render fold builder_only])
+                       %w[pattern kind sub_numbering item render fold builder_only map urn])
 
             pattern = body["pattern"]
             unless pattern.is_a?(String) && !pattern.empty?
@@ -575,9 +734,11 @@ module Pubid
               pattern: pattern,
               kind: kind,
               item: body["item"],
-              render: check_list_render(name, kind, body["render"]),
+              render: check_field_render(name, kind, body["render"]),
               fold: check_fold(name, body["fold"]),
               builder_only: body["builder_only"] || false,
+              map: check_value_map(name, body["map"], "captured token"),
+              urn: check_value_map(name, body["urn"], "stored value"),
             )
           end
 
@@ -587,16 +748,47 @@ module Pubid
 
         # The list render declaration: REQUIRED on a list field (the render
         # face composes the array through it), refused on a plain field.
-        def check_list_render(name, kind, render)
+        # A plain string field may instead carry a VALUE map as its render
+        # face (the draft-stage spellings — the stored code "pren" prints
+        # as "prEN"), and a list keeps the composition.
+        def check_field_render(name, kind, render)
           return nil if render.nil?
 
-          unless kind == "list"
+          if kind == "list"
+            check_list_render(name, render)
+          else
+            unless render.is_a?(Hash)
+              raise InvalidDefinition.new(
+                "fields.#{name}.render",
+                "on a string field this is the value→face map (a list carries " \
+                "the composition map), got #{render.inspect}",
+              )
+            end
+            check_value_map(name, render, "stored value")
+          end
+        end
+
+        # The value map (issue #121 features 2 and 5): a Hash of
+        # String → String — captured token → stored column (`map:`) or
+        # stored column → printed/URN face (`render:` / `urn:`). Fail-closed:
+        # an off-table value is a KeyError at the consumer, never a silent
+        # pass-through.
+        def check_value_map(name, map, what)
+          return nil if map.nil?
+
+          unless map.is_a?(Hash) && !map.empty? &&
+              map.keys.all?(String) && map.values.all?(String)
             raise InvalidDefinition.new(
-              "fields.#{name}.render",
-              "only a `kind: list` field renders a composition — a plain " \
-              "string capture renders whole",
+              "fields.#{name}",
+              "must be a map of #{what} → value, got #{map.inspect}",
             )
           end
+          map.freeze
+        end
+
+        # The list render declaration: REQUIRED on a list field (the render
+        # face composes the array through it), refused on a plain field.
+        def check_list_render(name, render)
           unless render.is_a?(Hash)
             raise InvalidDefinition.new("fields.#{name}.render", "must be a map")
           end
@@ -733,7 +925,8 @@ module Pubid
           "#{pattern} [(#{separators.map { |s| "\"#{s}\"" }.join(' / ')}) 1*digit]"
         end
 
-        def check_templates(raw, fields, grammar)
+        def check_templates(raw, fields, grammar, adopted = nil,
+                            fragment_field = nil)
           templates = raw["templates"]
           unless templates.is_a?(Hash)
             raise InvalidDefinition.new("templates", "section is required")
@@ -754,7 +947,8 @@ module Pubid
               "under `alternates:`",
             )
           end
-          check_refs(canonical, fields, grammar, "templates.canonical")
+          check_refs(canonical, fields, grammar, "templates.canonical", adopted,
+                     fragment_field)
           check_canonical_optionals(canonical)
 
           alternates = (templates["alternates"] || []).map.with_index do |text, i|
@@ -764,7 +958,7 @@ module Pubid
             end
             rule = "templates.alternates[#{i}]"
             parsed = Template.parse(text, rule: rule)
-            check_refs(parsed, fields, grammar, rule)
+            check_refs(parsed, fields, grammar, rule, adopted, fragment_field)
 
             if Template.same_structure?(parsed, canonical)
               raise InvalidDefinition.new(
@@ -793,18 +987,23 @@ module Pubid
           { canonical: canonical, alternates: alternates }
         end
 
-        def check_refs(template, fields, grammar, rule)
+        def check_refs(template, fields, grammar, rule, adopted = nil,
+                       fragment_field = nil)
           # The captures a face may never reference: a list's item capture
           # (the list renders whole through its `render:` composition) and
           # the supplement run's generated internals. Renderable
           # exceptions: a fold's SOURCE capture (its render presence is
-          # the fold flag) and the run list itself.
+          # the fold flag), the run list itself, the adopted dispatch's
+          # run (the face renders the adopted identifier) and the
+          # fragment's ordinal capture.
           item_names = fields.select { |f| f.kind == "list" && f.item }.map(&:item)
           run_name = fields.find { |f| f.builder_only && f.kind == "list" }&.name
+          renderable_builder_only = [adopted&.field, fragment_field].compact
           unrenderable = fields.select do |f|
             next true if item_names.include?(f.name)
             next false if f.fold
             next false if f.name == run_name
+            next false if renderable_builder_only.include?(f.name)
 
             f.builder_only
           end.map(&:name)
@@ -862,7 +1061,7 @@ module Pubid
           end
         end
 
-        def check_urn(raw, fields, supplements)
+        def check_urn(raw, fields, supplements, adopted)
           urn = raw["urn"]
           unless urn.is_a?(Hash)
             raise InvalidDefinition.new("urn", "section is required")
@@ -876,14 +1075,16 @@ module Pubid
                                         "must be a lower-case namespace, got #{namespace.inspect}")
           end
 
-          official = check_urn_official(urn["official"] || [], fields)
+          official = check_urn_official(urn["official"] || [], fields, adopted)
 
           schema = urn["schema"] || {}
           atoms = (schema["atoms"] || []).map.with_index do |atom, i|
             rule = "urn.schema.atoms[#{i}]"
             check_keys(rule, atom, %w[path prefix kind])
             path = atom["path"]
-            unless fields.any? { |f| f.name == path }
+            # `identifiers` is the consolidated bundle's member list — a
+            # compiler-generated column the declared wrappers synthesize.
+            unless fields.any? { |f| f.name == path } || path == "identifiers"
               raise InvalidDefinition.new(rule, "unknown field path #{path.inspect}")
             end
             prefix = atom["prefix"]
@@ -1020,7 +1221,9 @@ module Pubid
           unless raw.is_a?(Hash)
             raise InvalidDefinition.new("supplements", "must be a map")
           end
-          check_keys("supplements", raw, %w[run item kind number wrappers])
+          check_keys("supplements", raw,
+                     %w[run item kind number wrappers number_kind
+                        date consolidated fragment])
           names = %w[run item kind number].map do |key|
             value = raw[key]
             unless value.is_a?(String) && NAME.match?(value)
@@ -1037,8 +1240,35 @@ module Pubid
               "be distinct — two of #{names.map(&:inspect).join(', ')} collide",
             )
           end
+          number_kind = raw["number_kind"] || "integer"
+          unless %w[integer string].include?(number_kind)
+            raise InvalidDefinition.new(
+              "supplements.number_kind",
+              "unsupported ordinal kind #{number_kind.inspect} — known: " \
+              "integer (etsi), string (cen)",
+            )
+          end
+          date_columns = raw["date"] || []
+          unless date_columns.is_a?(Array) && date_columns.all?(String)
+            raise InvalidDefinition.new("supplements.date",
+                                        "must be an array of column names")
+          end
+          date_columns.each do |column|
+            unless %w[year month].include?(column)
+              raise InvalidDefinition.new(
+                "supplements.date",
+                "unsupported wrapper date column #{column.inspect} — known: " \
+                "year, month (the wrapper's own calendar columns)",
+              )
+            end
+          end
+          # The extended shape's generated capture names too: the run's
+          # separator captures and the declared date columns.
+          generated_names = names +
+            date_columns.map { |c| "#{run_name}_#{c}" } +
+            ["#{run_name}_slash", "#{run_name}_plus"]
           collides = fields.select do |field|
-            names.include?(field.name) || names.include?(field.fold&.flag)
+            generated_names.include?(field.name) || generated_names.include?(field.fold&.flag)
           end
           unless collides.empty?
             raise InvalidDefinition.new(
@@ -1053,6 +1283,7 @@ module Pubid
             raise InvalidDefinition.new("supplements.wrappers",
                                         "at least one wrapper kind is required")
           end
+
           faces = {}
           tags = {}
           rows = wrappers.map do |name, body|
@@ -1060,9 +1291,22 @@ module Pubid
               raise InvalidDefinition.new("supplements.wrappers.#{name}",
                                           "wrapper name must be snake_case")
             end
-            check_keys("supplements.wrappers.#{name}", body, %w[face tag title])
+            check_keys("supplements.wrappers.#{name}", body,
+                       %w[face tag title fields number_optional mr urn])
+            wrapper_number_optional = body["number_optional"] || false
+            unless [true, false].include?(wrapper_number_optional)
+              raise InvalidDefinition.new(
+                "supplements.wrappers.#{name}.number_optional",
+                "must be a boolean",
+              )
+            end
             face = body["face"]
-            unless face.is_a?(String) && face.match?(/\A[A-Z]\z/)
+            # The flat shape dispatches single-letter faces; the extended
+            # shape (issue #121 feature 3) takes the cen word faces ("AC").
+            face_shape = extended_shape?(number_kind,
+                                         date_columns, raw["consolidated"],
+                                         raw["fragment"]) ? /\A[A-Z]+\z/ : /\A[A-Z]\z/
+            unless face.is_a?(String) && face.match?(face_shape)
               raise InvalidDefinition.new(
                 "supplements.wrappers.#{name}.face",
                 "must be a single upper-case kind face letter, got #{face.inspect}",
@@ -1091,30 +1335,55 @@ module Pubid
               )
             end
             tags[tag] = name
+            wrapper_fields = body["fields"] || []
+            unless wrapper_fields.is_a?(Array) && wrapper_fields.all?(String) &&
+                wrapper_fields.all? { |f| %w[year month].include?(f) }
+              raise InvalidDefinition.new(
+                "supplements.wrappers.#{name}.fields",
+                "must be an array of the wrapper's own calendar columns " \
+                "(year, month), got #{wrapper_fields.inspect}",
+              )
+            end
             Definition::Wrapper.new(
               name: name, face: face, tag: tag,
               title: body["title"] || name.capitalize,
+              fields: wrapper_fields.freeze,
+              number_optional: wrapper_number_optional,
+              mr: check_wrapper_segments("supplements.wrappers.#{name}.mr",
+                                         body["mr"], wrapper_fields),
+              urn: check_wrapper_segments("supplements.wrappers.#{name}.urn",
+                                          body["urn"], wrapper_fields),
             )
           end
+
+          consolidated = check_consolidated(raw["consolidated"], tags)
+          fragment = check_fragment(raw["fragment"], tags)
 
           wrapper = Definition::Supplements.new(
             run: run_name, item: item_name, kind: kind_name, number: number_name,
             wrappers: rows.freeze,
+            number_kind: number_kind,
+            date: date_columns.freeze,
+            consolidated: consolidated,
+            fragment: fragment,
           )
 
           # The generated capture names join the field list: the run as the
-          # builder-only list the fold consumes, the item/kind/number as
-          # the generated grammar's internal captures (never model columns,
-          # never render faces — the templates may reference the run).
+          # builder-only list the fold consumes, the item/kind/number (and
+          # the declared date columns) as the generated grammar's internal
+          # captures (never model columns, never render faces — the
+          # templates may reference the run). The flat shape renders its
+          # notations behind the "/" glue; the extended shape's items carry
+          # their own separator (the cen "/A1:2005" / "+AC:2016-11").
+          run_glue = extended_shape?(number_kind, date_columns,
+                                     raw["consolidated"], raw["fragment"]) ? "" : "/"
           generated = [
             Definition::Field.new(
               name: run_name,
               pattern: generated_run_pattern(wrapper),
               kind: "list",
               item: item_name,
-              # The notations render as the printed run: "/" before each
-              # kind face + ordinal ("/A1/C1").
-              render: Definition::ListRender.new(glue: "/", style: "prefix"),
+              render: Definition::ListRender.new(glue: run_glue, style: "prefix"),
               builder_only: true,
             ),
             Definition::Field.new(name: item_name, pattern: "", kind: "string",
@@ -1123,8 +1392,118 @@ module Pubid
                                   kind: "string", builder_only: true),
             Definition::Field.new(name: number_name, pattern: "1*digit",
                                   kind: "string", builder_only: true),
+            *date_columns.map do |column|
+              Definition::Field.new(name: generated_date_name(wrapper, column),
+                                    pattern: date_column_pattern(column),
+                                    kind: "string", builder_only: true)
+            end,
           ]
           [wrapper, fields + generated]
+        end
+
+        # The wrapper's date capture name: the run-internal
+        # `supplement_year` / `supplement_month`.
+        def generated_date_name(wrapper, column)
+          "#{wrapper.run}_#{column}"
+        end
+
+        # The lexical tail of a wrapper date column inside the run.
+        def date_column_pattern(column)
+          case column
+          when "year" then "4digit"
+          when "month" then "2digit"
+          end
+        end
+
+        # The wrapper's suffix segments (MR or URN): lowercase kind words
+        # ("amd") alternate with the column refs the wrapper carries —
+        # `number`, the declared date columns, and `date` (the year-month
+        # composition). Anything else is a literal segment word.
+        def check_wrapper_segments(rule, segments, wrapper_fields)
+          return nil if segments.nil?
+
+          unless segments.is_a?(Array) && !segments.empty? && segments.all?(String)
+            raise InvalidDefinition.new(rule,
+                                        "must be a non-empty array of segment tokens")
+          end
+          columns = (%w[number date] + wrapper_fields).flatten
+          segments.each_with_index do |segment, i|
+            next if columns.include?(segment)
+            next if segment.match?(/\A[a-z][a-z0-9_]*\z/)
+
+            raise InvalidDefinition.new("#{rule}[#{i}]",
+                                        "must be a column ref or a lower-case " \
+                                        "word, got #{segment.inspect}")
+          end
+          segments.freeze
+        end
+
+        # The consolidated (plus-run) bundle class: its wire tag, unique
+        # against the wrappers'.
+        def check_consolidated(raw, tags)
+          return nil if raw.nil?
+
+          unless raw.is_a?(Hash)
+            raise InvalidDefinition.new("supplements.consolidated", "must be a map")
+          end
+          check_keys("supplements.consolidated", raw, %w[tag title])
+          tag = raw["tag"]
+          unless tag.is_a?(String) && TAG.match?(tag)
+            raise InvalidDefinition.new("supplements.consolidated.tag",
+                                        "must match pubid:<flavor>:<type>, got #{tag.inspect}")
+          end
+          if tags.key?(tag)
+            raise InvalidDefinition.new("supplements.consolidated.tag",
+                                        "ambiguity: wire tag #{tag.inspect} already claimed")
+          end
+
+          Definition::Consolidated.new(tag: tag, title: raw["title"] || "Consolidated identifier")
+        end
+
+        # The fragment wrapper: the printed FRAG face, its wire tag.
+        def check_fragment(raw, tags)
+          return nil if raw.nil?
+
+          unless raw.is_a?(Hash)
+            raise InvalidDefinition.new("supplements.fragment", "must be a map")
+          end
+          check_keys("supplements.fragment", raw, %w[face tag title field mr urn])
+          face = raw["face"]
+          unless face.is_a?(String) && face.match?(/\A[A-Z]{2,}\z/)
+            raise InvalidDefinition.new("supplements.fragment.face",
+                                        "must be an upper-case kind face word, got #{face.inspect}")
+          end
+          tag = raw["tag"]
+          unless tag.is_a?(String) && TAG.match?(tag)
+            raise InvalidDefinition.new("supplements.fragment.tag",
+                                        "must match pubid:<flavor>:<type>, got #{tag.inspect}")
+          end
+          if tags.key?(tag)
+            raise InvalidDefinition.new("supplements.fragment.tag",
+                                        "ambiguity: wire tag #{tag.inspect} already claimed")
+          end
+
+          field = raw["field"]
+          unless field.is_a?(String) && field.match?(NAME)
+            raise InvalidDefinition.new("supplements.fragment.field",
+                                        "must name the builder-only capture " \
+                                        "carrying the fragment ordinal")
+          end
+          wrapper_fields = raw["fields"] || []
+          Definition::Fragment.new(name: "fragment", face: face, tag: tag,
+                                   title: raw["title"] || "Fragment",
+                                   field: field,
+                                   mr: check_wrapper_segments("supplements.fragment.mr",
+                                                              raw["mr"], []),
+                                   urn: check_wrapper_segments("supplements.fragment.urn",
+                                                               raw["urn"], []))
+        end
+
+        # The extended run shape (issue #121 feature 3): any of the cen
+        # wrapper declarations present.
+        def extended_shape?(number_kind, date_columns, consolidated, fragment)
+          number_kind == "string" ||
+            !date_columns.empty? || consolidated || fragment
         end
 
         # The run pattern the compiler generates from the wrapper faces:
@@ -1222,13 +1601,14 @@ module Pubid
         # fields joined with `-`), or a `{compose: [...]}` code (ordered
         # slots, each glued before the previously rendered). A definition
         # without `official:` keeps the shared base generator (doi's shape).
-        def check_urn_official(official, fields)
+        def check_urn_official(official, fields, adopted)
           unless official.is_a?(Array)
             raise InvalidDefinition.new("urn.official",
                                         "must be an array of ordered segments")
           end
           known = fields.map(&:name)
           fold_targets = fields.select { |f| f.fold }.map { |f| f.fold.into }
+          stage_fields = fields.select { |f| f.urn.is_a?(Hash) }.map(&:name)
           official.map.with_index do |segment, i|
             rule = "urn.official[#{i}]"
             case segment
@@ -1238,7 +1618,9 @@ module Pubid
               end
               Definition::UrnField.new(name: segment)
             when Hash
-              check_keys(rule, segment, %w[field date compose lower affix edition_affix])
+              check_keys(rule, segment,
+                         %w[field date compose lower affix edition_affix
+                            pub_group stage_code adopted_mr])
               if segment.key?("field")
                 name = segment["field"]
                 unless known.include?(name)
@@ -1259,6 +1641,49 @@ module Pubid
                   affix: segment["affix"],
                   edition_affix: edition_affix,
                 )
+              elsif segment.key?("pub_group")
+                glue = segment["pub_group"]
+                unless glue.is_a?(Hash) && glue.key?("glue") &&
+                    glue["glue"].is_a?(String) && !glue["glue"].empty?
+                  raise InvalidDefinition.new(
+                    "#{rule}.pub_group",
+                    "must be {glue:} — the separator fusing the publisher " \
+                    "column and the copublishers list (\"cen-clc-etsi\")",
+                  )
+                end
+                check_keys("#{rule}.pub_group", glue, %w[glue lower])
+                Definition::UrnPubGroup.new(
+                  glue: glue["glue"], lower: glue.fetch("lower", true),
+                )
+              elsif segment.key?("stage_code")
+                spec = segment["stage_code"]
+                unless spec.is_a?(Hash) && spec.key?("field")
+                  raise InvalidDefinition.new(
+                    "#{rule}.stage_code",
+                    "must be {field:} — the draft-stage column carrying the " \
+                    "declared URN map",
+                  )
+                end
+                name = spec["field"]
+                field = fields.find { |f| f.name == name }
+                unless field && field.urn.is_a?(Hash)
+                  raise InvalidDefinition.new(
+                    "#{rule}.stage_code",
+                    "the field #{name.inspect} carries no `urn:` map — the " \
+                    "stage segment renders the declared stage code",
+                  )
+                end
+                check_keys("#{rule}.stage_code", spec, %w[field marker])
+                Definition::UrnStageCode.new(marker: spec["marker"] || "stage.")
+              elsif segment.key?("adopted_mr")
+                unless adopted
+                  raise InvalidDefinition.new(
+                    "#{rule}.adopted_mr",
+                    "the definition declares no `adopted:` dispatch — the " \
+                    "fused adopted-MR segment reads the hook-provided adoption",
+                  )
+                end
+                Definition::UrnAdoptedMr.new(marker: true)
               elsif segment.key?("date")
                 date_fields = segment["date"]
                 unless date_fields.is_a?(Array) && !date_fields.empty? &&
@@ -1287,8 +1712,9 @@ module Pubid
             else
               raise InvalidDefinition.new(
                 rule,
-                "must be a field name, {field: ...}, {date: [fields]} or " \
-                "{compose: [...]}",
+                "must be a field name, {field: ...}, {date: [fields]}, " \
+                "{compose: [...]}, {pub_group: {glue:}}, {stage_code: " \
+                "{field:}} or {adopted_mr: true}",
               )
             end
           end
@@ -1413,7 +1839,7 @@ module Pubid
           template.sequences.each do |seq|
             seq.each do |item|
               yield item
-              Template::Opt === item && walk(item.inner, &)
+              (Template::Opt === item || Template::Group === item) && walk(item.inner, &)
             end
           end
         end

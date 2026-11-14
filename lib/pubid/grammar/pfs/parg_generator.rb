@@ -76,13 +76,16 @@ module Pubid
         end
 
         # The supplement-run fields the compiler generated (run, item,
-        # kind, number): their rules come from the supplements section,
-        # not from the (partial) field patterns.
+        # kind, number, and the declared date columns): their rules come
+        # from the supplements section, not from the (partial) field
+        # patterns.
         def supplements_generated?(field)
-          return false unless @definition.supplements
+          supplements = @definition.supplements
+          return false unless supplements
 
-          [@definition.supplements.run, @definition.supplements.item,
-           @definition.supplements.kind, @definition.supplements.number]
+          ([supplements.run, supplements.item, supplements.kind,
+            supplements.number] +
+            supplements.date.map { |column| generated_date_name(supplements, column) })
             .include?(field.name)
         end
 
@@ -116,9 +119,20 @@ module Pubid
         # supplements declaration (the declaration IS the run's shape —
         # the grammar and the fold can never drift apart). Every rule
         # carries its semantic name.
+        #
+        # Two shapes, by declaration: the phase-3 flat shape (kind rule +
+        # number rule + one slash item — etsi) and the issue-#121 feature-3
+        # shape for cen's wrapper forms: a separator capture ("/"
+        # standalone vs "+" consolidated), per-wrapper item rules (so the
+        # raw row names the kind's rule), an optional ordinal
+        # (`number_optional` — the unnumbered "/AC"), string ordinals
+        # (`number_kind: string`), and the wrapper-owned date columns
+        # (`date: [year, month]`).
         def supplement_run_rules
           supplements = @definition.supplements
           return [] unless supplements
+
+          return extended_run_rules(supplements) if extended_shape?(supplements)
 
           scheme = @definition.scheme
           faces = supplements.wrappers.map { |w| "\"#{w.face}\"" }.join(" / ")
@@ -133,6 +147,80 @@ module Pubid
               "#{scheme}_#{supplements.number} ) as #{supplements.item}",
             "  #{scheme}_#{supplements.run} = (1*#{scheme}_#{supplements.item}) as #{supplements.run}",
           ]
+        end
+
+        # The wrapper's date capture name: the run-internal
+        # `supplement_year`-shaped capture (the run name + the column).
+        def generated_date_name(supplements, column)
+          "#{supplements.run}_#{column}"
+        end
+
+        # The lexical tail of a wrapper date column inside the run.
+        def date_column_pattern(column)
+          case column
+          when "year" then "4digit"
+          when "month" then "2digit"
+          end
+        end
+
+        # The extended shape: any of the cen wrapper declarations present.
+        def extended_shape?(supplements)
+          supplements.number_kind == "string" ||
+            supplements.wrappers.any?(&:number_optional) ||
+            !supplements.date.empty? || supplements.consolidated ||
+            supplements.fragment
+        end
+
+        def extended_run_rules(supplements)
+          scheme = @definition.scheme
+          lines = [
+            "",
+            "  # Supplement run (compiled from the supplements declaration):",
+            "  # each item binds its separator, kind face, ordinal and date",
+            "  # columns; the builder folds the run into the declared wrapper",
+            "  # classes (the slash run standalone, the plus run consolidated).",
+            "  #{scheme}_#{supplements.number} = (1*digit) as #{supplements.number}",
+          ]
+          supplements.date.each do |column|
+            name = generated_date_name(supplements, column)
+            lines << "  #{scheme}_#{name} = (#{date_column_pattern(column)}) as #{name}"
+          end
+          # The item alternation orders by DESCENDING face length — a
+          # face that extends another ("AC" of "A") must try first, or the
+          # shorter face commits and the longer one can never match.
+          supplements.wrappers.sort_by { |w| -w.face.length }.each do |wrapper|
+            tail = extended_date_tail(supplements, wrapper)
+            number_term = if wrapper.number_optional
+              "[#{scheme}_#{supplements.number}]"
+            else
+              "#{scheme}_#{supplements.number}"
+            end
+            lines << "  #{scheme}_#{supplements.item}_#{wrapper.name} = {"
+            lines << "    (\"/\" as #{supplements.run}_slash / \"+\" as #{supplements.run}_plus)"
+            lines << "    \"#{wrapper.face}\" as #{supplements.kind} #{number_term}#{tail}"
+            lines << "  }"
+          end
+          item_refs = supplements.wrappers.sort_by { |w| -w.face.length }.map do |wrapper|
+            "#{scheme}_#{supplements.item}_#{wrapper.name}"
+          end
+          lines << "  #{scheme}_#{supplements.item} = ( #{item_refs.join(' / ')} ) as #{supplements.item}"
+          lines << "  #{scheme}_#{supplements.run} = (1*#{scheme}_#{supplements.item}) as #{supplements.run}"
+          lines
+        end
+
+        # The item's date tail: the wrapper's declared calendar columns in
+        # order — ":" + the year capture, then "-" + the month capture.
+        # A wrapper that declares no month never captures one.
+        def extended_date_tail(supplements, wrapper)
+          scheme = @definition.scheme
+          tail = +""
+          if supplements.date.include?("year") && wrapper.fields.include?("year")
+            tail << " [\":\" #{scheme}_#{generated_date_name(supplements, 'year')}]"
+          end
+          if supplements.date.include?("month") && wrapper.fields.include?("month")
+            tail << " [\"-\" #{scheme}_#{generated_date_name(supplements, 'month')}]"
+          end
+          tail
         end
 
         def identifier_rule

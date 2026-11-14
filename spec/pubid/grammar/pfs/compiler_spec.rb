@@ -375,4 +375,212 @@ RSpec.describe Pubid::Grammar::Pfs::Compiler do
         )
     end
   end
+
+  describe "the committed cen_pfs outputs (pubid-grammar#121, the six " \
+           "declared-emission features)" do
+    let(:cen_definition_path) do
+      File.join(PFS_REPO_ROOT, "definitions/cen.pfs")
+    end
+
+    it "recompiles definitions/cen.pfs byte-identically (generation is deterministic)" do
+      dir = Dir.mktmpdir("pfs-golden")
+      result = described_class.compile(
+        cen_definition_path,
+        source_rel: "definitions/cen.pfs",
+        flavor_key: "cen_pfs",
+        grammar_out: File.join(dir, "cen_pfs.parg"),
+        artifact_out: File.join(dir, "cen_pfs.json"),
+        repo_root: PFS_REPO_ROOT,
+        parsanol_version: ENV.fetch("PARSANOL_VERSION", "1.3.126"),
+      )
+
+      committed = File.read(File.join(PFS_REPO_ROOT, "grammars/cen_pfs.parg"))
+      expect(result.grammar_text).to eq(committed)
+      expect(File.read(result.artifact_path))
+        .to eq(File.read(File.join(PFS_REPO_ROOT, "artifacts/cen_pfs.json")))
+    end
+  end
+
+  describe "the #121 feature surfaces, per feature" do
+    let(:cen_definition_path) do
+      File.join(PFS_REPO_ROOT, "definitions/cen.pfs")
+    end
+
+    # feature 1 — multi-type declared emission
+    it "emits one class per declared type with its scheme-canonical wire tag" do
+      result = compile_definition(File.read(cen_definition_path), flavor_key: "cen_pfs")
+
+      identifiers = result.ruby_files
+        .find { |path| path.end_with?("cen_pfs/identifiers.rb") }
+        .then { |path| File.read(path) }
+      %w[EuropeanNorm TechnicalReport TechnicalSpecification Guide CenReport
+         CenWorkshopAgreement EuropeanSpecification EuropeanPrestandard
+         HarmonizationDocument AdoptedEuropeanNorm].each do |klass|
+        expect(identifiers).to include("autoload :#{klass},")
+      end
+
+      tr = result.ruby_files
+        .find { |path| path.end_with?("cen_pfs/identifiers/technical_report.rb") }
+        .then { |path| File.read(path) }
+      expect(tr).to include("def self.polymorphic_name")
+      expect(tr).to include('"pubid:cencenelec:technical-report"')
+    end
+
+    it "rejects a token claimed by two types (one spelling selects one class)" do
+      yaml = File.read(cen_definition_path)
+        .sub('    tokens: ["TS"]', '    tokens: ["TR"]')
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /types\.technical_specification\.tokens\[0\]: ambiguity: token "TR" already selects/,
+        )
+    end
+
+    # feature 2 — draft-stage serialization
+    it "emits the stage value maps and compacts the typed-stage trio to its code" do
+      result = compile_definition(File.read(cen_definition_path), flavor_key: "cen_pfs")
+
+      identifier = result.ruby_files
+        .find { |path| path.end_with?("cen_pfs/identifier.rb") }
+        .then { |path| File.read(path) }
+      expect(identifier).to include('"pren" => { stage_code: :proposal }')
+      expect(identifier).to include('"fpren" => { stage_code: :final_proposal }')
+      expect(identifier).to include('hash["stage"] = stage.code.to_s')
+    end
+
+    it "rejects a stage spelling claimed by two stages" do
+      yaml = File.read(cen_definition_path)
+        .sub("  fpren:\n    tokens: [\"FprEN\"]", "  fpren:\n    tokens: [\"FprEN\", \"prEN\"]")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /stages\.fpren\.tokens\[1\]: ambiguity: spelling "prEN" already claimed/,
+        )
+    end
+
+    # feature 3 — cen's wrapper shapes
+    it "generates the extended run: separator capture, per-wrapper items, " \
+       "the optional ordinal and the date columns, faces longest-first" do
+      result = compile_definition(File.read(cen_definition_path), flavor_key: "cen_pfs")
+      grammar = File.read(result.grammar_path)
+
+      expect(grammar).to include('("/" as supplements_slash / "+" as supplements_plus)')
+      expect(grammar).to include("cen_cenelec_supplement_corrigendum = {")
+      expect(grammar).to include('"AC" as supplement_kind [cen_cenelec_supplement_number]')
+      # the face-length order: the corrigendum item rule precedes the amendment's
+      expect(grammar).to match(
+        /cen_cenelec_supplement = \( cen_cenelec_supplement_corrigendum \/ cen_cenelec_supplement_amendment \)/,
+      )
+    end
+
+    it "rejects a wrapper word face in the extended shape when it is not a face word" do
+      yaml = File.read(cen_definition_path).sub('face: "AC"', 'face: "amd"')
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /supplements\.wrappers\.corrigendum\.face: must be a single upper-case kind face letter/,
+        )
+    end
+
+    # feature 4 — adopted-base dispatch
+    it "emits the two explicit hook call points, never an implicit adoption" do
+      result = compile_definition(File.read(cen_definition_path), flavor_key: "cen_pfs")
+
+      builder = result.ruby_files
+        .find { |path| path.end_with?("cen_pfs/builder.rb") }
+        .then { |path| File.read(path) }
+      expect(builder).to include("return AdoptedBase.build(self, data) if data[:adopted]")
+      expect(builder).to include("implicit = AdoptedBase.implicit(self, data)")
+    end
+
+    it "rejects an adopted dispatch on a non-builder-only capture" do
+      yaml = File.read(cen_definition_path).sub("  field: adopted\n  hook: coded",
+                                                "  field: number\n  hook: coded")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /adopted\.field: must name a declared builder-only string capture/,
+        )
+    end
+
+    it "rejects an adopted hook other than `coded` (the escape hatch is the " \
+       "only mechanism, and it is explicit)" do
+      yaml = File.read(cen_definition_path).sub("hook: coded", "hook: magic")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /adopted\.hook: must be `coded`/,
+        )
+    end
+
+    # feature 5 — publisher-type defaults
+    it "emits the per-type publisher default (the designation types carry it)" do
+      result = compile_definition(File.read(cen_definition_path), flavor_key: "cen_pfs")
+
+      cr = result.ruby_files
+        .find { |path| path.end_with?("cen_pfs/identifiers/cen_report.rb") }
+        .then { |path| File.read(path) }
+      expect(cr).to include('Publisher.new(body: "CR")')
+
+      tr = result.ruby_files
+        .find { |path| path.end_with?("cen_pfs/identifiers/technical_report.rb") }
+        .then { |path| File.read(path) }
+      expect(tr).to include('Publisher.new(body: "EN")')
+    end
+
+    it "rejects a publisher default claimed by two types" do
+      yaml = File.read(cen_definition_path)
+        .gsub('    publisher_default: "CWA"', '    publisher_default: "CR"')
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /types\.cen_workshop_agreement\.publisher_default: ambiguity: publisher default "CR"/,
+        )
+    end
+
+    # feature 6 — fused URN segments
+    it "generates the fused segments: the publisher group, the adopted MR " \
+       "face and the stage code" do
+      result = compile_definition(File.read(cen_definition_path), flavor_key: "cen_pfs")
+
+      urn = result.ruby_files
+        .find { |path| path.end_with?("cen_pfs/urn_generator.rb") }
+        .then { |path| File.read(path) }
+      expect(urn).to include('group.map(&:downcase).join("-")')
+      expect(urn).to include('mr.tr("._", "::")')
+      expect(urn).to include('segments << "stage." + code.to_s')
+      expect(urn).to include('["amd", id.number, id.year]')
+      expect(urn).to include('"plus"')
+    end
+
+    it "rejects an adopted face with no declared dispatch (the face renders " \
+       "the hook-provided adoption — removing the section is a compile error)" do
+      yaml = File.read(cen_definition_path)
+        .gsub("adopted:\n  field: adopted\n  hook: coded\n\n", "")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /templates\.canonical: \{adopted\} is a compiler-generated supplement-run capture/,
+        )
+    end
+
+    it "rejects a fused adopted-MR segment without the adopted dispatch" do
+      yaml = File.read(cen_definition_path)
+        .gsub("adopted:\n  field: adopted\n  hook: coded\n\n", "")
+        .gsub(" {adopted}", "")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /urn\.official\[\d+\]\.adopted_mr: the definition declares no `adopted:` dispatch/,
+        )
+    end
+  end
 end

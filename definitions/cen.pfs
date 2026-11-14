@@ -1,82 +1,65 @@
-# CEN/CENELEC — the §4 NSB composition port (the natural first
-# national-adoption definition): the European Norm face composed from the
-# module library.
+# CEN/CENELEC — the full declared-emission absorption (pubid#706 phase 3,
+# pubid-grammar#121). The v1 module composition modeled the EN face only
+# (55 rows byte-identically, 134 pinned); this definition declares the
+# whole coded surface on the issue-#121 compiler features:
 #
-# This definition is the MEASURED boundary of what the v1 modules absorb.
-# The cen_cenelec coded flavor carries six pieces of machinery beyond
-# grammar composition, each measured against this definition's corpus in
-# the pubid parity harness (spec/pubid/cen_pfs/):
+#   1. Multi-type declared emission — the nine deliverable families (EN,
+#      TR, TS, CWA, HD, CR, ES, ENV, Guide) as declared types; a token in
+#      type position (TR/TS/Guide) or publisher position (the publisher
+#      types) selects the class.
+#   2. Draft-stage serialization — prEN/FprEN as declared stages; the
+#      typed-stage trio compacts to "stage" => "pren" by the class hook,
+#      and the URN carries stage.proposal / stage.final_proposal.
+#   3. cen's wrapper shapes — the supplements declaration extends to the
+#      slash-vs-plus dispatch (standalone wrapper vs the consolidated
+#      bundle), string ordinals, the unnumbered "/AC", the wrapper-owned
+#      year/month columns and the FRAG wrapper.
+#   4. Adopted-base dispatch — the §4 coded escape hatch: the generated
+#      builder calls the vendored AdoptedBase hook at two explicit points
+#      (the captured adopted run; the hook's implicit probe). The hook
+#      parses the adopted string with Pubid::Iso / Pubid::Iec, switches
+#      the ENV adoption to the prestandard class, and owns the implicit
+#      IEC-range adoption.
+#   5. Publisher-type defaults — the CR/CWA/HD/ES/ENV faces default the
+#      publisher column to the type token; to_hash drops it (the value
+#      equals the default).
+#   6. Fused URN segments — pub_group (publisher + copublishers fused
+#      "cen-clc-etsi"), the adopted MR string with its separators fused
+#      to colons, the stage code, and the declared wrapper chains
+#      (:amd:, :cor:, :frag:, the consolidated :plus: marker).
 #
-#   1. Multi-type emission is a v1 compiler boundary — CEN/CENELEC carry
-#      ~13 typed classes (TR, TS, CWA, HD, CR, ES, ENV, guides); the v1
-#      Ruby emission is single-type. This definition models the EN face.
-#   2. The draft-stage machinery (prEN/FprEN → typed stage + the
-#      compact-hash `"stage" => "pren"` serialization) is coded-model
-#      semantics, not a module parameter. This definition carries the
-#      accept faces (the overlay's en_draft) but the published model.
-#   3. The wrapper identity machinery (Amendment/Corrigendum with the
-#      slash/plus dispatch, ConsolidatedIdentifier, Fragment) is
-#      generated-class synthesis the compiler does not do in v1;
-#      supplements.core binds the operators, the classes stay coded.
-#   4. The adopted-base delegation (EN ISO/IEC → Pubid::Iso.parse /
-#      Pubid::Iec.parse, the ENV class switch, the implicit IEC adoption
-#      by number range) is value-dependent builder dispatch — the
-#      iso.inner hook's coded escape hatch.
-#   5. The publisher-type default-publisher rule (CWA/HD/CR/ES/ENV) and
-#      the EN-cannot-be-TR guard are builder value branches.
-#   6. The official URN composition (the adopted document's MR string as
-#      the number, plus-markers, stage segments) exceeds the ordered
-#      segment declaration.
-#
-# What the composition DOES absorb — and compiles here: the EN accept
-# surface with its parts, years, draft faces (en.overlay) and European
-# body tokens (national.prefix as data), with wrapper-with-adopted as
-# the declared identity of the adoption face.
+# Boundaries (honest, non-corpus): the coded flavor's loose forms ("prEN"
+# bare, "CEN/TR" without a number, "CEN Guide" without a number, the
+# AMD-keyword fragment spelling, the "EN ... ED1" edition face, the GUID
+# spelling) stay outside the declared accept surface — the compiled
+# flavor accepts what its model can represent, and none of these forms
+# occurs in the pinned corpus. The "EN cannot be TR" builder guard is
+# coded-machinery the declaration does not carry.
 
 pfs: 1
 
 scheme: cen_cenelec
-title: "CEN/CENELEC European Norms (module composition)"
+title: "CEN/CENELEC"
 
 organization:
   name: "CEN/CENELEC"
-  publisher: "CEN"
-  # The head-dispatch tokens the composed flavor ACCEPTS: the published
-  # EN face (the overlay's draft faces are blocker 2, out of the
-  # composed model) and the European body tokens for the publisher-type
-  # forms. A module's token claims are its ambiguity scope, not
-  # automatic dispatch — the definition lists what its grammar accepts.
-  prefixes: ["EN", "CEN/", "CLC/"]
+  publisher: "EN"
+  prefixes: ["CEN", "CLC", "CENELEC", "EN", "CWA", "HD", "ES", "CR", "ENV"]
 
-# The §4 composition: the inner ISO face, the CEN adoption overlay over
-# it, the European body tokens as data, and the supplement operators as
-# bindings.
-modules:
-  - module: iso.inner
-    version: 1
-  - module: en.overlay
-    version: 1
-  - module: national.prefix
-    version: 1
-    parameters:
-      prefixes: ["CEN", "CLC", "CENELEC"]
-  - module: supplements.core
-    version: 1
+# The declared draft stages (feature 2): the serialized code is the key,
+# the accepted spellings and the official-URN stage code are declared.
+stages:
+  pren:
+    tokens: ["prEN"]
+    urn: proposal
+  fpren:
+    tokens: ["FprEN"]
+    urn: final_proposal
 
-# The scheme's calendar: the publication year of the norm.
-date:
-  fields: [year]
-
-grammar:
-  digit: "%x30-39"
-  space: '" "'
-  slash: '"/"'
-  colon: '":"'
-  dash: '"-"'
-
-# The typed class this definition models: the published European Norm.
-# The scheme-canonical wire tag keeps to_hash byte-identical with the
-# coded flavor for the rows the composition absorbs.
+# The nine deliverable families (feature 1). Tokens in type position
+# (TR/TS/Guide) or publisher position (the publisher types) select the
+# class; the token-free EuropeanNorm is the default. publisher_default
+# (feature 5) names the token the publisher column defaults to.
 types:
   european_norm:
     key: en
@@ -84,48 +67,317 @@ types:
     title: "European Norm"
     short: "EN"
     tag: "pubid:cencenelec:european-norm"
+    publisher_default: "EN"
     stage:
       code: puben
       stage_code: published
       abbr: ["EN"]
+  # The adoption wrapper (feature 4): no tokens of its own — the hook
+  # builds it for every adopted run.
+  adopted_european_norm:
+    key: aen
+    web: adopted_european_norm
+    title: "Adopted European Norm"
+    short: "EN"
+    tag: "pubid:cencenelec:adopted-european-norm"
+    publisher_default: "EN"
+    adopted: true
+  technical_report:
+    key: tr
+    web: technical_report
+    title: "Technical Report"
+    short: "TR"
+    tag: "pubid:cencenelec:technical-report"
+    tokens: ["TR"]
+  technical_specification:
+    key: ts
+    web: technical_specification
+    title: "Technical Specification"
+    short: "TS"
+    tag: "pubid:cencenelec:technical-specification"
+    tokens: ["TS"]
+  guide:
+    key: guide
+    title: "Guide"
+    short: "Guide"
+    tag: "pubid:cencenelec:guide"
+    tokens: ["Guide"]
+  cen_report:
+    key: cr
+    web: cen_report
+    title: "CEN Report"
+    short: "CR"
+    tag: "pubid:cencenelec:cen-report"
+    tokens: ["CR"]
+    publisher_default: "CR"
+  cen_workshop_agreement:
+    key: cwa
+    web: cen_workshop_agreement
+    title: "CEN Workshop Agreement"
+    short: "CWA"
+    tag: "pubid:cencenelec:cen-workshop-agreement"
+    tokens: ["CWA"]
+    publisher_default: "CWA"
+  european_specification:
+    key: es
+    web: european_specification
+    title: "European Specification"
+    short: "ES"
+    tag: "pubid:cencenelec:european-specification"
+    tokens: ["ES"]
+    publisher_default: "ES"
+  european_prestandard:
+    key: env
+    web: european_prestandard
+    title: "European Prestandard"
+    short: "ENV"
+    tag: "pubid:cencenelec:european-prestandard"
+    tokens: ["ENV"]
+    publisher_default: "ENV"
+    adopted: true
+  harmonization_document:
+    key: hd
+    web: harmonization_document
+    title: "Harmonization Document"
+    short: "HD"
+    tag: "pubid:cencenelec:harmonization-document"
+    tokens: ["HD"]
+    publisher_default: "HD"
+
+# The adopted-base dispatch (feature 4): the hook is vendored beside the
+# generated classes (lib/pubid/cen_pfs/adopted_base.rb).
+adopted:
+  field: adopted
+  hook: coded
+
+# The cen wrapper shapes (feature 3): the slash run folds into the
+# standalone wrapper chain, the plus run into the consolidated bundle;
+# the ordinals are strings, the corrigendum's is optional, and the
+# wrappers carry their own year/month columns.
+supplements:
+  run: supplements
+  item: supplement
+  kind: supplement_kind
+  number: supplement_number
+  number_kind: string
+  date: [year, month]
+  wrappers:
+    amendment:
+      face: "A"
+      tag: "pubid:cencenelec:amendment"
+      title: "Amendment"
+      fields: [year]
+      mr: [amd, number, year]
+      urn: [amd, number, year]
+    corrigendum:
+      face: "AC"
+      tag: "pubid:cencenelec:corrigendum"
+      title: "Corrigendum"
+      fields: [year, month]
+      number_optional: true
+      mr: [cor, number, date]
+      urn: [cor, number, date]
+  consolidated:
+    tag: "pubid:cencenelec:consolidated-identifier"
+    title: "Consolidated identifier"
+  fragment:
+    face: "FRAG"
+    field: fragment_number
+    tag: "pubid:cencenelec:fragment"
+    title: "Fragment"
+    mr: [frag, number]
+    urn: [frag, number]
+
+# Named lexical rules the fields reference (the coded grammar's terms).
+grammar:
+  digit: "%x30-39"
 
 fields:
+  # The head token: the publisher types are the designation ("CR 954"),
+  # EN/CEN/CLC the publisher face. ENV precedes EN (PEG first-match).
+  publisher:
+    pattern: '("CWA" / "HD" / "ES" / "CR" / "ENV" / "EN" / "CEN" / "CLC")'
+    kind: string
+  copublisher:
+    pattern: '("CLC" / "ETSI")'
+    kind: string
+    builder_only: true
+  copublishers:
+    pattern: "*( \"/\" cen_cenelec_copublisher )"
+    kind: list
+    item: copublisher
+    render: { glue: "/", style: prefix }
+  stage:
+    pattern: '("FprEN" / "prEN")'
+    kind: string
+    map: { FprEN: fpren, prEN: pren }
+    render: { fpren: FprEN, pren: prEN }
+    urn: { fpren: final_proposal, pren: proposal }
+  type:
+    pattern: '("TR" / "TS")'
+    kind: string
+  guide:
+    pattern: '"Guide"'
+    kind: string
   number:
-    pattern: '(%x31-39) *digit'
+    pattern: "((1*%x30-39) (*(\" \" (1*%x30-39))))"
+    kind: string
   part:
-    pattern: '1*digit'
+    pattern: "1*(%x30-39 / \"-\")"
+    kind: string
+  version:
+    # The capture keeps its leading space (" V2.2.1"), exactly as the
+    # coded column stores it; the face renders it whole.
+    pattern: '" " "V" (1*%x30-39) "." (1*%x30-39) "." (1*%x30-39)'
+    kind: string
   year:
-    pattern: '4*digit'
+    pattern: "4digit"
+    kind: string
+  adopted:
+    # The adopted run: an ISO/IEC/CISPR lead token and the rest, ending
+    # before a supplement item or the FRAG face (the coded grammar's own
+    # shape — "/Amd 1:2016" is not a cen item, so the run keeps it).
+    pattern: '((("ISO" / "IEC" / "CISPR")) *((!(cen_cenelec_supplement) !(" FRAG") (%x01-09 / %x0B-10FFFF))))'
+    kind: string
+    builder_only: true
+  fragment_number:
+    pattern: "1*%x30-39"
+    kind: string
+    builder_only: true
+
+# The scheme's calendar: the publication year of the document.
+date:
+  fields: [year]
 
 templates:
-  # The canonical face: the printed EN form. The overlay's DRAFT faces
-  # (prEN/FprEN, the en_draft fragment) are deliberately NOT alternates:
-  # a draft is a different document, and normalizing one to the
-  # published face would be the semantic decode blocker 2 forbids —
-  # the draft rows are the measured gap (see the harness ledger).
-  canonical: '"EN" " " {number} ["-" {part}] [":" {year}]'
+  # The canonical face: the head alternation picks the first alternative
+  # whose direct fields captured — the draft face, the Guide word face,
+  # the adopted face, else the publisher face with the optional slash
+  # type. The run and the FRAG face follow.
+  canonical: '({stage} " " {number} ["-" {part}] [{version}] [":" {year}] / {publisher} [{copublishers}] " " {guide} " " {number} ["-" {part}] [":" {year}] / {publisher} [{copublishers}] " " {adopted} / {publisher} [{copublishers}] ["/" {type}] " " {number} ["-" {part}] [{version}] [":" {year}]) [{supplements} [" FRAG" {fragment_number}]]'
+  alternates:
+    # The coded grammar also takes the type after a space
+    # ("CEN/CLC TR 17161:2019" spellings normalize to the slash face).
+    - '{publisher} [{copublishers}] " " {type} " " {number} ["-" {part}] [{version}] [":" {year}] [{supplements} [" FRAG" {fragment_number}]]'
 
 urn:
+  # The scheme's own namespace (RFC 8515): the coded to_urn's urn:cen:
+  # form, DECLARED — the fused segments (feature 6): the publisher group,
+  # the adopted document's fused MR string, the composed document code,
+  # the year, the draft-stage code.
   namespace: cen
+  official:
+    - { pub_group: { glue: "-" } }
+    - { adopted_mr: true }
+    - compose:
+        - { field: number }
+        - { field: part, glue: "-" }
+    - { date: [year] }
+    - { stage_code: { field: stage } }
   schema:
+    # The coded schema's atom table (issue #656), in its order.
     atoms:
+      - { path: publisher, prefix: pub }
+      - { path: copublishers, prefix: co, kind: list }
       - { path: part, prefix: part }
       - { path: year, prefix: year }
+      - { path: version, prefix: v }
+      - { path: stage, prefix: stage }
+      - { path: adopted, prefix: adopted, kind: id }
+      - { path: identifiers, prefix: ids, kind: ids }
     types:
+      - { type: "pubid:cencenelec:adopted-european-norm", token: aen, core: [] }
+      - { type: "pubid:cencenelec:amendment", token: amd, core: [] }
+      - { type: "pubid:cencenelec:cen-report", token: cr, core: [] }
+      - { type: "pubid:cencenelec:cen-workshop-agreement", token: cwa, core: [] }
+      - { type: "pubid:cencenelec:consolidated-identifier", token: consol, core: [] }
+      - { type: "pubid:cencenelec:corrigendum", token: cor, core: [] }
+      - { type: "pubid:cencenelec:european-norm", token: en, core: [] }
+      - { type: "pubid:cencenelec:european-prestandard", token: ep, core: [] }
+      - { type: "pubid:cencenelec:european-specification", token: es, core: [] }
+      - { type: "pubid:cencenelec:fragment", token: fragment, core: [] }
+      - { type: "pubid:cencenelec:guide", token: guide, core: [] }
+      - { type: "pubid:cencenelec:harmonization-document", token: hd, core: [] }
       - { type: "pubid:cencenelec:identifier", token: id, core: [] }
-      - { type: "pubid:cencenelec:european-norm", token: en, core: [number] }
+      - { type: "pubid:cencenelec:technical-report", token: tr, core: [] }
+      - { type: "pubid:cencenelec:technical-specification", token: ts, core: [] }
 
-# REQUIRED. The live test panel: the faces the composition absorbs.
+# The MR-slug hooks (the coded columns): the publisher downcased, the
+# number-part fused, the year. The draft mr_type override and the wrapper
+# suffixes are generated from the stages and the wrappers' mr: segments.
+mr:
+  number: { join: [number, part], glue: "-" }
+  year: { field: year }
+
+# REQUIRED. The live test panel: real corpus shapes, one per family; each
+# positive parses and renders as declared under the canonical face; each
+# negative fails to parse (every negative verified against the coded
+# flavor first).
 examples:
   positives:
     - input: "EN 1325"
       renders: "EN 1325"
     - input: "EN 12464-1:2011"
       renders: "EN 12464-1:2011"
-    - input: "EN 1177:2018"
-      renders: "EN 1177:2018"
+    - input: "EN 302 326-2 V2.2.1:2026"
+      renders: "EN 302 326-2 V2.2.1:2026"
+    - input: "prEN 12464-1:2019"
+      renders: "prEN 12464-1:2019"
+    - input: "FprEN 50600-2-4"
+      renders: "FprEN 50600-2-4"
+    - input: "CEN/TR 12101-5:2005"
+      renders: "CEN/TR 12101-5:2005"
+    - input: "CEN/CLC/ETSI/TR 101551:2026"
+      renders: "CEN/CLC/ETSI/TR 101551:2026"
+    - input: "CLC/TS 50701:2021"
+      renders: "CLC/TS 50701:2021"
+    - input: "CR 10313:2000"
+      renders: "CR 10313:2000"
+    - input: "CWA 14050-21:2000"
+      renders: "CWA 14050-21:2000"
+    - input: "ES 59008-6-1:1999"
+      renders: "ES 59008-6-1:1999"
+    - input: "ENV 1613:1995"
+      renders: "ENV 1613:1995"
+    - input: "HD 1215-2:1988"
+      renders: "HD 1215-2:1988"
+    - input: "CEN Guide 414:2017"
+      renders: "CEN Guide 414:2017"
+    - input: "CEN/CLC Guide 25:2023"
+      renders: "CEN/CLC Guide 25:2023"
+    - input: "EN ISO 12100:2010"
+      renders: "EN ISO 12100:2010"
+    - input: "HD IEC 60364-8-81"
+      renders: "HD IEC 60364-8-81"
+    - input: "EN 13250:2000/A1:2005"
+      renders: "EN 13250:2000/A1:2005"
+    - input: "EN 60335-1:2012/A1"
+      renders: "EN 60335-1:2012/A1"
+    - input: "EN 13254:2000/AC:2003"
+      renders: "EN 13254:2000/AC:2003"
+    - input: "EN 61375-2-3:2015/AC:2016-11"
+      renders: "EN 61375-2-3:2015/AC:2016-11"
+    - input: "EN 285:2015+A1"
+      renders: "EN 285:2015+A1"
+    - input: "EN 285:2015+A1:2021"
+      renders: "EN 285:2015+A1:2021"
+    - input: "EN ISO 10077-1:2006+AC:2009+AC2:2009"
+      renders: "EN ISO 10077-1:2006+AC:2009+AC2:2009"
+    - input: "EN 60038/A1 FRAG2"
+      renders: "EN 60038/A1 FRAG2"
   negatives:
-    - "EN"
-    - "EN ISO 9001:2015"
     - "nonsense"
-    - "CEN/TS 12345"
+    - "ETSI EN 300 175"
+    - "CEN/XX 100"
+    - "HD 1215-2:198"
+    - "EN 300 175 V"
+    - "EN 1325 EXTRA"
+    - "EN A1"
+    - "ISO 12100:2010"
+    - "EN 1325:20000"
+    - "EN /TR 100"
+    - "EN 13250:2000/A1:"
+    - "EN 13250:2000/ACX:2003"
+    - "EN 285:2015+A1:"
+    - "FRAG2"
+    - "EN 13250:2000 FRAG2"

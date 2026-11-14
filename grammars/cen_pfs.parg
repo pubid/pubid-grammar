@@ -1,54 +1,72 @@
 # PFS-generated grammar — DO NOT EDIT BY HAND.
-# Source: definitions/cen.pfs (pfs:1) sha256:bc1edd5874f8938b5f946416a2b052d9d9b9df3d99f6c20a3d88fcab9ae1d70c
+# Source: definitions/cen.pfs (pfs:1) sha256:b8f2c00e392dbc03c1fddedad141afa7c930c5430738721b7df0ac69a371d028
 # Compiler: pubid/grammar/pfs 0.1.0
 # Flavor key: cen_pfs (grammar PubidCenPfs)
 # Regenerate: ruby scripts/pfs compile definitions/cen.pfs --as cen_pfs
-# Module: iso.inner v1 (sha256:7a088d2a7814...)
-# Module: en.overlay v1 (sha256:b92ac2b27544...)
-# Module: national.prefix v1 (sha256:c7aa2f2442e8...)
-# Module: supplements.core v1 (sha256:9fa9656375c7...)
 
 grammar PubidCenPfs version "0.1.0" edition 2 {
 
   # Grammar fragments: named lexical terms declared under `grammar:`.
-  iso_space = " "
-  iso_colon = ":"
-  iso_dash = "-"
-  iso_year = 4*digit
-  iso_part = 1*digit ["-" 1*digit]
-  iso_number = 1*("0" %x31-39) as iso_zero_lead *digit [iso_dash iso_part]
-  iso_document = "ISO" iso_space iso_number [iso_colon iso_year]
-  en_space = " "
-  en_draft = ("pr" / "Fpr") as en_draft_kind
-  en_face = [en_draft] "EN"
-  en_adoption = en_face en_space iso_document
-  supplement_number = 1*digit
-  supplement_year = 4*digit
-  supplement_month = 2*digit
   digit = %x30-39
-  space = " "
-  slash = "/"
-  colon = ":"
-  dash = "-"
 
   # Fields: one capture rule per declared field; the whole pattern
   # is the capture.
-  cen_cenelec_number = ((%x31-39) *digit) as number
-  cen_cenelec_part = (1*digit) as part
-  cen_cenelec_year = (4*digit) as year
+  cen_cenelec_publisher = (("CWA" / "HD" / "ES" / "CR" / "ENV" / "EN" / "CEN" / "CLC")) as publisher
+  cen_cenelec_copublisher = (("CLC" / "ETSI")) as copublisher
+  cen_cenelec_copublishers = (*( "/" cen_cenelec_copublisher )) as copublishers
+  cen_cenelec_stage = (("FprEN" / "prEN")) as stage
+  cen_cenelec_type = (("TR" / "TS")) as type
+  cen_cenelec_guide = ("Guide") as guide
+  cen_cenelec_number = (((1*%x30-39) (*(" " (1*%x30-39))))) as number
+  cen_cenelec_part = (1*(%x30-39 / "-")) as part
+  cen_cenelec_version = (" " "V" (1*%x30-39) "." (1*%x30-39) "." (1*%x30-39)) as version
+  cen_cenelec_year = (4digit) as year
+  cen_cenelec_adopted = (((("ISO" / "IEC" / "CISPR")) *((!(cen_cenelec_supplement) !(" FRAG") (%x01-09 / %x0B-10FFFF))))) as adopted
+  cen_cenelec_fragment_number = (1*%x30-39) as fragment_number
+
+  # Supplement run (compiled from the supplements declaration):
+  # each item binds its separator, kind face, ordinal and date
+  # columns; the builder folds the run into the declared wrapper
+  # classes (the slash run standalone, the plus run consolidated).
+  cen_cenelec_supplement_number = (1*digit) as supplement_number
+  cen_cenelec_supplements_year = (4digit) as supplements_year
+  cen_cenelec_supplements_month = (2digit) as supplements_month
+  cen_cenelec_supplement_corrigendum = {
+    ("/" as supplements_slash / "+" as supplements_plus)
+    "AC" as supplement_kind [cen_cenelec_supplement_number] [":" cen_cenelec_supplements_year] ["-" cen_cenelec_supplements_month]
+  }
+  cen_cenelec_supplement_amendment = {
+    ("/" as supplements_slash / "+" as supplements_plus)
+    "A" as supplement_kind cen_cenelec_supplement_number [":" cen_cenelec_supplements_year]
+  }
+  cen_cenelec_supplement = ( cen_cenelec_supplement_corrigendum / cen_cenelec_supplement_amendment ) as supplement
+  cen_cenelec_supplements = (1*cen_cenelec_supplement) as supplements
 
   # Identifier rule: the canonical template first, then the
   # declared alternates (parse-in spellings; they normalize to the
   # canonical render face).
-  identifier = "EN" " " cen_cenelec_number ["-" cen_cenelec_part] [":" cen_cenelec_year]
+  identifier = {
+    ( cen_cenelec_stage " " cen_cenelec_number ["-" cen_cenelec_part] [cen_cenelec_version] [":" cen_cenelec_year] / cen_cenelec_publisher [cen_cenelec_copublishers] " " cen_cenelec_guide " " cen_cenelec_number ["-" cen_cenelec_part] [":" cen_cenelec_year] / cen_cenelec_publisher [cen_cenelec_copublishers] " " cen_cenelec_adopted / cen_cenelec_publisher [cen_cenelec_copublishers] ["/" cen_cenelec_type] " " cen_cenelec_number ["-" cen_cenelec_part] [cen_cenelec_version] [":" cen_cenelec_year] ) [cen_cenelec_supplements [" FRAG" cen_cenelec_fragment_number]]
+    / cen_cenelec_publisher [cen_cenelec_copublishers] " " cen_cenelec_type " " cen_cenelec_number ["-" cen_cenelec_part] [cen_cenelec_version] [":" cen_cenelec_year] [cen_cenelec_supplements [" FRAG" cen_cenelec_fragment_number]]
+  }
   entry identifier: identifier
 
   # Typed model bindings: every bound capture lands on the
   # consumer model's field of the same name.
   bindings identifier {
+    publisher -> publisher (string)
+    copublisher -> copublisher (string)
+    copublisher -> copublishers[].copublisher (string)
+    stage -> stage (string)
+    type -> type (string)
+    guide -> guide (string)
     number -> number (string)
     part -> part (string)
+    version -> version (string)
     year -> year (string)
+    adopted -> adopted (string)
+    fragment_number -> fragment_number (string)
+    supplement -> supplements[].supplement (raw)
   }
 
   # REQUIRED examples from the definition — accepts, rejects, and
@@ -56,13 +74,68 @@ grammar PubidCenPfs version "0.1.0" edition 2 {
   test {
     accept "EN 1325"
     accept "EN 12464-1:2011"
-    accept "EN 1177:2018"
-    reject "EN"
-    reject "EN ISO 9001:2015"
+    accept "EN 302 326-2 V2.2.1:2026"
+    accept "prEN 12464-1:2019"
+    accept "FprEN 50600-2-4"
+    accept "CEN/TR 12101-5:2005"
+    accept "CEN/CLC/ETSI/TR 101551:2026"
+    accept "CLC/TS 50701:2021"
+    accept "CR 10313:2000"
+    accept "CWA 14050-21:2000"
+    accept "ES 59008-6-1:1999"
+    accept "ENV 1613:1995"
+    accept "HD 1215-2:1988"
+    accept "CEN Guide 414:2017"
+    accept "CEN/CLC Guide 25:2023"
+    accept "EN ISO 12100:2010"
+    accept "HD IEC 60364-8-81"
+    accept "EN 13250:2000/A1:2005"
+    accept "EN 60335-1:2012/A1"
+    accept "EN 13254:2000/AC:2003"
+    accept "EN 61375-2-3:2015/AC:2016-11"
+    accept "EN 285:2015+A1"
+    accept "EN 285:2015+A1:2021"
+    accept "EN ISO 10077-1:2006+AC:2009+AC2:2009"
+    accept "EN 60038/A1 FRAG2"
     reject "nonsense"
-    reject "CEN/TS 12345"
-    example "EN 1325" { number: "1325" }
-    example "EN 12464-1:2011" { number: "12464" part: "1" year: "2011" }
-    example "EN 1177:2018" { number: "1177" year: "2018" }
+    reject "ETSI EN 300 175"
+    reject "CEN/XX 100"
+    reject "HD 1215-2:198"
+    reject "EN 300 175 V"
+    reject "EN 1325 EXTRA"
+    reject "EN A1"
+    reject "ISO 12100:2010"
+    reject "EN 1325:20000"
+    reject "EN /TR 100"
+    reject "EN 13250:2000/A1:"
+    reject "EN 13250:2000/ACX:2003"
+    reject "EN 285:2015+A1:"
+    reject "FRAG2"
+    reject "EN 13250:2000 FRAG2"
+    example "EN 1325" { publisher: "EN" number: "1325" }
+    example "EN 12464-1:2011" { publisher: "EN" number: "12464" part: "1" year: "2011" }
+    example "EN 302 326-2 V2.2.1:2026" { publisher: "EN" number: "302 326" part: "2" version: " V2.2.1" year: "2026" }
+    example "prEN 12464-1:2019" { stage: "prEN" number: "12464" part: "1" year: "2019" }
+    example "FprEN 50600-2-4" { stage: "FprEN" number: "50600" part: "2-4" }
+    example "CEN/TR 12101-5:2005" { publisher: "CEN" type: "TR" number: "12101" part: "5" year: "2005" }
+    example "CEN/CLC/ETSI/TR 101551:2026" { publisher: "CEN" copublisher: "CLC" type: "TR" number: "101551" year: "2026" }
+    example "CLC/TS 50701:2021" { publisher: "CLC" type: "TS" number: "50701" year: "2021" }
+    example "CR 10313:2000" { publisher: "CR" number: "10313" year: "2000" }
+    example "CWA 14050-21:2000" { publisher: "CWA" number: "14050" part: "21" year: "2000" }
+    example "ES 59008-6-1:1999" { publisher: "ES" number: "59008" part: "6-1" year: "1999" }
+    example "ENV 1613:1995" { publisher: "ENV" number: "1613" year: "1995" }
+    example "HD 1215-2:1988" { publisher: "HD" number: "1215" part: "2" year: "1988" }
+    example "CEN Guide 414:2017" { publisher: "CEN" guide: "Guide" number: "414" year: "2017" }
+    example "CEN/CLC Guide 25:2023" { publisher: "CEN" copublisher: "CLC" guide: "Guide" number: "25" year: "2023" }
+    example "EN ISO 12100:2010" { publisher: "EN" adopted: "ISO 12100:2010" }
+    example "HD IEC 60364-8-81" { publisher: "HD" adopted: "IEC 60364-8-81" }
+    example "EN 13250:2000/A1:2005" { publisher: "EN" number: "13250" year: "2000" }
+    example "EN 60335-1:2012/A1" { publisher: "EN" number: "60335" part: "1" year: "2012" }
+    example "EN 13254:2000/AC:2003" { publisher: "EN" number: "13254" year: "2000" }
+    example "EN 61375-2-3:2015/AC:2016-11" { publisher: "EN" number: "61375" part: "2-3" year: "2015" }
+    example "EN 285:2015+A1" { publisher: "EN" number: "285" year: "2015" }
+    example "EN 285:2015+A1:2021" { publisher: "EN" number: "285" year: "2015" }
+    example "EN ISO 10077-1:2006+AC:2009+AC2:2009" { publisher: "EN" adopted: "ISO 10077-1:2006" }
+    example "EN 60038/A1 FRAG2" { publisher: "EN" number: "60038" fragment_number: "2" }
   }
 }
