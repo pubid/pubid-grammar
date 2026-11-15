@@ -1287,7 +1287,14 @@ module Pubid
             autoloads << "    autoload :AdoptedBase, \"#{__dir_placeholder__}/#{key}/adopted_base\""
             autoloads << ""
           end
-          body("#{header}#{scheme_module_body(autoloads)}")
+          text = body("#{header}#{scheme_module_body(autoloads)}")
+          # The module composition the definition binds (issue #706 §4):
+          # carried as an introspectable MODULES constant when modules are
+          # bound, so consumers and the wizard can read what the flavor is
+          # composed of. The placeholder line is exact (the indented marker
+          # the body writes), so the substitution cannot clip a neighbour.
+          composition = definition.modules.empty? ? "" : "#{modules_constant}\n"
+          text.sub("    __MODULES_COMPOSITION__\n", composition)
         end
 
         def scheme_module_body(autoloads)
@@ -1303,6 +1310,7 @@ module Pubid
                 extend Pubid::PrefixesSupport
 
                 PREFIXES = #{ruby_array(definition.organization.prefixes)}.freeze
+                __MODULES_COMPOSITION__
             #{autoloads.join("\n").chomp}
                 autoload :Builder, "#{__dir_placeholder__}/#{key}/builder"
                 autoload :Identifier, "#{__dir_placeholder__}/#{key}/identifier"

@@ -35,6 +35,14 @@ families declared as types on the six compiler features of
 pubid-grammar#121 (merged as #122), 189/189 corpus rows byte-identical
 with the coded flavor, zero rows pinned (pubid#721); its header
 documents the features and the honest non-corpus boundaries.
+[`bsi.pfs`](bsi.pfs) is the FIRST module-composition proof flavor — the
+BS face composed from the library (national.prefix + en.overlay over
+the adopted iso/iec inners, supplements.core bound for BSI's
+plus-separated amendment run), measured against the biggest composition
+corpus in the fleet: 304 of the 1,500 bsi rows at full byte parity, 539
+classified (the wrapper/typed-trio serialization the declared emission
+does not fill), 657 rejected families outside the surface — every row
+pinned in pubid's `spec/pubid/bsi_pfs/parity_spec.rb` ledger.
 
 ## The file
 

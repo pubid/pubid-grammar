@@ -1,0 +1,354 @@
+# BSI — the first module-composition PFS proof flavor (pubid#706 §4): the
+# British Standards face composed from the module library. BSI is THE
+# flagship composition story — British Standards adopting EN/ISO/IEC
+# documents (`BS EN ISO 13485`, `BS EN IEC 61851-1`, the national.prefix
+# head over the en.overlay adoption over the adopted inner document) —
+# and the bsi corpus is the biggest composition corpus in the fleet
+# (1,500 cases; tests/bsi in pubid-testsuite).
+#
+# The composition (issue #706 §4, grammar#122's port shape):
+#
+#   national.prefix  — the "BS" head token as DATA (the module's
+#                      parameter), the same module DIN/NF/SS- compose with;
+#   en.overlay       — the EN adoption face and its identity (the adopted
+#                      document is the base), routing to the inner modules;
+#   iso.inner        — the adopted ISO document face ("BS ISO 8601:2019");
+#   iec.inner        — the adopted IEC document face ("BS IEC 60747-8");
+#   supplements.core — the amendment/corrigendum operators as bindings
+#                      (BSI's "+A1:2016" spelling, plus-separated).
+#
+# edition.core is NOT bound: its edition_face requires an
+# `edition_space` separator the composing definition must supply, and
+# BSI's ED face is glued to the number ("BS HD IEC 60364-8-81 ED1" — no
+# separator exists to supply). That is a measured module-library gap,
+# not a definition choice — see the parity ledger's follow-up list.
+#
+# The coded Pubid::Bsi flavor carries machinery beyond grammar
+# composition (the 1,495-line builder): the typed-trio serialization
+# (PAS/PD/DD/TS rows carry type/stage/typed_stage with harmonized
+# stages), the wrapper attribute named `base` (the uniform parent
+# accessor), the RootIdentity MR slugs, the root-through URN reads,
+# the nested publisher body form, and thirty-plus families outside the
+# composition surface (aerospace, Flex, index/method/section suffixes,
+# national annexes, Expert commentary, bundles, sets). Those are the
+# MEASURED boundary — the parity harness (spec/pubid/bsi_pfs/) classifies
+# every non-parity row against this definition's corpus.
+#
+# What the composition DOES absorb, and compiles here: the national
+# head over the adoption chains (BS EN…, BS EN ISO…, BS EN IEC…, BS
+# HD…, DD CEN ISO/TS…, DD CLC/TS… — the adopted run delegated to the
+# owning flavors through the §4 coded hook), the plain BS face with
+# parts and years, the PAS/PD/DD/TS designations, BSI's plus-separated
+# amendment run, and the wrapper-with-adopted identity of the adoption
+# face. The escalation prefix (DISC), the AMD-keyword supplement
+# spelling (" BS 6305:1992 AMD1" — a space-separated face the
+# supplements declaration does not carry) and the draft "Draft BS"
+# face are declared negatives here and follow-up items.
+
+pfs: 1
+
+scheme: bsi
+title: "BSI (module composition)"
+
+organization:
+  name: "British Standards Institution"
+  publisher: "BS"
+  # The head-dispatch tokens the composed flavor ACCEPTS: the national
+  # body token (national.prefix as data) and the BSI designation faces
+  # that are their own head tokens (PAS/PD/DD/TS — the publisher-type
+  # faces, cen's CR/CWA rule). The escalation prefix DISC and the Flex
+  # series stay outside this surface.
+  prefixes: ["BS", "PAS", "PD", "DD", "TS"]
+
+# The §4 composition: the inner ISO/IEC faces, the EN adoption overlay
+# over them, the national body token as data, and the supplement/edition
+# operators as bindings.
+modules:
+  - module: iso.inner
+    version: 1
+  - module: iec.inner
+    version: 1
+  - module: en.overlay
+    version: 1
+  - module: national.prefix
+    version: 1
+    parameters:
+      prefixes: ["BS", "BSI"]
+  - module: supplements.core
+    version: 1
+
+# The deliverable faces (feature 1). The token-free BritishStandard is
+# the default class; the designation faces are publisher types (feature
+# 5); the adoption wrappers (feature 4) have no tokens of their own —
+# the hook builds them for every adopted run.
+types:
+  british_standard:
+    key: bs
+    web: british_standard
+    title: "British Standard"
+    short: "BS"
+    tag: "pubid:bsi:british-standard"
+    publisher_default: "BS"
+    stage:
+      code: pubbs
+      stage_code: published
+      abbr: ["BS"]
+  adopted_european_norm:
+    key: aen
+    web: adopted_european_norm
+    title: "Adopted European Norm"
+    short: "EN"
+    tag: "pubid:bsi:adopted-european-norm"
+    publisher_default: "BS"
+    adopted: true
+  adopted_international_standard:
+    key: ais
+    web: adopted_international_standard
+    title: "Adopted International Standard"
+    short: "BS"
+    tag: "pubid:bsi:adopted-international-standard"
+    publisher_default: "BS"
+    adopted: true
+  publicly_available_specification:
+    key: pas
+    web: publicly_available_specification
+    title: "Publicly Available Specification"
+    short: "PAS"
+    tag: "pubid:bsi:publicly-available-specification"
+    tokens: ["PAS"]
+    publisher_default: "PAS"
+  published_document:
+    key: pd
+    web: published_document
+    title: "Published Document"
+    short: "PD"
+    tag: "pubid:bsi:published-document"
+    tokens: ["PD"]
+    publisher_default: "PD"
+  draft_document:
+    key: dd
+    web: draft_document
+    title: "Draft Document"
+    short: "DD"
+    tag: "pubid:bsi:draft-document"
+    tokens: ["DD"]
+    publisher_default: "DD"
+  technical_specification:
+    key: ts
+    web: technical_specification
+    title: "Technical Specification"
+    short: "TS"
+    tag: "pubid:bsi:technical-specification"
+    tokens: ["TS"]
+    publisher_default: "TS"
+
+# The adopted-base dispatch (feature 4): the hook is vendored beside the
+# generated classes (lib/pubid/bsi_pfs/adopted_base.rb) — it parses the
+# adopted run with the OWNING flavor (EN/CEN/CLC/HD/ENV/ES/CR/CWA leads
+# through Pubid::CenCenelec, ISO through Pubid::Iso, IEC/CISPR through
+# Pubid::Iec), picks the wrapper class by what came back (a CEN
+# identifier is an adopted European norm; an ISO/IEC identifier an
+# adopted international standard), and carries the multi-level chains
+# (BS EN ISO … is a BSI wrapper over a CEN adoption over the ISO
+# document — the identity composition the modules declare).
+adopted:
+  field: adopted
+  hook: coded
+
+# BSI's supplement spelling (feature 3): the plus-separated amendment
+# run ("BS 10125:2014+A1:2016", "BS EN 1005-1:2001+A1:2008") folds into
+# the consolidated bundle; the corrigendum face C exists in the coded
+# flavor (no corpus rows) and is declared beside the amendment. The AMD
+# keyword spelling (" BS 6305:1992 AMD1" — a space-separated face) and
+# the "/AMD1" IEC-internal runs stay outside: a slash cannot START a
+# declared item (the face-digit item fails on "AMD1"), so those runs
+# stay inside the adopted capture where the owning flavors parse them.
+supplements:
+  run: supplements
+  item: supplement
+  kind: supplement_kind
+  number: supplement_number
+  number_kind: string
+  date: [year]
+  wrappers:
+    amendment:
+      face: "A"
+      tag: "pubid:bsi:amendment"
+      title: "Amendment"
+      fields: [year]
+      mr: [amd, number, year]
+      urn: [amd, number, year]
+    corrigendum:
+      face: "C"
+      tag: "pubid:bsi:corrigendum"
+      title: "Corrigendum"
+      fields: [year]
+      mr: [cor, number, year]
+      urn: [cor, number, year]
+  consolidated:
+    tag: "pubid:bsi:consolidated-identifier"
+    title: "Consolidated identifier"
+
+# Named lexical rules the fields reference. The module fragments
+# (iso_*, iec_*, en_*, supplement_*, edition_*) are merged beside them.
+grammar:
+  digit: "%x30-39"
+  alpha: '%x41-5A / %x61-7A'
+
+fields:
+  # The head token: the national body token and the designation faces
+  # that ARE the designation ("PAS 003"), cen's publisher-type rule.
+  publisher:
+    pattern: '("BS" / "PAS" / "PD" / "DD" / "TS")'
+    kind: string
+  number:
+    # The number carries a glued trailing letter ("BS 1000A:1961",
+    # "PD 6481C:1977" — the coded column keeps it in the number). The
+    # letter is UPPER-case only: the coded flavor rejects the lower-case
+    # spelling ("PD 854a:1951", a negative-corpus row).
+    pattern: '1*(%x30-39) [%x41-5A]'
+    kind: string
+  part:
+    # The printed part: numeric ("107.2"), dotted ("107.2"), letter-led
+    # ("A1", "B2"), multi-level ("1.3.3") — the coded part column keeps
+    # the whole printed run.
+    pattern: '1*(digit / alpha) *(("." / "-") 1*(digit / alpha))'
+    kind: string
+  year:
+    pattern: '4digit'
+    kind: string
+  adopted:
+    # The adopted run: an EN/CEN/CLC/HD/ENV/ES/CR/CWA/ISO/IEC/CISPR
+    # lead token and the rest of the document face, ending before BSI's
+    # own supplement run (the item rule the supplements declaration
+    # compiles). CISPR is NOT a lead: the coded flavor routes "BS CISPR"
+    # to its aerospace series (a family outside this surface), so the
+    # composed flavor refuses it rather than mis-representing the class.
+    # The IEC-internal runs ("/AMD1/FRAG1") cannot start a declared
+    # item, so they stay inside the run the hook delegates.
+    pattern: '( ( "EN" / "CEN" / "CLC" / "HD" / "ENV" / "ES" / "CR" / "CWA" / "ISO" / "IEC" ) ( *( !(bsi_supplement) ( %x01-09 / %x0B-10FFFF ) ) ) )'
+    kind: string
+    builder_only: true
+
+# The scheme's calendar: the publication year of the document.
+date:
+  fields: [year]
+
+templates:
+  # The canonical face: the head alternation picks the first alternative
+  # whose direct fields captured — the adoption face (the national head
+  # over the adopted document), else the designation face. BSI's
+  # plus-separated amendment run follows.
+  canonical: '({publisher} " " {adopted} / {publisher} " " {number} ["-" {part}] [":" {year}]) [{supplements}]'
+
+urn:
+  # The coded urn:bsi:… form: the publisher downcased ("bs" — the coded
+  # generator's fallback token; a designation face whose publisher is
+  # its own token prints the fallback here too), the composed code, the
+  # part behind its dash and the year. The adoption rows read the ROOT
+  # document's identity in the coded flavor (urn:bsi:bs:1073:-2:2002) —
+  # a root-through read the ordered segment declaration does not carry;
+  # those rows are the measured URN gap.
+  namespace: bsi
+  official:
+    - { field: publisher, lower: true }
+    - { field: number }
+    - { field: part, affix: "-" }
+    - { date: [year] }
+  schema:
+    # The coded schema's atom table, narrowed to the columns this
+    # surface declares (the coded schema carries every family's atoms;
+    # a compiled flavor declares what its model holds).
+    atoms:
+      - { path: publisher, prefix: pub, kind: string }
+      - { path: part, prefix: part }
+      - { path: year, prefix: year }
+      - { path: adopted, prefix: adopted, kind: id }
+      - { path: identifiers, prefix: ids, kind: ids }
+    types:
+      - { type: "pubid:bsi:adopted-european-norm", token: aen, core: [] }
+      - { type: "pubid:bsi:adopted-international-standard", token: ais, core: [] }
+      - { type: "pubid:bsi:amendment", token: amd, core: [] }
+      - { type: "pubid:bsi:british-standard", token: bs, core: [number] }
+      - { type: "pubid:bsi:consolidated-identifier", token: consol, core: [] }
+      - { type: "pubid:bsi:corrigendum", token: cor, core: [] }
+      - { type: "pubid:bsi:draft-document", token: dd, core: [number] }
+      - { type: "pubid:bsi:published-document", token: pd, core: [number] }
+      - { type: "pubid:bsi:publicly-available-specification", token: pas, core: [number] }
+      - { type: "pubid:bsi:technical-specification", token: ts, core: [number] }
+
+# The MR-slug hooks (the coded columns): the number-part fused, the year.
+# The publisher segment is the shared model's (the captured head token).
+mr:
+  number: { join: [number, part], glue: "-" }
+  year: { field: year }
+
+# REQUIRED. The live test panel: real corpus shapes, one per family; each
+# positive parses and renders as declared under the canonical face; each
+# negative fails to parse (every negative verified against the coded
+# flavor first — they are its rejections or its families outside this
+# surface).
+examples:
+  positives:
+    - input: "BS 10005:1995"
+      renders: "BS 10005:1995"
+    - input: "BS 1016-107.2:1991"
+      renders: "BS 1016-107.2:1991"
+    - input: "BS 1344-A1:1960"
+      renders: "BS 1344-A1:1960"
+    - input: "PD 5730"
+      renders: "PD 5730"
+    - input: "PAS 003:1994"
+      renders: "PAS 003:1994"
+    - input: "DD 136-2:1986"
+      renders: "DD 136-2:1986"
+    - input: "TS 1:1995"
+      renders: "TS 1:1995"
+    - input: "BS EN 1073-2:2002"
+      renders: "BS EN 1073-2:2002"
+    - input: "BS EN ISO 105-B06:2020"
+      renders: "BS EN ISO 105-B06:2020"
+    - input: "BS EN IEC 61851-1:2019"
+      renders: "BS EN IEC 61851-1:2019"
+    - input: "BS ISO 8601:2019"
+      renders: "BS ISO 8601:2019"
+    - input: "BS IEC 60747-8:2000"
+      renders: "BS IEC 60747-8:2000"
+    - input: "BS HD 60269-3"
+      renders: "BS HD 60269-3"
+    - input: "DD CEN ISO/TS 12180-1:2007"
+      renders: "DD CEN ISO/TS 12180-1:2007"
+    - input: "DD CLC/TS 50131-2-2:2004"
+      renders: "DD CLC/TS 50131-2-2:2004"
+    - input: "BS EN IEC 60601-1/FRAG1"
+      renders: "BS EN IEC 60601-1/FRAG1"
+    - input: "BS EN IEC 61535/AMD1/FRAG1"
+      renders: "BS EN IEC 61535/AMD1/FRAG1"
+    - input: "BS 10125:2014+A1:2016"
+      renders: "BS 10125:2014+A1:2016"
+    - input: "BS EN 1005-1:2001+A1:2008"
+      renders: "BS EN 1005-1:2001+A1:2008"
+    - input: "BS 646:1958+A2:2013"
+      renders: "BS 646:1958+A2:2013"
+  negatives:
+    - "nonsense"
+    - "BS"
+    - "EN 1325"
+    - "ISO 9001:2015"
+    - "BS 2X 26:2001"
+    - "DISC PD 0005:1995"
+    - "BS A 103:2025"
+    - "BSI Flex 1886 v2.0:2024-09"
+    - "BS 7671 AMD2"
+    - "BS 1000[9]:1971"
+    - "BS 1580:Parts 1 and 2:1962"
+    - "BS CISPR 12:1997"
+    - "14/30300822 DC"
+    - "NA to BS EN 1996-1-2:2005"
+    - "BS 7722:2006 BOOK"
+    - "BS 31100:2021 ExComm"
+    - "AMD 11015"
+    - "BS 1425:Supplement No. 1:1966"
+    - "BS 185 Index:1962"
+    - "BS 2782-10:Method 1006:1978"
+    - "BS 1902-2.3:Addendum No.  1:1976"
