@@ -18,11 +18,15 @@ grammar PubidJis version "0.1.0" edition 2 {
   year = colon (1*digit) as year [reaffirmed_rule]
   language = ("(" / "（") ("E" / "J") as language (")" / "）")
   all_parts = (("（" "規格群" "）") / ("(" "規格群" ")")) as all_parts
+  # A supplement's `:year[R]` tail is optional as ONE unit (colon and digits
+  # together, as the base `year` rule is): a yearless amendment prints and
+  # parses as "…/AMD 1", and a dangling colon with no year after it stays
+  # rejected — the renderer never emits it (pubid#745).
   amendment = {
     slash ("AMENDMENT" / "AMD") as amd_type
     space
     (1*digit) as amd_number
-    colon (1*digit) as amd_year
+    [(colon (1*digit) as amd_year)]
     [("R" (*"R")) as amd_reaffirmed]
   }
   explanation = {
@@ -33,7 +37,7 @@ grammar PubidJis version "0.1.0" edition 2 {
     slash ("CORRIGENDUM" / "CORR") as corr_type
     space
     (1*digit) as corr_number
-    colon (1*digit) as corr_year
+    [(colon (1*digit) as corr_year)]
     [("R" (*"R")) as corr_reaffirmed]
   }
   supplement = {
@@ -131,12 +135,15 @@ grammar PubidJis version "0.1.0" edition 2 {
     example "WES 1112:2022(E)" { language: "E", year: "2022" }
     example "WES 1112(E)" { wes: "WES", number: "1112", language: "E" }
     example "JIS A 0001:1999/AMD 1:2000" { series: "A", number: "0001", year: "1999", amd_type: "AMD", amd_number: "1", amd_year: "2000" }
+    example "JIS G 0558/AMD 1" { series: "G", number: "0558", amd_type: "AMD", amd_number: "1" }
+    example "JIS B 3700-11:1996/CORRIGENDUM 1" { series: "B", number: "3700", year: "1996", corr_type: "CORRIGENDUM", corr_number: "1" }
     example "JIS B 3700-11:1996/CORRIGENDUM 1:2002" { series: "B", number: "3700", year: "1996", corr_type: "CORRIGENDUM", corr_number: "1", corr_year: "2002" }
     reject "JIS X 0208(E):1997"
     reject "TR WES 2032"
     reject "JIS TR WES 2032"
     reject "WES TX 2032:2024"
     reject "WES TR X 2032"
+    reject "JIS G 0558/AMD 1:"
     example "WES　TR　2032：2024" { wes: "WES", wes_type: "TR", number: "2032", year: "2024" }
     example "WES 1112（E）：2022" { wes: "WES", number: "1112", wes_language: "E", year: "2022" }
   }
