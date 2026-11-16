@@ -32,6 +32,7 @@
 | ini | 1.0.0 | 13 | 9 | 0 | 0 | true |
 | json | 1.0.0 | 18 | 9 | 0 | 0 | true |
 | lua | 1.0.0 | 27 | 18 | 0 | 0 | true |
+| toml | 1.0.0 | 37 | 28 | 0 | 0 | true |
 | iho | 0.2.0 | 46 | 43 | 22 | 0 | true |
 | ire | 0.1.0 | 5 | 4 | 5 | 0 | true |
 | isbn | 0.1.0 | 4 | 3 | 1 | 0 | true |
@@ -53,4 +54,4 @@
 | w3c | 0.1.0 | 3 | 2 | 2 | 0 | true |
 | xsf | 0.1.0 | 3 | 2 | 1 | 0 | true |
 
-flavors: 51; corpus cases: 436; with render: 1; gates: run scripts/cross-runtime-check.sh
+flavors: 52; corpus cases: 463; with render: 1; gates: run scripts/cross-runtime-check.sh
