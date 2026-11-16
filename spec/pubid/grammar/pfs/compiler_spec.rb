@@ -22,7 +22,7 @@ RSpec.describe Pubid::Grammar::Pfs::Compiler do
         grammar_out: File.join(dir, "doi_pfs.parg"),
         artifact_out: File.join(dir, "doi_pfs.json"),
         repo_root: PFS_REPO_ROOT,
-        parsanol_version: ENV.fetch("PARSANOL_VERSION", "1.3.126"),
+        parsanol_version: ENV.fetch("PARSANOL_VERSION", "1.5.1.0"),
       )
 
       committed = File.read(File.join(PFS_REPO_ROOT, "grammars/doi_pfs.parg"))
@@ -42,7 +42,7 @@ RSpec.describe Pubid::Grammar::Pfs::Compiler do
         grammar_out: File.join(dir, "etsi_pfs.parg"),
         artifact_out: File.join(dir, "etsi_pfs.json"),
         repo_root: PFS_REPO_ROOT,
-        parsanol_version: ENV.fetch("PARSANOL_VERSION", "1.3.126"),
+        parsanol_version: ENV.fetch("PARSANOL_VERSION", "1.5.1.0"),
       )
 
       committed = File.read(File.join(PFS_REPO_ROOT, "grammars/etsi_pfs.parg"))
@@ -391,7 +391,7 @@ RSpec.describe Pubid::Grammar::Pfs::Compiler do
         grammar_out: File.join(dir, "cen_pfs.parg"),
         artifact_out: File.join(dir, "cen_pfs.json"),
         repo_root: PFS_REPO_ROOT,
-        parsanol_version: ENV.fetch("PARSANOL_VERSION", "1.3.126"),
+        parsanol_version: ENV.fetch("PARSANOL_VERSION", "1.5.1.0"),
       )
 
       committed = File.read(File.join(PFS_REPO_ROOT, "grammars/cen_pfs.parg"))

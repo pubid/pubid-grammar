@@ -342,7 +342,7 @@ ruby scripts/pfs compile definitions/doi.pfs --as doi_pfs \
 
 # emit the Ruby flavor module for vendoring (the pubid PR's lib/ files)
 ruby scripts/pfs compile definitions/doi.pfs --as doi_pfs \
-  --parsanol-version 1.3.126 --ruby-out <pubid-repo>/lib
+  --parsanol-version 1.5.1.0 --ruby-out <pubid-repo>/lib
 
 # regenerate the derived contracts (schemas/ + corpora/), then commit
 # grammars/, artifacts/, schemas/, corpora/ together

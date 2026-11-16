@@ -9,13 +9,16 @@ env:
   # Post brace-body rule forms (ruby#311) and the advisory lint split:
   # the compiler must parse brace-form grammars and reproduce the
   # committed contracts byte-for-byte.
-  # The released compiler the artifacts are baked with. 1.3.121 carried
-  # ruby#400's capture-flatten (the edition-2 text-capture semantics);
-  # 1.3.126 is the last good compiler before ruby#434 (its successor's
-  # loud-loss check matches the binding PATH instead of the CAPTURE
-  # name, wrongly dropping every capture != path rename, so the whole
-  # fleet pins below it until that fix ships).
-  PARSANOL_VERSION: 1.3.126
+  # The released compiler the artifacts are baked with. The fleet rode
+  # 1.3.126 because ruby#434 (1.3.127's loud-loss check matched the
+  # binding PATH instead of the CAPTURE name, wrongly dropping every
+  # capture != path rename) froze the pin below it until the fix
+  # shipped. ruby#434 is fixed, so the whole fleet graduated to
+  # 1.5.1.0 — the engine's graduation release (parsanol-rs#519):
+  # every artifact re-sealed and every schema/corpus regenerated,
+  # parse behavior byte-identical (probe: zero tree/bound/case deltas
+  # across all 54 flavors).
+  PARSANOL_VERSION: 1.5.1.0
   RS_REF: main
   TS_REF: main
 
@@ -104,7 +107,7 @@ jobs:
           # verdict moves underneath it. Pin the wasm engine (the TS
           # sibling of the ruby PARSANOL_VERSION pin above): 0.10.46
           # vendors rs 0.19.19, vendored from the rs 0.20.14 train (phantom-array harvest fixed, parsanol-ts#66);
-          # the ruby 1.3.121 these artifacts and contracts are baked
+          # the ruby 1.5.1.0 these artifacts and contracts are baked
           # and recorded with.
           npm install --no-save parsanol@0.10.46
           npm run build

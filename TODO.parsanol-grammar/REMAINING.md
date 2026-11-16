@@ -13,7 +13,8 @@ edition-2 typed bindings (see dashboard.md, regenerated this sync).
 The grammar CI job runs on ubuntu-24.04 with ruby 3.4.8 — bakes and
 contract regens stay on that toolchain because the artifact stamps
 embed the Ruby version; the compiler pin is `PARSANOL_VERSION` in
-`.github/workflows/parg-conformance.yml` (1.3.126) and the
+`.github/workflows/parg-conformance.yml` (1.5.1.0 — the fleet
+graduated once ruby#434 shipped, parsanol-rs#519) and the
 cross-engine wasm gate is pinned to `@parsanol/wasm` 0.10.46
 (rs 0.20.14 — the phantom-array harvest of parsanol-ts#66, ruby
 ancestor parsanol-ruby#399, is fixed there; 0.10.32 predates the fix).
