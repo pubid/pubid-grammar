@@ -1,0 +1,58 @@
+# CSV (RFC 4180): the delimited-data grammar — the second
+# general-purpose data-format flavor, riding the json flavor's
+# methodology (parsanol-rs#531 grammar breadth).
+#
+# Edition-2 notes: records are right-recursive through the row list
+# (no left recursion). Quoted fields admit any byte except a raw
+# dquote (dquotes double per RFC 4180 section 2.7); line breaks inside
+# quotes are legal RFC — the quoted class includes them. Unquoted
+# fields exclude dquote/comma/CR/LF (textdata, extended past 0x7E to
+# 0x10FFFF for UTF-8 content). Bare LF is accepted alongside CRLF
+# (editors rewrite line endings); a trailing row terminator is
+# optional. A trailing comma is a reject (RFC-strict: every comma
+# opens another field).
+
+grammar Csv version "1.0.0" edition 2 {
+  crlf = %x0D %x0A
+  lf = %x0A
+  comma = %x2C
+  dquote = %x22
+
+  ## file = record *( eol record ) [ eol ]; one record minimum (an
+  ## empty document parses as one empty unquoted field).
+  file = csv_record *( eol csv_record ) [ eol ]
+
+  ## eol: the RFC wire form is CRLF; bare LF tolerated.
+  eol = crlf / lf
+
+  csv_record = ( field *( comma field ) ) as record
+  field = ( quoted_field / unquoted_field ) as field
+
+  ## Quoted: dquote, any non-dquote bytes (CR/LF included — RFC allows
+  ## line breaks inside quoted fields), or a doubled dquote escape.
+  quoted_field = dquote *( %x00-21 / %x23-10FFFF / dquote dquote ) dquote
+
+  ## Unquoted: RFC textdata (no dquote, comma, CR, LF) extended for
+  ## multibyte.
+  unquoted_field = *( %x20-21 / %x23-2B / %x2D-10FFFF )
+
+  entry main: file
+
+  test {
+    accept "a,b,c"
+    accept "1,2\r\n3,4"
+    accept "1,2\n3,4"
+    accept "\"quoted,comma\",plain"
+    accept "\"say \"\"hi\"\"\",x"
+    accept "single"
+    accept "a,b,\r\n,,c"
+    accept "name,age\n\"Smith, John\",42\n\"multi\nline\",1"
+    accept "\"unicode ünïcödé\",2"
+    accept "row with trailing newline\n"
+    accept "a,b,\n"
+    reject "\"unterminated,x"
+    reject "a,\"mix\"ed"
+    reject "a,,b\rc"
+    reject "a\tb,c"
+  }
+}

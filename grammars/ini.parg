@@ -1,0 +1,57 @@
+# INI: the classic configuration-file grammar — the third
+# general-purpose data-format flavor (parsanol-rs#531 grammar
+# breadth). The common INI denominator: optional sections, key=value
+# (or key:value), ; and # comments, values running to end of line.
+# Dialect notes: keys may contain spaces; a whitespace-only line is a
+# blank (ordered choice matches blank before setting); values keep
+# inline ; and # (inline comments are a dialect extension — not
+# consumed here). Line endings: CRLF or bare LF; the final line may
+# omit the terminator. An empty document parses (zero lines).
+
+grammar Ini version "1.0.0" edition 2 {
+  crlf = %x0D %x0A
+  lf = %x0A
+  ws = *( %x20 / %x09 )
+
+  ## ini = *( blank / comment / section / setting ); each line shape
+  ## consumes its own terminator, optional at end of document.
+  ini = *( blank / comment / section / setting )
+
+  blank = ( ws nl ) as blank
+
+  comment = ( ws comment_mark *( %x20-10FFFF ) [ nl ] ) as comment
+  comment_mark = %x3B / %x23
+
+  section = ( ws %x5B ws section_name ws %x5D ws [ nl ] ) as section
+  section_name = ( 1*name_char ) as name
+
+  ## key = value or key: value — the separator tail is optional, so a
+  ## bare key line ("flag") is a setting with an absent value.
+  setting = ( ws key ws [ setting_tail ] [ nl ] ) as setting
+  setting_tail = ( ( %x3D / %x3A ) ws *( %x20-10FFFF ) )
+  key = ( 1*name_char ) as key
+
+  ## name chars: everything except CR/LF and the structural marks
+  ## (= : [ ] ; #). Keys and section names share the class.
+  name_char = %x20-22 / %x24-39 / %x3C / %x3E-5A / %x5C / %x5E-10FFFF
+
+  nl = crlf / lf
+
+  entry main: ini
+
+  test {
+    accept "[section]\nkey=value"
+    accept "key = value"
+    accept "a=1\nb:2\n;c\n#d\n[ s ]\nx=y"
+    accept "[a]\n[b]"
+    accept "empty="
+    accept "; only a comment"
+    accept "key = value with; semicolon and # hash"
+    accept "flag\nother key = spaced"
+    accept "[top]\n\n[bottom]\nk = v\n"
+    reject "=novalue"
+    reject "[unclosed"
+    reject "a=b\n]stray"
+    reject "a=b\n  =  x"
+  }
+}

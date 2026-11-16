@@ -13,6 +13,7 @@
 | calconnect | 0.1.0 | 4 | 3 | 5 | 0 | true |
 | ccsds | 0.1.0 | 3 | 2 | 7 | 0 | true |
 | cen_cenelec | 0.2.0 | 10 | 9 | 14 | 0 | true |
+| csv | 1.0.0 | 15 | 11 | 0 | 0 | true |
 | cie | 0.1.0 | 9 | 8 | 47 | 0 | true |
 | csa | 0.1.0 | 4 | 3 | 38 | 0 | true |
 | doi | 0.1.0 | 4 | 3 | 2 | 0 | true |
@@ -28,6 +29,7 @@
 | iec | 0.1.0 | 6 | 5 | 40 | 0 | true |
 | ieee | 0.1.0 | 85 | 81 | 99 | 0 | true |
 | ietf | 0.1.0 | 5 | 4 | 3 | 0 | true |
+| ini | 1.0.0 | 13 | 9 | 0 | 0 | true |
 | json | 1.0.0 | 18 | 9 | 0 | 0 | true |
 | iho | 0.2.0 | 46 | 43 | 22 | 0 | true |
 | ire | 0.1.0 | 5 | 4 | 5 | 0 | true |
@@ -50,4 +52,4 @@
 | w3c | 0.1.0 | 3 | 2 | 2 | 0 | true |
 | xsf | 0.1.0 | 3 | 2 | 1 | 0 | true |
 
-flavors: 48; corpus cases: 415; with render: 1; gates: run scripts/cross-runtime-check.sh
+flavors: 50; corpus cases: 435; with render: 1; gates: run scripts/cross-runtime-check.sh
