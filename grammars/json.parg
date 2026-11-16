@@ -1,0 +1,63 @@
+# JSON (RFC 8259): the data-interchange grammar — the fleet's first
+# general-purpose data format flavor, and the shared corpus grammar for
+# the industry benchmark suite (parsanol-rs#526: every competitor engine
+# has a JSON grammar, so the comparison row is direct).
+#
+# Edition-2 notes: the object/array recursions are right-recursive
+# through their element lists (no left recursion). Whitespace is RFC ws
+# (space/tab/LF/CR), zero-or-more, handled positionally around the
+# structural tokens. The true/false/null faces are exact: the value
+# grammar's ordered choice plus the document-end anchor make "truex" a
+# reject without a trailing guard.
+
+grammar Json version "1.0.0" edition 2 {
+  ws = *( %x20 / %x09 / %x0A / %x0D )
+
+  ## A JSON text is a serialized value (RFC 8259 section 2: "a JSON
+  ## text is a serialized value"); parsers accept the value with
+  ## optional surrounding whitespace.
+  json = ws value ws
+
+  value = object / array / string / number / %i"true" / %i"false" / %i"null"
+
+  object = ( "{" ws [ member *( ws "," ws member ) ] ws "}" ) as object
+  member = ( string ws ":" ws value ) as member
+
+  array = ( "[" ws [ value *( ws "," ws value ) ] ws "]" ) as array
+
+  ## Strings (RFC 8259 section 7): the unescaped class excludes quote
+  ## and backslash; the escape set is the nine two-char forms including
+  ## the u-hexquad.
+  string = ( %x22 *( %x20-21 / %x23-5B / %x5D-10FFFF / %x5C ( %x22 / %x5C / %x2F / %x62 / %x66 / %x6E / %x72 / %x74 / ( %x75 4*( %x30-39 / %x41-46 / %x61-66 ) ) ) ) %x22 ) as string
+
+  ## Numbers (RFC 8259 section 6): minus optional, int is zero or a
+  ## nonzero-leading digit run, frac and exp optional.
+  number = ( [ %x2D ] int [ frac ] [ exp ] ) as number
+  int = %x30 / ( %x31-39 *digit )
+  frac = %x2E 1*digit
+  exp = ( %x65 / %x45 ) [ %x2B / %x2D ] 1*digit
+  digit = %x30-39
+
+  entry main: json
+
+  test {
+    accept "{}"
+    accept "[]"
+    accept "{\"a\": 1}"
+    accept "{\"a\": [1, true, null], \"b\": \"x\\nA\"}"
+    accept "[[[[[1]]]]]"
+    accept "-0.5e10"
+    accept "\"a\\tb\\\\c\\/d\""
+    accept "\"A plain hex\""
+    accept "{ \"nested\" : { \"deep\" : [ {\"x\" : 0} ] } }"
+    reject "{a: 1}"
+    reject "{'a': 1}"
+    reject "[1, 2,]"
+    reject "truex"
+    reject "01"
+    reject "+1"
+    reject "{\"a\": }"
+    reject "\"unterminated"
+    reject "{"
+  }
+}
