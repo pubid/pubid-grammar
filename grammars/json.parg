@@ -38,6 +38,14 @@ grammar Json version "1.0.0" edition 2 {
   exp = ( %x65 / %x45 ) [ %x2B / %x2D ] 1*digit
   digit = %x30-39
 
+  ## Recovery (R2 declared resync): a corrupted value or member skips
+  ## a deterministic junk run — every byte except the structural
+  ## boundaries (quote, comma, close-bracket, close-brace) — and
+  ## parsing resumes AT the boundary, so the enclosing list continues
+  ## with its comma intact. The author owns the spans; no trial scan.
+  resync value = 1*( %x00-21 / %x23-2B / %x2D-5C / %x5E-7C / %x7E-10FFFF )
+  resync member = 1*( %x00-21 / %x23-2B / %x2D-5C / %x5E-7C / %x7E-10FFFF )
+
   entry main: json
 
   test {
