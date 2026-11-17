@@ -853,16 +853,35 @@ module Pubid
               "        segments << group.map(&:#{'downcase'}).join(#{segment.glue.inspect}) unless group.empty?",
             ].join("\n        ").sub(".map(&:downcase)", segment.lower ? ".map(&:downcase)" : "")
           when Definition::UrnAdoptedMr
+            attr = definition.adopted&.attribute || "adopted"
             [
-              "adopted = @identifier.respond_to?(:adopted) ? @identifier.adopted : nil",
+              "adopted = @identifier.respond_to?(:#{attr}) ? @identifier.#{attr} : nil",
               "        mr = adopted&.to_mr_string",
               "        segments << mr.tr(\"._\", \"::\") unless mr.nil? || mr.empty?",
             ].join("\n        ")
           when Definition::UrnStageCode
+            if segment.published
+              [
+                "# The typed trio's own stage segment (the declared published",
+                "# form): it fires for published rows too — the coded",
+                "# generator's own comparison (a stage_code String is never",
+                "# the :published Symbol).",
+                "code = @identifier.typed_stage&.stage_code",
+                "  segments << #{segment.marker.inspect} + code.to_s if code && code != :published",
+              ].join("\n        ")
+            else
+              [
+                "stage = @identifier.typed_stage",
+                "        code = stage&.stage_code",
+                "        segments << #{segment.marker.inspect} + code.to_s if code && code.to_s != \"published\"",
+              ].join("\n        ")
+            end
+          when Definition::UrnTypeAbbr
             [
-              "stage = @identifier.typed_stage",
-              "        code = stage&.stage_code",
-              "        segments << #{segment.marker.inspect} + code.to_s if code && code.to_s != \"published\"",
+              "if @identifier.type",
+              "  type = @identifier.type&.abbr || @identifier.type.to_s",
+              "  segments << type.to_s.downcase if type && type.to_s != #{segment.skip.inspect}",
+              "end",
             ].join("\n        ")
           when Definition::UrnField
             if segment.edition_affix
@@ -940,11 +959,30 @@ module Pubid
           else
             wrapper_mode? ? "subject" : "@identifier"
           end
-          if date_binding && date_binding.fields.include?(name)
+          if root_through_column?(name)
+            # The declared root-through: the wrapper carries no identity of
+            # its own, the segment reads the ROOT document's (the wrapper's
+            # OWN columns — the edition face — are never root-through).
+            date_binding && date_binding.fields.include?(name) \
+              ? "identity(:date)&.#{name}" \
+              : "identity(:#{name})"
+          elsif date_binding && date_binding.fields.include?(name)
             "#{root}.date&.#{name}"
           else
             "#{root}.#{name}"
           end
+        end
+
+        # The columns the declared root-through reads through the root
+        # document. Off unless the definition declares it; the wrapper's
+        # OWN columns stay the wrapper's (the coded generator reads the
+        # publisher and the declared edition face off the wrapper).
+        def root_through_column?(name)
+          return false unless scheme_mode? && definition.adopted&.identity == "root_through"
+          return false if definition.adopted&.edition && name == "edition"
+          return false if name == "publisher"
+
+          true
         end
 
         def urn_field_guard(name)
@@ -1371,6 +1409,19 @@ module Pubid
           definition.types.find { |t| t.name == name } or raise Error, "unknown type #{name.inspect}"
         end
 
+        # The typed-trio types (the designation shape): the designation
+        # token selects the class but is not a publisher — the column keeps
+        # the organization default, the printed face prints the type's own
+        # abbr where the face names the publisher, and the identifier
+        # carries the declared stage's type/stage/typed_stage.
+        def designation_types
+          definition.types.select(&:designation)
+        end
+
+        def designation_type?(type)
+          type.designation == true
+        end
+
         # The shared base: the version column, the flat-scalar tables, the
         # stage compaction hook (the coded CenCenelec::Identifier shape),
         # the draft-aware mr_type, the publisher-prefix cut and the parse
@@ -1410,16 +1461,7 @@ module Pubid
                     end
                   end
 
-                  # The publisher serializes as a bare string, the copublishers
-                  # as a list of strings (the coded flavor's flat-scalar table).
-                  def self.flat_scalar_components
-                    super.merge(publisher: "publisher", copublishers: "copublishers")
-                  end
-
-                  def self.flat_scalar_fields
-                    super.merge(publisher: :body, copublishers: :body)
-                  end
-
+            #{flat_scalar_block}
                   # The declared draft stages: the serialized code is the key,
                   # the official-URN code the declared `urn:` value.
                   STAGE_CODES = {
@@ -1429,9 +1471,13 @@ module Pubid
                   # A draft stage serializes as its typed-stage code
                   # ("stage" => "pren"); #inflate_scalar_components rebuilds
                   # the three components from it (the coded compact-hash shape).
+                  # A PUBLISHED trio stays nested: the coded flavors that
+                  # carry one (the designations) serialize type/stage/
+                  # typed_stage in full — only a draft stage compacts.
                   def self.compact_hash(model, hash)
                     stage = model.typed_stage
                     return unless stage && hash.key?("typed_stage")
+                    return if stage.stage_code.to_s == "published"
                     return unless model.type == stage.to_type &&
                                   model.stage == stage.to_stage
 
@@ -1505,6 +1551,36 @@ module Pubid
           RUBY
         end
 
+        # The shared base's flat-scalar block, by the serialization
+        # declaration. flat_publisher (the default, the cen shape) emits
+        # the flat-scalar tables byte-identically with the pre-declaration
+        # emission; flat_publisher: false keeps the lutaml component
+        # shapes ({"body": "DD"} — the coded-BSI wire form).
+        def flat_scalar_block
+          if definition.serialization&.flat_publisher == false
+            [
+              "                  # The publisher and copublishers keep the lutaml",
+              "                  # component shapes ({\"body\" => \"DD\"} — the coded",
+              "                  # flavor's own wire form): the definition's",
+              "                  # serialization declaration declines the flat-scalar",
+              "                  # table.",
+            ]
+          else
+            [
+              "                  # The publisher serializes as a bare string, the copublishers",
+              "                  # as a list of strings (the coded flavor's flat-scalar table).",
+              "                  def self.flat_scalar_components",
+              "                    super.merge(publisher: \"publisher\", copublishers: \"copublishers\")",
+              "                  end",
+              "",
+              "                  def self.flat_scalar_fields",
+              "                    super.merge(publisher: :body, copublishers: :body)",
+              "                  end",
+              "",
+            ]
+          end.join("\n")
+        end
+
         # The builder: type dispatch over the declared tokens, the column
         # assignment (the coded cast's shape), the supplement fold (the
         # slash run standalone, the plus run consolidated), the fragment
@@ -1549,6 +1625,33 @@ module Pubid
           lines << "      STAGE_MAP = {"
           lines << stage_map.chomp
           lines << "      }.freeze"
+          if designation_types.any?
+            lines << ""
+            lines << "      # The designation trios (the typed trio's declaration): the"
+            lines << "      # token that selected the class is the designation face, not"
+            lines << "      # a publisher — the column keeps the class default and the"
+            lines << "      # identifier carries the stage entry's type/stage/typed_stage"
+            lines << "      # (the coded builder's cast)."
+            lines << "      DESIGNATION_STAGES = {"
+            designation_types.each do |type|
+              stage = type.stage
+              Array(type.tokens).each do |token|
+                lines << "        #{token.inspect} => { code: #{stage.code.inspect}, stage_code: #{stage.stage_code.inspect}, " \
+                  "type_code: #{type.key.inspect}, abbr: #{ruby_array(stage.abbr)}, " \
+                  "name: #{type.title.inspect}, harmonized_stages: #{ruby_array(stage.harmonized_stages)} },"
+              end
+            end
+            lines << "      }.freeze"
+          end
+          if adopted
+            lines << ""
+            lines << "      # The model column the adopted document lands on (the vendored"
+            lines << "      # hook's wrapper slot) and the declared edition face, if any."
+            lines << "      ADOPTED_ATTRIBUTE = #{(definition.adopted.attribute || definition.adopted.field).inspect}"
+            if definition.adopted&.edition
+              lines << "      ADOPTED_EDITION_FACE = #{definition.adopted.edition.face.inspect}"
+            end
+          end
           lines << ""
           lines << "      def self.build(parsed_data)"
           lines << "        new.build(parsed_data)"
@@ -1613,7 +1716,13 @@ module Pubid
           lines << "        identifier.number = data[:number]&.to_s"
           lines << "        identifier.part = data[:part]&.to_s"
           lines << "        identifier.version = present_string(data[:version])"
-          lines << "        if data[:publisher]"
+          if designation_types.any?
+            lines << "        # A designation token selects the class but is not a publisher:"
+            lines << "        # the column keeps the class default (the organization's)."
+            lines << "        if data[:publisher] && !DESIGNATION_STAGES.key?(data[:publisher].to_s)"
+          else
+            lines << "        if data[:publisher]"
+          end
           lines << "          identifier.publisher = ::Pubid::Components::Publisher.new(body: data[:publisher].to_s)"
           lines << "        end"
           lines << "        copubs = Array(data[:copublishers]).map do |row|"
@@ -1623,6 +1732,21 @@ module Pubid
           lines << "        identifier.copublishers = copubs unless copubs.empty?"
           lines << "        type_token = data[:guide] || data[:type]"
           lines << "        identifier.type = ::Pubid::Components::Type.new(abbr: type_token.to_s) if type_token"
+          if designation_types.any?
+            lines << "        # The typed trio (the designation's stage entry): type, stage"
+            lines << "        # and typed_stage carry the registry row — the wire keys the"
+            lines << "        # coded flavor serializes."
+            lines << "        if (row = DESIGNATION_STAGES[data[:publisher].to_s])"
+            lines << "          typed_stage = ::Pubid::Components::TypedStage.new("
+            lines << "            code: row[:code], stage_code: row[:stage_code],"
+            lines << "            type_code: row[:type_code], abbr: row[:abbr],"
+            lines << "            name: row[:name], harmonized_stages: row[:harmonized_stages],"
+            lines << "          )"
+            lines << "          identifier.typed_stage = typed_stage"
+            lines << "          identifier.type = typed_stage.to_type"
+            lines << "          identifier.stage = typed_stage.to_stage"
+            lines << "        end"
+          end
           lines << "        captured = data[:stage]"
           lines << "        return unless captured"
           lines << ""
@@ -1683,7 +1807,16 @@ module Pubid
             "          inner",
             "        end",
             "        if items.any? { |item| item[:supplements_plus] || item[\"supplements_plus\"] }",
-            "          members = items.map { |item| supplement_from(item) }",
+            *(if supplements.consolidated&.marker.nil?
+                [
+                  "          # The declared marker-less bundle (the coded-BSI shape): each",
+                  "          # member amends THE bundle's base document, so the members",
+                  "          # carry it (the coded builder's wrap_with_consolidated).",
+                  "          members = items.map { |item| supplement_from(item, base: base) }",
+                ]
+              else
+                ["          members = items.map { |item| supplement_from(item) }"]
+              end),
             "          Identifiers::ConsolidatedIdentifier.new(identifiers: [base] + members)",
             "        else",
             "          supplement_from(items.first, base: base)",
@@ -1937,7 +2070,11 @@ module Pubid
             if field.name == run_name
               next # the run is composed by the walker; set after the view
             elsif field.name == definition.adopted&.field
-              lines << "          #{field.name}: root.respond_to?(:adopted) ? root.adopted : nil,"
+              if definition.adopted&.edition
+                lines << "          #{field.name}: view_adopted(root),"
+              else
+                lines << "          #{field.name}: root.respond_to?(:#{definition.adopted.attribute}) ? root.#{definition.adopted.attribute} : nil,"
+              end
             elsif field.name == definition.supplements&.fragment&.field
               next # the fragment face is composed by the walker
             elsif field.name == "stage"
@@ -1955,7 +2092,11 @@ module Pubid
               # declared face map ("pren" renders "prEN").
               lines << "          #{field.name}: FACE_#{field.name}.fetch(root.#{field.name}, root.#{field.name}),"
             elsif field.name == "publisher"
-              lines << "          #{field.name}: root.publisher&.respond_to?(:body) ? root.publisher.body : root.publisher,"
+              if designation_types.any?
+                lines << "          #{field.name}: (t = root.type&.abbr) && DESIGNATION_FACES.include?(t) ? t : (root.publisher&.respond_to?(:body) ? root.publisher.body : root.publisher),"
+              else
+                lines << "          #{field.name}: root.publisher&.respond_to?(:body) ? root.publisher.body : root.publisher,"
+              end
             else
               lines << "          #{field.name}: root.#{field.name},"
             end
@@ -1991,6 +2132,13 @@ module Pubid
           lines << "  module #{module_name}"
           lines << "    # Human renderer, generated from the canonical template."
           lines << "    class Renderer < ::Pubid::Renderers::Base"
+          if designation_types.any?
+            lines << "      # The designation faces (the typed trio): the token that"
+            lines << "      # selected the class prints where the face names the"
+            lines << "      # publisher — the column keeps the organization default."
+            lines << "      DESIGNATION_FACES = #{ruby_array(designation_types.map(&:short))}.freeze"
+            lines << ""
+          end
           scheme_face_map_lines.each { |block| lines << block }
           lines << "      def render(**_opts)"
           lines << "        f = render_fields(@id)"
@@ -1999,6 +2147,21 @@ module Pubid
           lines << ""
           lines << "      private"
           lines << ""
+          if definition.adopted&.edition
+            face = definition.adopted.edition.face
+            separator = definition.adopted.edition.separator
+            lines << "      # The adoption face: the adopted document, with the"
+            lines << "      # wrapper's own edition face after it (the declared glued"
+            lines << "      # ED form — the hook lifts the ordinal onto the wrapper)."
+            lines << "      def view_adopted(root)"
+            lines << "        adopted = root.respond_to?(:#{definition.adopted.attribute}) ? root.#{definition.adopted.attribute} : nil"
+            lines << "        return nil unless adopted"
+            lines << ""
+            lines << "        edition = root.edition"
+            lines << "        edition ? \"\#{adopted}#{separator}#{face}\#{edition}\" : adopted.to_s"
+            lines << "      end"
+            lines << ""
+          end
           lines << "      # The field view: a wrapper reads through to the wrapped"
           lines << "      # standard and composes the printed run once — the standalone"
           lines << "      # chain behind its slash, the consolidated members behind the"
@@ -2061,8 +2224,13 @@ module Pubid
           lines << "    # (feature 6) — the publisher group, the adopted document's"
           lines << "    # fused MR string, the composed code, the year, the draft"
           lines << "    # stage. A wrapper reads through to its subject and appends"
-          lines << "    # its declared chain; the consolidated bundle marks each"
-          lines << "    # member with the plus marker."
+          if definition.supplements&.consolidated&.marker
+            lines << "    # its declared chain; the consolidated bundle marks each"
+            lines << "    # member with the #{definition.supplements.consolidated.marker} marker."
+          else
+            lines << "    # its declared chain; the marker-less bundle appends each"
+            lines << "    # member's chain directly (the coded-BSI shape)."
+          end
           lines << "    class UrnGenerator < ::Pubid::UrnGenerator::Base"
           lines << "      def urn_namespace"
           lines << "        #{definition.urn.namespace.inspect}"
@@ -2098,7 +2266,9 @@ module Pubid
           lines << "        parts.concat(wrapper)"
           if definition.supplements&.consolidated
             lines << "        members&.each do |member|"
-            lines << "          parts << \"plus\""
+            if definition.supplements.consolidated.marker
+              lines << "          parts << \"#{definition.supplements.consolidated.marker}\""
+            end
             lines << "          parts.concat(wrapper_segments(member))"
             lines << "        end"
           end
@@ -2113,6 +2283,22 @@ module Pubid
           lines << "        " + segments.map { |segment| urn_segment_source(segment) }.join("\n        ")
           lines << "        segments"
           lines << "      end"
+          if definition.adopted&.identity == "root_through"
+            lines << ""
+            lines << "      # An identity attribute of the identifier, or of the document"
+            lines << "      # it wraps (the declared root-through): the adoption wrapper"
+            lines << "      # carries no identity of its own, so its official segments"
+            lines << "      # read the ROOT document's. #root is +self+ for a non-wrapper,"
+            lines << "      # so an ordinary identifier reads its own value and nothing"
+            lines << "      # changes."
+            lines << "      def identity(attr)"
+            lines << "        own = @identifier.public_send(attr)"
+            lines << "        return own if own"
+            lines << ""
+            lines << "        root = @identifier.root"
+            lines << "        root.equal?(@identifier) ? nil : root.public_send(attr)"
+            lines << "      end"
+          end
           lines << ""
           lines << "      # One wrapper's declared URN chain: the kind word, then the"
           lines << "      # wrapper's columns (the ordinal, the year-month date)."
@@ -2213,7 +2399,9 @@ module Pubid
         # stages for the default type, the declared type stage else), the
         # publisher default (feature 5), the scheme-canonical wire tag,
         # and — for the adopted wrapper types (feature 4) — the adopted
-        # attribute and the MR/URN hooks the adopted identity reads.
+        # attribute (the declared model column) and the MR/URN hooks the
+        # adopted identity reads. The designation types (the typed trio)
+        # declare no type default — the trio the builder sets IS the type.
         def scheme_type_file(type)
           stages = if type == default_type
             rows = []
@@ -2222,7 +2410,7 @@ module Pubid
                 "          ::Pubid::Components::TypedStage.new(",
                 "            code: :#{published.code}, stage_code: :#{published.stage_code},",
                 "            type_code: :#{type.key}, abbr: #{ruby_array(published.abbr)},",
-                "            name: #{type.title.inspect}, harmonized_stages: [],",
+                "            name: #{type.title.inspect}, harmonized_stages: #{ruby_array(published.harmonized_stages)},",
                 "          ),",
               ]
             end
@@ -2241,7 +2429,7 @@ module Pubid
               "          ::Pubid::Components::TypedStage.new(",
               "            code: :#{type.stage.code}, stage_code: :#{type.stage.stage_code},",
               "            type_code: :#{type.key}, abbr: #{ruby_array(type.stage.abbr)},",
-              "            name: #{type.title.inspect}, harmonized_stages: [],",
+              "            name: #{type.title.inspect}, harmonized_stages: #{ruby_array(type.stage.harmonized_stages)},",
               "          ),",
             ]
           else
@@ -2268,20 +2456,32 @@ module Pubid
           lines << "        end"
           lines << ""
           lines << "        attribute :publisher, ::Pubid::Components::Publisher, default: -> { self.class.default_publisher }"
-          lines << "        attribute :type, ::Pubid::Components::Type, default: -> { self.class.default_type }"
-          lines << ""
-          lines << "        def self.default_type"
-          lines << "          ::Pubid::Components::Type.new(abbr: type[:short])"
-          lines << "        end"
+          unless designation_type?(type) || adopted_type?(type)
+            lines << "        attribute :type, ::Pubid::Components::Type, default: -> { self.class.default_type }"
+            lines << ""
+            lines << "        def self.default_type"
+            lines << "          ::Pubid::Components::Type.new(abbr: type[:short])"
+            lines << "        end"
+          end
           if adopted_type?(type)
+            adopted_attr = definition.adopted&.attribute || "adopted"
             lines << ""
             lines << "        # The adopted document (feature 4): the whole identity lives"
-            lines << "        # on the nested ISO/IEC identifier."
-            lines << "        attribute :adopted, ::Pubid::Identifier, polymorphic: true"
-            lines << ""
-            lines << "        def root"
-            lines << "          adopted ? adopted.root : self"
-            lines << "        end"
+            lines << "        # on the nested ISO/IEC identifier, under the declared"
+            lines << "        # model column (the uniform `base` renames the wrapper"
+            lines << "        # slot — the codec's root-first walk and the from_hash"
+            lines << "        # key read it)."
+            lines << "        attribute :#{adopted_attr}, ::Pubid::Identifier, polymorphic: true"
+            if adopted_attr == "base"
+              lines << ""
+              lines << "        # The column IS the uniform parent accessor: #root and"
+              lines << "        # #base_document are the shared machinery's, walking it."
+            else
+              lines << ""
+              lines << "        def root"
+              lines << "          #{adopted_attr} ? #{adopted_attr}.root : self"
+              lines << "        end"
+            end
             lines << ""
             lines << "        # MR \"cen.iso.ts.21003-7\": the publisher group fused, then the"
             lines << "        # adopted document's own MR string in place of a number."
@@ -2289,10 +2489,32 @@ module Pubid
             lines << "          mr_join(*([publisher] + Array(copublishers)).compact"
             lines << "            .map { |p| p.to_s.downcase })"
             lines << "        end"
-            lines << ""
-            lines << "        def mr_number_with_part"
-            lines << "          adopted ? adopted.to_mr_string : super"
-            lines << "        end"
+            if definition.adopted&.identity == "root_through"
+              lines << ""
+              lines << "        # The wrapper carries no identity of its own: the MR slug"
+              lines << "        # reads the ROOT document (the coded RootIdentity shape),"
+              lines << "        # so an adoption slugs bs.1073-2.2002, not the adopted"
+              lines << "        # document's own MR string."
+              lines << "        def mr_number_with_part"
+              lines << "          root.equal?(self) ? super : root.mr_number_with_part"
+              lines << "        end"
+              lines << ""
+              lines << "        def mr_year"
+              lines << "          root.equal?(self) ? super : root.mr_year"
+              lines << "        end"
+            else
+              lines << ""
+              lines << "        def mr_number_with_part"
+              lines << "          #{adopted_attr} ? #{adopted_attr}.to_mr_string : super"
+              lines << "        end"
+            end
+            if definition.adopted&.edition
+              lines << ""
+              lines << "        # The wrapper's own edition face (the declared glued ED"
+              lines << "        # form): the hook lifts the trailing face+ordinal out of"
+              lines << "        # the adopted run onto this column."
+              lines << "        attribute :edition, :string"
+            end
           end
           lines << ""
           lines << "        # The scheme-canonical wire tag declared in the definition:"
@@ -2434,49 +2656,83 @@ module Pubid
 
         def scheme_consolidated_file
           consolidated = definition.supplements.consolidated
-          body(<<~RUBY)
-            module Pubid
-              module #{module_name}
-                module Identifiers
-                  # The consolidated (plus-run) bundle: the base document is
-                  # the first member; the supplements carry no base.
-                  class ConsolidatedIdentifier < ::Pubid::#{module_name}::Identifier
-                    attribute :identifiers, ::Pubid::#{module_name}::Identifier,
-                              polymorphic: true, collection: true
-
-                    # The origin document. Members live in `identifiers`, so
-                    # walk the first member to its root.
-                    def root
-                      identifiers&.first&.root || self
-                    end
-
-                    def base_document
-                      identifiers&.first&.base_document || self
-                    end
-
-                    def drop_supplements
-                      identifiers&.first || self
-                    end
-
-                    # The base document, then each member's own supplement
-                    # suffix behind the plus marker — the coded shape.
-                    def to_mr_string
-                      base, *supplements = identifiers
-                      return "" unless base
-
-                      ([base.to_mr_string] +
-                        supplements.map { |s| "plus-\#{s.mr_supplement_suffix}" })
-                        .join(::Pubid::Renderers::MrString::SEPARATOR_SUPPLEMENT)
-                    end
-
-                    def self.polymorphic_name
-                      #{consolidated.tag.inspect}
-                    end
-                  end
-                end
-              end
-            end
-          RUBY
+          marker = consolidated.marker
+          lines = []
+          lines << "module Pubid"
+          lines << "  module #{module_name}"
+          lines << "    module Identifiers"
+          lines << "      # The consolidated (#{marker ? "#{marker}-run" : "plus-run"}) bundle: the base document is"
+          if marker
+            lines << "      # the first member; the supplements carry no base."
+          else
+            lines << "      # the first member; each member amends it, so the members"
+            lines << "      # carry it as their base (the coded builder's shape)."
+          end
+          lines << "      class ConsolidatedIdentifier < ::Pubid::#{module_name}::Identifier"
+          lines << "        attribute :identifiers, ::Pubid::#{module_name}::Identifier,"
+          lines << "                  polymorphic: true, collection: true"
+          lines << ""
+          lines << "        # The origin document. Members live in `identifiers`, so"
+          lines << "        # walk the first member to its root."
+          lines << "        def root"
+          lines << "          identifiers&.first&.root || self"
+          lines << "        end"
+          lines << ""
+          lines << "        def base_document"
+          lines << "          identifiers&.first&.base_document || self"
+          lines << "        end"
+          lines << ""
+          lines << "        def drop_supplements"
+          lines << "          identifiers&.first || self"
+          lines << "        end"
+          lines << ""
+          if marker
+            lines << "        # The base document, then each member's own supplement"
+            lines << "        # suffix behind the #{marker} marker — the coded shape."
+            lines << "        def to_mr_string"
+            lines << "          base, *supplements = identifiers"
+            lines << "          return \"\" unless base"
+            lines << ""
+            lines << "          ([base.to_mr_string] +"
+            lines << "            supplements.map { |s| \"#{marker}-\#{s.mr_supplement_suffix}\" })"
+            lines << "            .join(::Pubid::Renderers::MrString::SEPARATOR_SUPPLEMENT)"
+            lines << "        end"
+          else
+            lines << "        # The declared marker-less bundle (the coded-BSI shape): the"
+            lines << "        # wrapper reads the base document's identity and drops the"
+            lines << "        # member suffixes — the delegated publisher (off the wrapper's"
+            lines << "        # own wire entry, the coded compact-hash rule), the typed trio"
+            lines << "        # the base document carries, and the root-through MR hooks."
+            lines << "        def type"
+            lines << "          member = identifiers&.first"
+            lines << "          member.respond_to?(:typed_stage) && member.typed_stage ? member.type : nil"
+            lines << "        end"
+            lines << ""
+            lines << "        def publisher"
+            lines << "          identifiers&.first&.publisher"
+            lines << "        end"
+            lines << ""
+            lines << "        def self.compact_hash(_model, hash)"
+            lines << "          hash.delete(\"publisher\")"
+            lines << "        end"
+            lines << ""
+            lines << "        def mr_number_with_part"
+            lines << "          root.equal?(self) ? super : root.mr_number_with_part"
+            lines << "        end"
+            lines << ""
+            lines << "        def mr_year"
+            lines << "          root.equal?(self) ? super : root.mr_year"
+            lines << "        end"
+          end
+          lines << ""
+          lines << "        def self.polymorphic_name"
+          lines << "          #{consolidated.tag.inspect}"
+          lines << "        end"
+          lines << "      end"
+          lines << "    end"
+          lines << "  end"
+          lines << "end"
+          body(lines.join("\n") << "\n")
         end
 
         def scheme_fragment_file

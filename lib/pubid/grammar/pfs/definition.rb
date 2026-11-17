@@ -16,13 +16,21 @@ module Pubid
         # names the token the publisher column defaults to when the
         # reference omits a publisher face (publisher-type defaults,
         # issue #121 feature 5); absent, the default is the organization's
-        # publisher.
+        # publisher. `designation` marks the typed-trio shape (the
+        # designation token selects the class but is not a publisher): the
+        # column keeps the organization default, the printed face prints
+        # the type's own abbr where the face names the publisher, and the
+        # identifier carries the declared stage's type/stage/typed_stage.
+        # Mutually exclusive with `publisher_default`.
         Type = Struct.new(:name, :key, :web, :title, :short, :tag, :stage,
-                          :tokens, :publisher_default, :adopted,
+                          :tokens, :publisher_default, :adopted, :designation,
                           keyword_init: true)
         # types.<name>.stage: the typed-stage binding
-        # (body code → harmonized stage mapping).
-        Stage = Struct.new(:code, :stage_code, :abbr, keyword_init: true)
+        # (body code → harmonized stage mapping). `harmonized_stages` names
+        # the stage registry's harmonized stages (the typed trio's row —
+        # the coded TYPED_STAGES entries carry them).
+        Stage = Struct.new(:code, :stage_code, :abbr, :harmonized_stages,
+                           keyword_init: true)
         # stages.<key>: a declared draft stage of the scheme (issue #121
         # feature 2) — `tokens` are the accepted spellings ("prEN"), `urn`
         # is the official-URN stage code ("proposal"). The stage FIELD
@@ -72,9 +80,13 @@ module Pubid
         Wrapper = Struct.new(:name, :face, :tag, :title, :fields,
                              :number_optional, :mr, :urn, keyword_init: true)
         # supplements.consolidated: the plus-run bundle class — the wire
-        # tag and the human title. Its members serialize via their own
-        # hashes under `identifiers`.
-        Consolidated = Struct.new(:tag, :title, keyword_init: true)
+        # tag and the human title. `marker` is the URN word marking each
+        # member ("plus", the cen shape — the default); `nil` (declared
+        # `marker: none`) is the coded-BSI shape: the members' segments
+        # append directly, the member suffixes drop from the MR slug, and
+        # the members carry the bundle's base document. Its members
+        # serialize via their own hashes under `identifiers`.
+        Consolidated = Struct.new(:tag, :title, :marker, keyword_init: true)
         # supplements.fragment: the fragment wrapper — the printed FRAG
         # face, the wire tag, and the builder-only capture carrying the
         # fragment ordinal.
@@ -85,8 +97,23 @@ module Pubid
         # carrying the adopted run; `hook` names the coded hook the
         # generated builder calls (the only declared value is `coded` —
         # the hook is vendored beside the generated flavor and parses the
-        # adopted string with the owning schemes' flavors).
-        Adopted = Struct.new(:field, :hook, keyword_init: true)
+        # adopted string with the owning schemes' flavors). `attribute`
+        # names the model column the adopted document lands on — the
+        # uniform `base` renames the wrapper slot (the codec's root-first
+        # walk, the from_hash key and the MR join all read it); the
+        # default is the capture name. `identity: root_through` makes the
+        # wrapper's official-URN identity segments and MR hooks read the
+        # ROOT document (the wrapper carries no identity of its own).
+        # `edition` declares the wrapper's own edition face (the "BS HD
+        # IEC 60364-8-81 ED1" glued form): the hook lifts the trailing
+        # face+ordinal out of the adopted run onto the wrapper column, and
+        # the adoption face renders it after the adopted document.
+        Adopted = Struct.new(:field, :hook, :attribute, :identity, :edition,
+                             keyword_init: true)
+        # adopted.edition: the wrapper's glued edition face — the token
+        # ("ED") and the separator before it (" "); the ordinal glues to
+        # the token with no space (there is no edition_space to supply).
+        AdoptedEdition = Struct.new(:face, :separator, keyword_init: true)
         # mr: — the MR-slug hooks. A map of segment name → declaration;
         # each declaration is either {field:} or {join:, glue:}.
         Mr = Struct.new(:segments, keyword_init: true)
@@ -113,7 +140,16 @@ module Pubid
         UrnField = Struct.new(:name, :lower, :affix, :edition_affix, keyword_init: true)
         UrnDate = Struct.new(:fields, keyword_init: true)
         UrnPubGroup = Struct.new(:glue, :lower, keyword_init: true)
-        UrnStageCode = Struct.new(:marker, keyword_init: true)
+        # The stage segment. `field` reads a declared draft-stage column
+        # (the cen shape); `published: true` reads the identifier's
+        # typed_stage directly and fires for published rows too (the coded
+        # generator's own comparison — the typed trio's ":stage.published"
+        # segment).
+        UrnStageCode = Struct.new(:field, :marker, :published, keyword_init: true)
+        # The type segment: the identifier's type abbr, downcased, skipped
+        # when it spells the declared token (the coded generator's "BS"
+        # rule).
+        UrnTypeAbbr = Struct.new(:skip, keyword_init: true)
         UrnAdoptedMr = Struct.new(:marker, keyword_init: true)
         # urn.official[] compose slot: one field with the glue that
         # precedes it and the join style (`prefix` per item, `infix`
@@ -127,6 +163,11 @@ module Pubid
         # shared Components::Date (the coded flavors' own shape), the
         # serialized hash stays flat. `fields` order is the printed order.
         Date = Struct.new(:fields, keyword_init: true)
+        # serialization: the wire shape. `flat_publisher` (the default,
+        # the cen shape) serializes the publisher column as a bare scalar
+        # and the copublishers as a list of scalars; `false` keeps the
+        # lutaml component shapes ({"body": "DD"} — the coded-BSI form).
+        Serialization = Struct.new(:flat_publisher, keyword_init: true)
         # examples.positives[]: a REQUIRED parse/render row.
         Positive = Struct.new(:input, :renders, keyword_init: true)
         # The whole definition. `modules` carries the RESOLVED module
@@ -138,7 +179,7 @@ module Pubid
           :source_path, :source_sha, :scheme, :title, :organization,
           :grammar, :types, :fields, :templates, :urn, :examples,
           :modules, :module_bindings, :date, :supplements, :mr,
-          :stages, :adopted,
+          :stages, :adopted, :serialization,
           keyword_init: true,
         )
       end

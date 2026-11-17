@@ -19,9 +19,10 @@
 #
 # edition.core is NOT bound: its edition_face requires an
 # `edition_space` separator the composing definition must supply, and
-# BSI's ED face is glued to the number ("BS HD IEC 60364-8-81 ED1" — no
-# separator exists to supply). That is a measured module-library gap,
-# not a definition choice — see the parity ledger's follow-up list.
+# BSI's ED face is GLUED to the number ("BS HD IEC 60364-8-81 ED1" — no
+# separator exists to supply). The face is declared where the wrapper
+# owns it instead — under `adopted.edition` — the hook lifting the
+# trailing ED ordinal out of the adopted run onto the wrapper column.
 #
 # The coded Pubid::Bsi flavor carries machinery beyond grammar
 # composition (the 1,495-line builder): the typed-trio serialization
@@ -109,6 +110,12 @@ types:
     tag: "pubid:bsi:adopted-international-standard"
     publisher_default: "BS"
     adopted: true
+  # The typed trio (the designation shape): the token selects the class
+  # but is not a publisher — the column keeps the organization default
+  # ("BS", the coded trio's runtime publisher) and the identifier carries
+  # the declared stage's type/stage/typed_stage (the coded
+  # TYPED_STAGES rows, harmonized stages included). The printed face
+  # prints the designation itself.
   publicly_available_specification:
     key: pas
     web: publicly_available_specification
@@ -116,7 +123,12 @@ types:
     short: "PAS"
     tag: "pubid:bsi:publicly-available-specification"
     tokens: ["PAS"]
-    publisher_default: "PAS"
+    designation: true
+    stage:
+      code: pubpas
+      stage_code: published
+      abbr: ["PAS"]
+      harmonized_stages: ["60.00", "60.60"]
   published_document:
     key: pd
     web: published_document
@@ -124,7 +136,12 @@ types:
     short: "PD"
     tag: "pubid:bsi:published-document"
     tokens: ["PD"]
-    publisher_default: "PD"
+    designation: true
+    stage:
+      code: pubpd
+      stage_code: published
+      abbr: ["PD"]
+      harmonized_stages: ["60.00", "60.60"]
   draft_document:
     key: dd
     web: draft_document
@@ -132,7 +149,12 @@ types:
     short: "DD"
     tag: "pubid:bsi:draft-document"
     tokens: ["DD"]
-    publisher_default: "DD"
+    designation: true
+    stage:
+      code: pubdd
+      stage_code: published
+      abbr: ["DD"]
+      harmonized_stages: ["60.00", "60.60"]
   technical_specification:
     key: ts
     web: technical_specification
@@ -140,7 +162,18 @@ types:
     short: "TS"
     tag: "pubid:bsi:technical-specification"
     tokens: ["TS"]
-    publisher_default: "TS"
+    designation: true
+    stage:
+      code: pubts
+      stage_code: published
+      abbr: ["TS"]
+      harmonized_stages: ["60.00", "60.60"]
+
+# The wire shape (the coded BSI flavor's own): the publisher column
+# serializes NESTED ({"body": "DD"} — the adoption rows' publisher), so
+# the flat-scalar table the cen shape applies is declined here.
+serialization:
+  flat_publisher: false
 
 # The adopted-base dispatch (feature 4): the hook is vendored beside the
 # generated classes (lib/pubid/bsi_pfs/adopted_base.rb) — it parses the
@@ -150,10 +183,22 @@ types:
 # identifier is an adopted European norm; an ISO/IEC identifier an
 # adopted international standard), and carries the multi-level chains
 # (BS EN ISO … is a BSI wrapper over a CEN adoption over the ISO
-# document — the identity composition the modules declare).
+# document — the identity composition the modules declare). The adopted
+# document lands on the uniform `base` column (the coded wrapper's
+# slot — the codec's root-first walk, the from_hash key and the MR join
+# all read it); the wrapper's identity is ROOT-THROUGH (the official-URN
+# identity segments and the MR hooks read the origin document:
+# urn:bsi:bs:1073:-2:2002, bs.1073-2.2002); and the wrapper's own glued
+# edition face ("BS HD IEC 60364-8-81 ED1") is lifted from the adopted
+# run by the hook.
 adopted:
   field: adopted
+  attribute: base
   hook: coded
+  identity: root_through
+  edition:
+    face: "ED"
+    separator: " "
 
 # BSI's supplement spelling (feature 3): the plus-separated amendment
 # run ("BS 10125:2014+A1:2016", "BS EN 1005-1:2001+A1:2008") folds into
@@ -188,6 +233,10 @@ supplements:
   consolidated:
     tag: "pubid:bsi:consolidated-identifier"
     title: "Consolidated identifier"
+    # The coded-BSI bundle shape: no marker word — the members' segments
+    # append directly (urn:bsi:bs:10125:2014:amd:1:2016), the MR slug is
+    # the base document's own, and the members carry the bundle's base.
+    marker: none
 
 # Named lexical rules the fields reference. The module fragments
 # (iso_*, iec_*, en_*, supplement_*, edition_*) are merged beside them.
@@ -244,34 +293,55 @@ templates:
 urn:
   # The coded urn:bsi:… form: the publisher downcased ("bs" — the coded
   # generator's fallback token; a designation face whose publisher is
-  # its own token prints the fallback here too), the composed code, the
-  # part behind its dash and the year. The adoption rows read the ROOT
-  # document's identity in the coded flavor (urn:bsi:bs:1073:-2:2002) —
-  # a root-through read the ordered segment declaration does not carry;
-  # those rows are the measured URN gap.
+  # its own token prints the fallback here too), the identity read
+  # ROOT-THROUGH on the adoption wrappers (urn:bsi:bs:1073:-2:2002),
+  # the part behind its dash, the year, the wrapper's own edition face
+  # (v1), the designation's type abbr (skipping "BS" itself) and the
+  # typed trio's stage segment (":stage.published" — the coded
+  # generator's own comparison, which a String stage_code passes).
   namespace: bsi
   official:
     - { field: publisher, lower: true }
     - { field: number }
     - { field: part, affix: "-" }
+    - { field: subpart, affix: "-" }
     - { date: [year] }
+    - { field: edition, affix: "v" }
+    - { type_abbr: { skip: BS } }
+    - { stage_code: { published: true, marker: "stage." } }
   schema:
     # The coded schema's atom table, narrowed to the columns this
     # surface declares (the coded schema carries every family's atoms;
-    # a compiled flavor declares what its model holds).
+    # a compiled flavor declares what its model holds). The publisher
+    # reads the component's body (the nested {"body": "DD"} shape the
+    # serialization declaration keeps); the typed trio's components
+    # serialize every registry field, so each field is its own atom.
     atoms:
-      - { path: publisher, prefix: pub, kind: string }
+      - { path: publisher.body, prefix: pubbody }
       - { path: part, prefix: part }
       - { path: year, prefix: year }
-      - { path: adopted, prefix: adopted, kind: id }
+      - { path: edition, prefix: ed }
+      - { path: type.abbr, prefix: typeabbr }
+      - { path: type.name, prefix: typename }
+      - { path: type.type_code, prefix: typetypecode }
+      - { path: stage.abbr, prefix: stageabbr }
+      - { path: stage.name, prefix: stagename }
+      - { path: stage.stage_code, prefix: stagecode }
+      - { path: stage.harmonized_stages, prefix: stagehs, kind: list }
+      - { path: typed_stage.abbr, prefix: tsabbr, kind: list }
+      - { path: typed_stage.name, prefix: tsname }
+      - { path: typed_stage.code, prefix: tscode }
+      - { path: typed_stage.stage_code, prefix: tsstagecode }
+      - { path: typed_stage.type_code, prefix: tstypecode }
+      - { path: typed_stage.harmonized_stages, prefix: tshs, kind: list }
       - { path: identifiers, prefix: ids, kind: ids }
     types:
       - { type: "pubid:bsi:adopted-european-norm", token: aen, core: [] }
       - { type: "pubid:bsi:adopted-international-standard", token: ais, core: [] }
-      - { type: "pubid:bsi:amendment", token: amd, core: [] }
+      - { type: "pubid:bsi:amendment", token: amd, core: [number] }
       - { type: "pubid:bsi:british-standard", token: bs, core: [number] }
       - { type: "pubid:bsi:consolidated-identifier", token: consol, core: [] }
-      - { type: "pubid:bsi:corrigendum", token: cor, core: [] }
+      - { type: "pubid:bsi:corrigendum", token: cor, core: [number] }
       - { type: "pubid:bsi:draft-document", token: dd, core: [number] }
       - { type: "pubid:bsi:published-document", token: pd, core: [number] }
       - { type: "pubid:bsi:publicly-available-specification", token: pas, core: [number] }

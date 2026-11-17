@@ -30,6 +30,7 @@ module Pubid
         TOP_LEVEL_KEYS = %w[
           pfs scheme title organization grammar types fields templates
           urn examples modules date supplements mr stages adopted
+          serialization
         ].freeze
 
         # The kinds a field's list render may declare.
@@ -74,6 +75,7 @@ module Pubid
                                       raw.dig("supplements", "fragment", "field"))
           mr = check_mr(raw["mr"], fields)
           urn = check_urn(raw, fields, supplements, adopted)
+          serialization = check_serialization(raw.fetch("serialization", nil))
 
           Definition::Root.new(
             source_path: source_path,
@@ -94,7 +96,29 @@ module Pubid
             mr: mr,
             stages: stages,
             adopted: adopted,
+            serialization: serialization,
           )
+        end
+
+        # serialization: — the wire shape. `flat_publisher` defaults to
+        # true (the cen shape: the publisher column serializes as a bare
+        # scalar, the copublishers as a list of scalars); `false` keeps
+        # the lutaml component shapes ({"body": "DD"} — the coded-BSI
+        # form). Absent section = the legacy flat shape.
+        def check_serialization(raw)
+          return Definition::Serialization.new(flat_publisher: true) if raw.nil?
+
+          unless raw.is_a?(Hash)
+            raise InvalidDefinition.new("serialization", "must be a map")
+          end
+          check_keys("serialization", raw, %w[flat_publisher])
+          flat = raw.fetch("flat_publisher", true)
+          unless [true, false].include?(flat)
+            raise InvalidDefinition.new("serialization.flat_publisher",
+                                        "must be a boolean")
+          end
+
+          Definition::Serialization.new(flat_publisher: flat)
         end
 
         # Resolve the `modules:` entries against the library and run the
@@ -441,7 +465,7 @@ module Pubid
               raise InvalidDefinition.new("types.#{name}", "type name must be snake_case")
             end
             check_keys("types.#{name}", body,
-                       %w[key web title short tag stage tokens publisher_default adopted])
+                       %w[key web title short tag stage tokens publisher_default adopted designation])
 
             key = body["key"]
             unless key.is_a?(String) && NAME.match?(key)
@@ -482,6 +506,33 @@ module Pubid
             tokens = check_type_tokens(name, body["tokens"], seen_tokens,
                                        seen_abbrs)
             publisher_default = body["publisher_default"]
+            designation = body["designation"] || false
+            unless [true, false].include?(designation)
+              raise InvalidDefinition.new("types.#{name}.designation",
+                                          "must be a boolean")
+            end
+            if designation
+              # The typed-trio shape: the designation token is not a
+              # publisher — the column keeps the organization default, so
+              # a publisher_default would re-introduce the column default
+              # the designation exists to avoid.
+              if publisher_default
+                raise InvalidDefinition.new(
+                  "types.#{name}.designation",
+                  "a designation type cannot carry publisher_default — the " \
+                  "designation token selects the class and prints the face, " \
+                  "the column keeps the organization publisher",
+                )
+              end
+              unless stage
+                raise InvalidDefinition.new(
+                  "types.#{name}.designation",
+                  "a designation type must declare its stage — the type/" \
+                  "stage/typed_stage trio the identifier carries is the " \
+                  "stage registry entry",
+                )
+              end
+            end
             if publisher_default && !adopted
               unless publisher_default.is_a?(String) && TOKEN.match?(publisher_default)
                 raise InvalidDefinition.new(
@@ -511,6 +562,7 @@ module Pubid
               tokens: tokens,
               publisher_default: publisher_default,
               adopted: adopted,
+              designation: designation,
             )
           end
         end
@@ -608,15 +660,20 @@ module Pubid
         # escape hatch): `adopted.field` names the builder-only capture
         # carrying the adopted run; `hook` must be `coded` — the generated
         # builder calls the vendored hook class, which parses the adopted
-        # string with the owning schemes' flavors. Never implicit: without
-        # the section the capture builds nothing.
+        # string with the owning schemes' flavors. `attribute` names the
+        # model column the adopted document lands on (the uniform `base`
+        # renames the wrapper slot; the default is the capture name).
+        # `identity: root_through` reads the wrapper's identity from the
+        # ROOT document. `edition` declares the wrapper's glued edition
+        # face. Never implicit: without the section the capture builds
+        # nothing.
         def check_adopted(raw, fields)
           return nil if raw.nil?
 
           unless raw.is_a?(Hash)
             raise InvalidDefinition.new("adopted", "must be a map")
           end
-          check_keys("adopted", raw, %w[field hook])
+          check_keys("adopted", raw, %w[field hook attribute identity edition])
           field = raw["field"]
           declared = fields.find { |f| f.name == field }
           unless declared && declared.builder_only && declared.kind == "string"
@@ -634,8 +691,48 @@ module Pubid
               "class beside the generated flavor, got #{hook.inspect}",
             )
           end
+          attribute = raw.fetch("attribute", field)
+          unless attribute.is_a?(String) && NAME.match?(attribute)
+            raise InvalidDefinition.new("adopted.attribute",
+                                        "must be a lower-case model column name")
+          end
+          identity = raw["identity"]
+          if identity && identity != "root_through"
+            raise InvalidDefinition.new(
+              "adopted.identity",
+              "must be `root_through` — the wrapper carries no identity of " \
+              "its own, the official-URN identity segments and the MR hooks " \
+              "read the ROOT document, got #{identity.inspect}",
+            )
+          end
+          edition = check_adopted_edition(raw["edition"])
 
-          Definition::Adopted.new(field: field, hook: hook)
+          Definition::Adopted.new(field: field, hook: hook, attribute: attribute,
+                                  identity: identity, edition: edition)
+        end
+
+        # adopted.edition: the wrapper's glued edition face — the token
+        # ("ED") printed with no separator inside (there is no
+        # edition_space to supply) and the declared separator before it.
+        def check_adopted_edition(raw)
+          return nil if raw.nil?
+
+          unless raw.is_a?(Hash)
+            raise InvalidDefinition.new("adopted.edition", "must be a map")
+          end
+          check_keys("adopted.edition", raw, %w[face separator])
+          face = raw["face"]
+          unless face.is_a?(String) && face.match?(/\A[A-Z]+\z/)
+            raise InvalidDefinition.new("adopted.edition.face",
+                                        "must be an upper-case face token, got #{face.inspect}")
+          end
+          separator = raw.fetch("separator", " ")
+          unless separator.is_a?(String) && !separator.empty?
+            raise InvalidDefinition.new("adopted.edition.separator",
+                                        "must be a non-empty separator string")
+          end
+
+          Definition::AdoptedEdition.new(face: face, separator: separator)
         end
 
         def check_stage(type_name, stage, seen_abbrs)
@@ -644,7 +741,7 @@ module Pubid
           unless stage.is_a?(Hash)
             raise InvalidDefinition.new("types.#{type_name}.stage", "must be a map")
           end
-          check_keys("types.#{type_name}.stage", stage, %w[code stage_code abbr])
+          check_keys("types.#{type_name}.stage", stage, %w[code stage_code abbr harmonized_stages])
 
           code = stage["code"]
           unless code.is_a?(String) && NAME.match?(code)
@@ -677,8 +774,17 @@ module Pubid
             seen_abbrs[abbr.upcase] = type_name
           end
 
+          harmonized = stage["harmonized_stages"] || []
+          unless harmonized.is_a?(Array) && harmonized.all?(String)
+            raise InvalidDefinition.new(
+              "types.#{type_name}.stage.harmonized_stages",
+              "must be an array of harmonized stage codes, got #{harmonized.inspect}",
+            )
+          end
+
           Definition::Stage.new(
             code: code, stage_code: stage_code, abbr: abbrs.freeze,
+            harmonized_stages: harmonized.freeze,
           )
         end
 
@@ -1061,6 +1167,21 @@ module Pubid
           end
         end
 
+        # The model columns a URN atom path or core path may root at: the
+        # declared fields, the consolidated bundle's member list, the
+        # adopted wrapper's columns (the adopted document and, declared,
+        # its edition face) and — where a designation type exists — the
+        # typed trio the designation sets (type/stage/typed_stage).
+        def model_columns(fields, adopted, has_designation)
+          columns = fields.map(&:name) + ["identifiers"]
+          if adopted
+            columns << adopted.attribute
+            columns << "edition" if adopted.edition
+          end
+          columns.concat(%w[type stage typed_stage]) if has_designation
+          columns
+        end
+
         def check_urn(raw, fields, supplements, adopted)
           urn = raw["urn"]
           unless urn.is_a?(Hash)
@@ -1077,6 +1198,8 @@ module Pubid
 
           official = check_urn_official(urn["official"] || [], fields, adopted)
 
+          columns = model_columns(fields, adopted,
+                                  (raw["types"] || {}).any? { |_, b| b.is_a?(Hash) && b["designation"] })
           schema = urn["schema"] || {}
           atoms = (schema["atoms"] || []).map.with_index do |atom, i|
             rule = "urn.schema.atoms[#{i}]"
@@ -1084,7 +1207,9 @@ module Pubid
             path = atom["path"]
             # `identifiers` is the consolidated bundle's member list — a
             # compiler-generated column the declared wrappers synthesize.
-            unless fields.any? { |f| f.name == path } || path == "identifiers"
+            # A dotted path roots at the column it reads ("publisher.body").
+            root = path.to_s.split(".").first
+            unless columns.include?(root)
               raise InvalidDefinition.new(rule, "unknown field path #{path.inspect}")
             end
             prefix = atom["prefix"]
@@ -1108,7 +1233,7 @@ module Pubid
             unless token.is_a?(String) && NAME.match?(token)
               raise InvalidDefinition.new(rule, "token must be a lower-case token")
             end
-            core = check_urn_core(rule, type["core"] || [], fields)
+            core = check_urn_core(rule, type["core"] || [], columns)
             Definition::UrnType.new(type: type_str, token: token, core: core)
           end
 
@@ -1122,14 +1247,14 @@ module Pubid
                               official: official)
         end
 
-        # The core declaration of a urn.schema.types[] row: bare field
+        # The core declaration of a urn.schema.types[] row: bare column
         # paths (string-kind) or `[path, kind]` pairs — pfs:1 phase 3 adds
         # the `int` kind (the coded schemas' `core: [["number", :int]]`
         # supplement rows). The normalized rows carry the pairs; the
         # generator emits them verbatim.
-        def check_urn_core(rule, core, fields)
+        def check_urn_core(rule, core, columns)
           unless core.is_a?(Array)
-            raise InvalidDefinition.new(rule, "core must be an array of field paths")
+            raise InvalidDefinition.new(rule, "core must be an array of column paths")
           end
           core.map do |entry|
             path, kind =
@@ -1144,12 +1269,12 @@ module Pubid
               else
                 raise InvalidDefinition.new(
                   rule,
-                  "core entries are field paths or [path, kind] pairs, " \
+                  "core entries are column paths or [path, kind] pairs, " \
                   "got #{entry.inspect}",
                 )
               end
-            unless fields.any? { |f| f.name == path }
-              raise InvalidDefinition.new(rule, "unknown core field #{path.inspect}")
+            unless columns.include?(path.to_s.split(".").first)
+              raise InvalidDefinition.new(rule, "unknown core path #{path.inspect}")
             end
             unless CORE_KINDS.include?(kind)
               raise InvalidDefinition.new(
@@ -1439,14 +1564,18 @@ module Pubid
         end
 
         # The consolidated (plus-run) bundle class: its wire tag, unique
-        # against the wrappers'.
+        # against the wrappers'. `marker` is the URN word marking each
+        # member — `none` is the coded-BSI shape (the members' segments
+        # append directly, the member suffixes drop from the MR slug, the
+        # members carry the bundle's base document); the default is
+        # "plus" (the cen shape).
         def check_consolidated(raw, tags)
           return nil if raw.nil?
 
           unless raw.is_a?(Hash)
             raise InvalidDefinition.new("supplements.consolidated", "must be a map")
           end
-          check_keys("supplements.consolidated", raw, %w[tag title])
+          check_keys("supplements.consolidated", raw, %w[tag title marker])
           tag = raw["tag"]
           unless tag.is_a?(String) && TAG.match?(tag)
             raise InvalidDefinition.new("supplements.consolidated.tag",
@@ -1456,8 +1585,17 @@ module Pubid
             raise InvalidDefinition.new("supplements.consolidated.tag",
                                         "ambiguity: wire tag #{tag.inspect} already claimed")
           end
+          marker = raw.fetch("marker", "plus")
+          unless marker == "none" || (marker.is_a?(String) && NAME.match?(marker))
+            raise InvalidDefinition.new("supplements.consolidated.marker",
+                                        "must be `none` or a lower-case marker word, " \
+                                        "got #{marker.inspect}")
+          end
 
-          Definition::Consolidated.new(tag: tag, title: raw["title"] || "Consolidated identifier")
+          Definition::Consolidated.new(
+            tag: tag, title: raw["title"] || "Consolidated identifier",
+            marker: marker == "none" ? nil : marker,
+          )
         end
 
         # The fragment wrapper: the printed FRAG face, its wire tag.
@@ -1606,7 +1744,12 @@ module Pubid
             raise InvalidDefinition.new("urn.official",
                                         "must be an array of ordered segments")
           end
-          known = fields.map(&:name)
+          # The wrapper-owned columns the adoption declares are segment
+          # sources too ("edition" — the adoption face's own ordinal); so
+          # is `subpart`, the shared model's column (a wrapper's
+          # root-through read reaches it through the delegated document).
+          known = fields.map(&:name) + ["subpart"]
+          known << "edition" if adopted&.edition
           fold_targets = fields.select { |f| f.fold }.map { |f| f.fold.into }
           stage_fields = fields.select { |f| f.urn.is_a?(Hash) }.map(&:name)
           official.map.with_index do |segment, i|
@@ -1620,8 +1763,26 @@ module Pubid
             when Hash
               check_keys(rule, segment,
                          %w[field date compose lower affix edition_affix
-                            pub_group stage_code adopted_mr])
-              if segment.key?("field")
+                            pub_group stage_code type_abbr adopted_mr])
+              if segment.key?("type_abbr")
+                spec = segment["type_abbr"]
+                unless spec.is_a?(Hash)
+                  raise InvalidDefinition.new(
+                    "#{rule}.type_abbr",
+                    "must be {skip:} — the type abbr downcased, skipped " \
+                    "when it spells the skip token",
+                  )
+                end
+                check_keys("#{rule}.type_abbr", spec, %w[skip])
+                skip = spec["skip"]
+                unless skip.is_a?(String) && !skip.empty?
+                  raise InvalidDefinition.new(
+                    "#{rule}.type_abbr.skip",
+                    "must be the abbr token the segment skips, got #{skip.inspect}",
+                  )
+                end
+                Definition::UrnTypeAbbr.new(skip: skip)
+              elsif segment.key?("field")
                 name = segment["field"]
                 unless known.include?(name)
                   raise InvalidDefinition.new(rule, "unknown field #{name.inspect}")
@@ -1657,7 +1818,30 @@ module Pubid
                 )
               elsif segment.key?("stage_code")
                 spec = segment["stage_code"]
-                unless spec.is_a?(Hash) && spec.key?("field")
+                unless spec.is_a?(Hash)
+                  raise InvalidDefinition.new(
+                    "#{rule}.stage_code",
+                    "must be {field:} or {published: true} — the draft-stage " \
+                    "column carrying the declared URN map, or the typed trio's " \
+                    "own stage segment",
+                  )
+                end
+                if spec.key?("published")
+                  # The typed trio's segment: reads the identifier's
+                  # typed_stage directly and fires for published rows too
+                  # (the coded generator's own comparison).
+                  check_keys("#{rule}.stage_code", spec, %w[published marker])
+                  unless spec["published"] == true
+                    raise InvalidDefinition.new(
+                      "#{rule}.stage_code.published",
+                      "must be true — the segment fires for published rows too",
+                    )
+                  end
+                  next Definition::UrnStageCode.new(
+                    field: nil, marker: spec["marker"] || "stage.", published: true,
+                  )
+                end
+                unless spec.key?("field")
                   raise InvalidDefinition.new(
                     "#{rule}.stage_code",
                     "must be {field:} — the draft-stage column carrying the " \
@@ -1674,7 +1858,9 @@ module Pubid
                   )
                 end
                 check_keys("#{rule}.stage_code", spec, %w[field marker])
-                Definition::UrnStageCode.new(marker: spec["marker"] || "stage.")
+                Definition::UrnStageCode.new(field: name,
+                                             marker: spec["marker"] || "stage.",
+                                             published: false)
               elsif segment.key?("adopted_mr")
                 unless adopted
                   raise InvalidDefinition.new(
@@ -1714,7 +1900,7 @@ module Pubid
                 rule,
                 "must be a field name, {field: ...}, {date: [fields]}, " \
                 "{compose: [...]}, {pub_group: {glue:}}, {stage_code: " \
-                "{field:}} or {adopted_mr: true}",
+                "{field:}}, {type_abbr: {skip:}} or {adopted_mr: true}",
               )
             end
           end
