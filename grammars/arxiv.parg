@@ -1,0 +1,50 @@
+# arXiv e-print identifiers, per
+# https://info.arxiv.org/help/arxiv_identifier_for_services.html:
+#   new form  YYMM.NNNN[vN] (0704-1412) and YYMM.NNNNN[vN] (1501 onward)
+#   old form  archive[.SC]/YYMMNNN[vN] (9108-0703)
+# with an optional, case-insensitive "arXiv:" or "arXiv " prefix.
+# The date ranges, the month and v0 are checked by the Ruby builder.
+
+grammar PubidArxiv version "0.1.0" edition 2 {
+  digit = %x30-39
+  lower = %x61-7A
+  letter = %x41-5A / %x61-7A
+  arxiv_prefix = %i"arXiv" (colon / space)
+  yymm = (4digit) as yymm
+  new_number = (4*5digit) as number
+  new_id = yymm "." new_number
+  archive = (lower *(lower / "-")) as archive
+  subject_class = (letter *(letter / "-")) as subject_class
+  old_number = (3digit) as number
+  old_id = archive ["." subject_class] "/" yymm old_number
+  version = "v" (1*digit) as version
+  identifier = [arxiv_prefix] (new_id / old_id) [version]
+  space = " "
+  colon = ":"
+  entry identifier: identifier
+
+  # Typed model bindings: every bound capture lands on the
+  # consumer model's field of the same name.
+  bindings identifier {
+    archive -> archive (string)
+    subject_class -> subject_class (string)
+    yymm -> yymm (string)
+    number -> number (string)
+    version -> version (string)
+  }
+
+
+  test {
+    accept "arXiv:2301.00001v1"
+    accept "arxiv:0704.0001"
+    accept "arXiv hep-th/9901001v2"
+    accept "math.GT/0309136"
+    reject "nonsense"
+    reject "2301.001"
+    reject "hep-th/99010"
+    example "arXiv:2301.00001v1" { yymm: "2301" number: "00001" version: "1" }
+    example "0704.0001" { yymm: "0704" number: "0001" }
+    example "hep-th/9901001" { archive: "hep-th" yymm: "9901" number: "001" }
+    example "math.GT/0309136v2" { archive: "math" subject_class: "GT" yymm: "0309" number: "136" version: "2" }
+  }
+}
