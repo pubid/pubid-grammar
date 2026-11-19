@@ -162,6 +162,19 @@ grammar PubidItu version "0.1.0" edition 2 {
     / (itu_prefix sector space report_word space report_body)
   }
   report_identifier = base_report [language]
+  # ITU-R Resolution ("Resolution ITU-R 1-9 (2023)"): a number and its
+  # revision, never a series. Like the Report marker, the word is captured,
+  # and both the leading and the infix spelling are accepted.
+  resolution_word = ("Resolution" / "Res.") as resolution_marker
+  resolution_body = {
+    code
+    [document_date]
+  }
+  base_resolution = {
+    (resolution_word space itu_prefix sector space resolution_body)
+    / (itu_prefix sector space resolution_word space resolution_body)
+  }
+  resolution_identifier = base_resolution [language]
   base = base_report / base_with_series / base_without_series / base_series_code
 
   annex_label = upper [1*digit] ["+"]
@@ -301,6 +314,7 @@ grammar PubidItu version "0.1.0" edition 2 {
     / annex_identifier
     / appendix_identifier
     / report_identifier
+    / resolution_identifier
     / handbook
     / numeric_question
     / letter_question
@@ -349,6 +363,7 @@ grammar PubidItu version "0.1.0" edition 2 {
     appendix_material -> appendix_material (string)
     supplement_slash -> supplement_slash (string)
     report_marker -> report_marker (string)
+    resolution_marker -> resolution_marker (string)
     _op_bull -> _op_bull (string)
     contribution_marker -> contribution_marker (string)
     handbook_marker -> handbook_marker (string)
