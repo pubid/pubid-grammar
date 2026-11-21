@@ -10,10 +10,12 @@
 # occurrence under copublishers[].copublisher.
 
 grammar PubidAnsi version "0.1.0" edition 2 {
-  organization = "ISO" / "IEC" / "IEEE" / "SAE" / "ASME" / "ASTM"
-  # The copublisher body is inlined to raw terms: bare rule refs next to
-  # a capture drop the capture or materialize stray {slash:} nodes.
-  copublisher_item = "/" [" "] ( "ISO" / "IEC" / "IEEE" / "SAE" / "ASME" / "ASTM" ) as copublisher
+  # Any uppercase developer acronym co-publishes (relaton#45): ASHRAE,
+  # UL, NISO, INCITS, HL7, ASC ... An uppercase letter, then uppercase
+  # letters or digits. The copublisher body is inlined to raw terms: bare
+  # rule refs next to a capture drop the capture or materialize stray
+  # {slash:} nodes.
+  copublisher_item = "/" [" "] ( %x41-5A 1*(%x41-5A / %x30-39) ) as copublisher
   copublishers = ( 1*copublisher_item ) as copublishers
   std_keyword = ["Std "]
   number_with_part = {
@@ -54,6 +56,12 @@ grammar PubidAnsi version "0.1.0" edition 2 {
     accept "ANSI C63.4"
     accept "ANSI/IEEE C63.4"
     accept "ANSI Std A119.1"
+    accept "ANSI X9.62-2005"
+    accept "ANSI/UL 94-2023"
+    accept "ANSI/NISO Z39.88-2004"
+    accept "ANSI/ASHRAE/IES 90.1-2019"
+    accept "ANSI/AAMI ST79:2017"
+    reject "ANSI/ul 94-2023"
     reject "nonsense"
   }
 }
