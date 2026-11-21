@@ -3,7 +3,7 @@
 | adobe | 0.1.0 | 4 | 3 | 6 | 0 | true |
 | aiee | 0.1.0 | 5 | 4 | 6 | 0 | true |
 | amca | 0.1.0 | 4 | 3 | 10 | 0 | true |
-| ansi | 0.1.0 | 4 | 3 | 5 | 0 | true |
+| ansi | 0.1.0 | 10 | 8 | 5 | 0 | true |
 | api | 0.1.0 | 4 | 3 | 14 | 0 | true |
 | arxiv | 0.1.0 | 11 | 8 | 5 | 0 | true |
 | ashrae | 0.1.0 | 9 | 8 | 37 | 0 | true |
@@ -56,4 +56,4 @@
 | w3c | 0.1.0 | 3 | 2 | 2 | 0 | true |
 | xsf | 0.1.0 | 3 | 2 | 1 | 0 | true |
 
-flavors: 54; corpus cases: 486; with render: 1; gates: run scripts/cross-runtime-check.sh
+flavors: 54; corpus cases: 491; with render: 1; gates: run scripts/cross-runtime-check.sh
