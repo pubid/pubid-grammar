@@ -20,18 +20,21 @@ grammar PubidAnsi version "0.1.0" edition 2 {
   std_keyword = ["Std "]
   number_with_part = {
     (
-      ( 1*(%x41-5A) 1*(%x30-39) *3("." 1*(%x30-39)) [*1(%x41-5A)] [("-" 1*(%x30-39))] )
-      / ( 1*(%x30-39) *2("." 1*(%x30-39) [*1(%x61-7A)]) [("-" 1*(%x30-39))] )
+      ( 1*(%x41-5A) 1*(%x30-39) *3("." 1*(%x30-39)) [*1(%x41-5A)] [("-" 1*(%x30-39))] [("-" ("19" / "20") 2*2(%x30-39) !(%x30-39 / ":"))] )
+      / ( 1*(%x30-39) *2("." 1*(%x30-39) [*1(%x61-7A)]) [("-" 1*(%x30-39))] [("-" ("19" / "20") 2*2(%x30-39) !(%x30-39 / ":"))] )
     ) as number_with_part
   }
+  # A revision letter after a dash: "ANSI/TIA-568.2-D". One uppercase
+  # letter, not the start of a word.
+  revision = "-" ( %x41-5A ) as revision !(%x41-5A / %x30-39)
   date = ":" ( ("19" / "20") 2*(%x30-39) !(%x30-39) ) as date
   languages = ( *( 2*(%x61-7A) [","] ) ) as languages
   language = "(" languages ")"
   identifier_with_copublishers = {
-    "ANSI" as publisher copublishers " " ["Std "] number_with_part [date] [language]
+    "ANSI" as publisher copublishers ( " " / ( "-" as number_separator ) ) ["Std "] number_with_part [revision] [date] [language]
   }
   identifier_sole = {
-    "ANSI" as publisher " " ["Std "] number_with_part [date] [language]
+    "ANSI" as publisher " " ["Std "] number_with_part [revision] [date] [language]
   }
   identifier = identifier_with_copublishers / identifier_sole
   upper = %x41-5A
@@ -47,7 +50,9 @@ grammar PubidAnsi version "0.1.0" edition 2 {
   bindings identifier {
     publisher -> publisher (string)
     copublisher -> copublishers[].copublisher (string)
+    number_separator -> number_separator (string)
     number_with_part -> number_with_part (string)
+    revision -> revision (string)
     date -> date (string)
     languages -> languages (string)
   }
@@ -61,6 +66,13 @@ grammar PubidAnsi version "0.1.0" edition 2 {
     accept "ANSI/NISO Z39.88-2004"
     accept "ANSI/ASHRAE/IES 90.1-2019"
     accept "ANSI/AAMI ST79:2017"
+    accept "ANSI/ISA-5.1-2009"
+    accept "ANSI/ANS-8.1-2014"
+    accept "ANSI/ISA-61511-1-2018"
+    accept "ANSI/TIA-568.2-D"
+    accept "ANSI X9.8-1-2007"
+    reject "ANSI/TIA-568.2-DE"
+    reject "ANSI X9.8-1-2007:2009"
     reject "ANSI/ul 94-2023"
     reject "nonsense"
   }
