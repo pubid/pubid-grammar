@@ -1,20 +1,51 @@
-# WMO document identifiers (pubid#763): the WMO-No. publication series
-# and the WMO-published S-100 product specifications.
+# WMO document identifiers (pubid#763, widened): the WMO-No. publication
+# series, the WMO-published S-100 product specifications, and the WMO
+# technical-document series (WMO/TD, JCOMM Technical Report, GAW Report).
 #
 #   WMO-No. 1364                      publication, bare
 #   WMO-No. 1364, 2025 edition        publication, year edition (citation comma)
 #   WMO-No. 1364 2025 edition         publication, year edition (cover stack)
 #   WMO-No. 1364:ed2025               publication, compact year edition (alias)
+#   WMO-No. 8, 2021/2018 edition      publication, compound year-pair edition
+#                                     (primary year first, the IMOP wording)
+#   WMO-No. 1364, 2023 edition,
+#                 updated in 2025     publication, edition + updated-in year
+#                                     (library record 69478)
+#   WMO-No. 8, Provisional 2026
+#                 edition             publication, status-qualified edition
+#                                     (IMOP Knowledge-Hub)
+#   WMO-No. 8, Volume I … V           volume face, roman (IMOP Guide page)
+#   WMO-No. 306, Volume I.1           dotted-roman sub-volume (record 35713)
+#   WMO-No. 9, Volume D               letter volume (Resolution 10 (SERCOM-1))
+#   WMO/TD-No. 196                    the Technical Document series (the
+#                                     library serial "WMO/TD-No."; the PREFIX
+#                                     law of the widening ruling: the bare
+#                                     "TD-No." head names no publisher, so it
+#                                     never parses)
+#   JCOMM Technical Report No. 14     the joint WMO/IOC series (self-
+#                                     identifying head)
+#   GAW Report No. 312                the GAW series, bare head (WMO's own
+#                                     library records; the prefixed
+#                                     "WMO/GAW Report No." spelling is
+#                                     third-party citation only)
 #   S-411                             S-100 product specification, bare
 #   S-411 1.2.1                       dotted edition (the S-411 repo form)
 #   S-411:ed1.2.1                     compact dotted edition (alias)
 #   S-411 Annex A                     annex wrapper (the DCEG docidentifier)
 #   S-411 Annex A 1.2.0               annex wrapper carrying its edition
 #
-# Editions are a type-driven face: the WMO-No. series carries calendar-year
-# editions ("2025 edition", MRN `ed2025`); the S-100 shapes carry the IHO
-# dotted x.y.z (MRN `ed1.2.1`). Both bind the one `edition_value` capture;
-# the builder keys the face off the resolved type.
+# Editions are a type-driven face: the publication series carry calendar-
+# year editions ("2025 edition", MRN `ed2025`); the S-100 shapes carry the
+# IHO dotted x.y.z (MRN `ed1.2.1`). Both bind the one `edition_value`
+# capture; the builder keys the face off the resolved type. The compound
+# faces widen the same capture: the year pair ("2021/2018") is one
+# edition value — the pair IS the identity face, the dotted-x.y.z rule of
+# the S-100 side applied to years — and the status word ("Provisional")
+# and the updated-in year ride their own captures beside it.
+#
+# The volume face precedes the edition face when both appear (the face
+# order of the widening ruling; both faces individually attested on
+# WMO-No. 306 Volume I.1 and the 2020-edition rows).
 #
 # Type assignment (the #763 ruling): the S-lexical form is a WMO type,
 # publisher-parameterised per IALA's S-201 — the lexical shape is the IHO
@@ -22,22 +53,43 @@
 # (metanorma/S-411-Product-Specification, mn-document-class wmo).
 #
 # Edition-2 conversion with typed model bindings, mirroring the iala
-# grammar: each alternative path carries exactly one occurrence of every
+# grammar: each alternative path carries at most one occurrence of every
 # capture name, so the harvest delivers one flat bound map; the annex base
 # composite stays unbound (its `doc_number` hoists to the top level) and
-# the builder dispatches on `wmomarker` / `annex_marker`. The annex letter
-# guard (!lower) keeps a following edition segment from mis-capturing.
+# the builder dispatches on `series_head` / `annex_marker`. The annex
+# letter guard (!lower) keeps a following edition segment from
+# mis-capturing.
 
-grammar PubidWmo version "0.1.0" edition 2 {
-  wmomarker = "WMO-No." as wmomarker
+grammar PubidWmo version "0.2.0" edition 2 {
+  series_head = {
+      "WMO-No." as series_head
+    / "WMO/TD-No." as series_head
+    / "JCOMM Technical Report No." as series_head
+    / "GAW Report No." as series_head
+  }
   doc_number = (1*digit) as doc_number
   s_code = "S-" (1*digit) as doc_number
-  year_value = (4digit) as edition_value
+  year_value = ((4digit) [slash (4digit)]) as edition_value
   dotted_value = (1*digit 1*(dot 1*digit)) as edition_value
-  edition_year_human = ([comma] space year_value " edition") as edition
+  updated_tail = {
+    "," space "updated" space "in" space ((4digit) as updated_in)
+  }
+  edition_year_human = {
+    [","] space year_value " edition"
+    [updated_tail]
+  }
   edition_year_compact = (colon "ed" year_value) as edition
+  edition_status_human = {
+    [","] space ("Provisional" as edition_status) space year_value " edition"
+  }
   edition_dotted_human = (space dotted_value) as edition
   edition_dotted_compact = (colon "ed" dotted_value) as edition
+  volume_roman = {
+      "VIII" / "VII" / "VI" / "III" / "II"
+    / "IX" / "IV" / "X" / "V" / "I"
+  }
+  volume_value = ((volume_roman / upper) *(dot 1*digit)) as volume
+  volume_face = { [","] space "Volume" space volume_value }
   annex_identifier = {
     s_code
     space
@@ -46,8 +98,9 @@ grammar PubidWmo version "0.1.0" edition 2 {
     [edition_dotted_human / edition_dotted_compact]
   }
   publication_identifier = {
-    wmomarker space doc_number
-    [edition_year_human / edition_year_compact]
+    series_head space doc_number
+    [volume_face]
+    [edition_year_human / edition_status_human / edition_year_compact]
   }
   standard_identifier = {
     s_code
@@ -59,15 +112,18 @@ grammar PubidWmo version "0.1.0" edition 2 {
   upper = %x41-5A
   lower = %x61-7A
   digit = %x30-39
-  comma = ","
   colon = ":"
   dot = "."
+  slash = "/"
   space = " "
 
   bindings identifier {
-    wmomarker -> wmomarker (string)
+    series_head -> series_head (string)
     doc_number -> doc_number (string)
     edition_value -> edition_value (string)
+    volume -> volume (string)
+    edition_status -> edition_status (string)
+    updated_in -> updated_in (string)
     annex_marker -> annex_marker (string)
     annex_letter -> annex_letter (string)
   }
@@ -83,12 +139,38 @@ grammar PubidWmo version "0.1.0" edition 2 {
     accept "S-411 Annex A"
     accept "S-411 ANNEX A"
     accept "S-411 Annex A 1.2.0"
+    # the widened publication faces
+    accept "WMO-No. 306"
+    accept "WMO-No. 8, Volume I"
+    accept "WMO-No. 8, Volume V"
+    accept "WMO-No. 306, Volume I.1"
+    accept "WMO-No. 9, Volume D"
+    accept "WMO-No. 306, Volume I.1, 2020 edition"
+    accept "WMO-No. 8, 2021/2018 edition"
+    accept "WMO-No. 1364, 2023 edition, updated in 2025"
+    accept "WMO-No. 8, Provisional 2026 edition"
+    # the new series heads (the prefix law: every head names its publisher)
+    accept "WMO/TD-No. 196"
+    accept "JCOMM Technical Report No. 14"
+    accept "GAW Report No. 312"
     reject "nonsense"
     reject "WMO-No. edition"
     reject "S-411 1234"
-    example "WMO-No. 1364" { wmomarker: "WMO-No.", doc_number: "1364" }
+    # the prefix law rejects: a series head that names no publisher (the
+    # bare TD-No. spellings), a misattributed publisher (no IMO TD series
+    # exists — the wild string is an OCR misread), and the third-party
+    # GAW citation form
+    reject "TD-No. 1265"
+    reject "TD No. 196"
+    reject "IMO/TD-No. 259"
+    reject "WMO/GAW Report No. 285"
+    # the spaced cover variant of the TD head ("WMO/TD - No. 1469",
+    # GAW-183 cover): deliberately outside the grammar — only the glued
+    # library-serial head "WMO/TD-No." is defined
+    reject "WMO/TD - No. 1469"
+    example "WMO-No. 1364" { series_head: "WMO-No.", doc_number: "1364" }
     example "WMO-No. 1364, 2025 edition" {
-      wmomarker: "WMO-No.",
+      series_head: "WMO-No.",
       doc_number: "1364",
       edition_value: "2025",
     }
@@ -100,9 +182,46 @@ grammar PubidWmo version "0.1.0" edition 2 {
       edition_value: "1.2.0",
     }
     example "WMO-No. 1364:ed2025" {
-      wmomarker: "WMO-No.",
+      series_head: "WMO-No.",
       doc_number: "1364",
       edition_value: "2025",
+    }
+    example "WMO-No. 306, Volume I.1" {
+      series_head: "WMO-No.",
+      doc_number: "306",
+      volume: "I.1",
+    }
+    example "WMO-No. 306, Volume I.1, 2020 edition" {
+      series_head: "WMO-No.",
+      doc_number: "306",
+      volume: "I.1",
+      edition_value: "2020",
+    }
+    example "WMO-No. 8, 2021/2018 edition" {
+      series_head: "WMO-No.",
+      doc_number: "8",
+      edition_value: "2021/2018",
+    }
+    example "WMO-No. 1364, 2023 edition, updated in 2025" {
+      series_head: "WMO-No.",
+      doc_number: "1364",
+      edition_value: "2023",
+      updated_in: "2025",
+    }
+    example "WMO-No. 8, Provisional 2026 edition" {
+      series_head: "WMO-No.",
+      doc_number: "8",
+      edition_status: "Provisional",
+      edition_value: "2026",
+    }
+    example "WMO/TD-No. 196" { series_head: "WMO/TD-No.", doc_number: "196" }
+    example "JCOMM Technical Report No. 14" {
+      series_head: "JCOMM Technical Report No.",
+      doc_number: "14",
+    }
+    example "GAW Report No. 312" {
+      series_head: "GAW Report No.",
+      doc_number: "312",
     }
   }
 }
