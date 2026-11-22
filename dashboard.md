@@ -54,6 +54,7 @@
 | tgpp | 0.1.0 | 3 | 2 | 6 | 0 | true |
 | un | 0.1.0 | 3 | 2 | 1 | 0 | true |
 | w3c | 0.1.0 | 3 | 2 | 2 | 0 | true |
+| wmo | 0.1.0 | 18 | 15 | 5 | 0 | true |
 | xsf | 0.1.0 | 3 | 2 | 1 | 0 | true |
 
-flavors: 54; corpus cases: 491; with render: 1; gates: run scripts/cross-runtime-check.sh
+flavors: 55; corpus cases: 506; with render: 1; gates: run scripts/cross-runtime-check.sh
