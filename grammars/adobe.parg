@@ -9,7 +9,7 @@
 # tech_note_bare, publication_version) keep the v1 tree shape and the
 # bindings name their scalar leaves.
 
-grammar PubidAdobe version "0.1.0" edition 2 {
+grammar PubidAdobe version "0.2.0" edition 2 {
 
   # Capture precedence: (*rep) as name wraps the whole repetition, so a
   # digit run joins to one string instead of re-keying every character;
@@ -30,12 +30,14 @@ grammar PubidAdobe version "0.1.0" edition 2 {
   # so an inner capture here would render the hash, not the digits.
   bare_number = (1*%x30-39) as tech_note_bare
   # Slug text: a lower-case lead segment, then dash-joined segments.
+  # The version face is a dot-joined digit run ("7", "1.7", "6.0") — the
+  # PDF Reference editions, TIFF 6.0 and XFA 3.3 carry dotted versions.
   publication_with_version = {
     (
       ( 1*%x61-7A *(%x61-7A / %x30-39)
         *("-" 1*%x61-7A *(%x61-7A / %x30-39)) ) as slug
       "-"
-      (1*%x30-39) as version
+      ( 1*%x30-39 *( "." 1*%x30-39 ) ) as version
     ) as publication_version
   }
   slug_inner = {
@@ -52,6 +54,10 @@ grammar PubidAdobe version "0.1.0" edition 2 {
     accept "Adobe TN 15"
     accept "ATN 30"
     accept "Adobe Technical Note #12"
+    accept "pdf-reference-1.7"
+    accept "Adobe Publication tiff-6.0"
+    accept "Adobe Publication xfa-3.3"
+    accept "adobe-japan1-7"
     reject "###"
   }
 
