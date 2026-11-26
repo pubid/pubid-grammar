@@ -9,6 +9,27 @@ The rule behind every step: **the artifact is the only parsing input**.
 Consumers never re-transcribe rules, so a change that stops at the
 grammar never reaches a user.
 
+## 0a. The PFS route (composed flavors)
+
+The hand-coded route below is for flavors whose bodies exceed the
+declarative surface. A scheme the module library composes (a national
+body adopting ISO/IEC documents over the EN overlay) starts from the
+scaffold instead:
+
+```bash
+ruby scripts/pfs new <Org>            # the composed skeleton, compiles green
+ruby scripts/pfs lint definitions/<org>.pfs
+ruby scripts/pfs capture specimen.txt --scheme <org> --out draft.pfs
+ruby scripts/pfs compile definitions/<org>.pfs --as <org>_pfs \
+  --parsanol-version <fleet pin>
+```
+
+The language reference (`definitions/README.md`, "The tooling" section)
+carries the command set (`doctor` for the drift checks, `cutover` for
+the graduation); the dev-alias → canonical recipe is `docs/CUTOVER.md`.
+The route below applies from step 4 onward — the gem module arrives
+generated (`--ruby-out`), not hand-written.
+
 ## 0. Set up the checkouts
 
 The repos must sit side by side so the pinned refs resolve:

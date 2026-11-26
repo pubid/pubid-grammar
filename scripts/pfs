@@ -39,9 +39,10 @@
 #   mechanical plan (gem module, registry, testsuite dir, site data).
 #   Mutates nothing.
 #
-# The engine pin is mandatory for compile and doctor (the bake-one.rb
-# rule: a binstub resolves the LATEST installed gem, so the compiler
-# must be activated explicitly):
+# The engine pin: compile and doctor run pinned (the bake-one.rb rule —
+# a binstub resolves the LATEST installed gem). The pin is given
+# explicitly (--parsanol-version, as CI does) or read from the fleet pin
+# (.github/workflows/parg-conformance.yml, PARSANOL_VERSION):
 #   ruby scripts/pfs compile definitions/doi.pfs --as doi_pfs \
 #     --parsanol-version 1.5.1.0
 
@@ -110,11 +111,14 @@ when "compile"
     opts.on("--grammar-out PATH") { |v| options[:grammar_out] = v }
     opts.on("--artifact-out PATH") { |v| options[:artifact_out] = v }
     opts.on("--ruby-out DIR", "emit the Ruby flavor module under DIR") { |v| options[:ruby_out] = v }
-    opts.on("--parsanol-version V", "the pinned compiler version (mandatory)") do |v|
+    opts.on("--parsanol-version V", "the pinned compiler version (default: the fleet pin)") do |v|
       options[:parsanol_version] = v
     end
   end
   parser.parse!
+  # The dispatcher resolved the pin (explicit flag or the fleet pin);
+  # hand it to the compile branch.
+  options[:parsanol_version] ||= pin
   definition_path = ARGV.shift
   abort(parser.to_s + "\na definition file is required") unless definition_path
   abort(parser.to_s + "\n--as KEY is required") unless options[:flavor_key]
@@ -203,9 +207,11 @@ when "lint"
   end
 
 when "doctor"
-  options = { parsanol_version: nil, gem_root: nil, testsuite_root: nil, reseal: true }
+  options = { parsanol_version: nil, gem_root: nil, testsuite_root: nil,
+              reseal: true, repo_root: REPO_ROOT }
   parser = OptionParser.new do |opts|
     opts.banner = "Usage: ruby scripts/pfs doctor [options]"
+    opts.on("--repo-root D", "the grammar repo to diagnose (default: this repo)") { |v| options[:repo_root] = v }
     opts.on("--parsanol-version V", "the engine pin (default: the fleet pin)") { |v| options[:parsanol_version] = v }
     opts.on("--gem-root D", "the pubid gem checkout (default: ../pubid)") { |v| options[:gem_root] = v }
     opts.on("--testsuite-root D", "the pubid-testsuite checkout (default: ../pubid-testsuite)") { |v| options[:testsuite_root] = v }
@@ -216,7 +222,7 @@ when "doctor"
   parser.parse!
 
   checks = Pfs::Doctor.run(
-    repo_root: REPO_ROOT,
+    repo_root: options[:repo_root],
     pin: options[:parsanol_version],
     gem_root: options[:gem_root],
     testsuite_root: options[:testsuite_root],
@@ -267,9 +273,10 @@ when "capture"
   end
 
 when "cutover"
-  options = { gem_root: nil, testsuite_root: nil }
+  options = { gem_root: nil, testsuite_root: nil, repo_root: REPO_ROOT }
   parser = OptionParser.new do |opts|
     opts.banner = "Usage: ruby scripts/pfs cutover KEY [options]"
+    opts.on("--repo-root D", "the grammar repo to diagnose (default: this repo)") { |v| options[:repo_root] = v }
     opts.on("--gem-root D", "the pubid gem checkout (default: ../pubid)") { |v| options[:gem_root] = v }
     opts.on("--testsuite-root D", "the pubid-testsuite checkout (default: ../pubid-testsuite)") { |v| options[:testsuite_root] = v }
   end
@@ -277,9 +284,10 @@ when "cutover"
   key = ARGV.shift
   abort(parser.to_s + "\na compiled flavor KEY is required (e.g. acme_pfs)") unless key
 
-  gem_root = options[:gem_root] || File.expand_path("../pubid", REPO_ROOT)
-  testsuite_root = options[:testsuite_root] || File.expand_path("../pubid-testsuite", REPO_ROOT)
-  plan = Pfs::Cutover.plan(key: key, repo_root: REPO_ROOT,
+  gem_root = options[:gem_root] || File.expand_path("../pubid", options[:repo_root])
+  testsuite_root = options[:testsuite_root] ||
+                   File.expand_path("../pubid-testsuite", options[:repo_root])
+  plan = Pfs::Cutover.plan(key: key, repo_root: options[:repo_root],
                            gem_root: gem_root, testsuite_root: testsuite_root)
   plan[:steps].each { |s| puts Pfs::Cutover.format(s) }
   puts

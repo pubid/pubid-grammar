@@ -75,6 +75,20 @@ jobs:
               exit 1
             }
           done
+          # The scaffold contract (issue #152): a generated definition
+          # compiles + verifies GREEN immediately. Scaffolding that does
+          # not run is debt — CI proves it every run, so the scaffold
+          # cannot rot.
+          ruby "$GITHUB_WORKSPACE/scripts/pfs" new DemoOrg \
+            --scheme ci_scaffold --out /tmp/ci_scaffold.pfs
+          ruby "$GITHUB_WORKSPACE/scripts/pfs" lint /tmp/ci_scaffold.pfs
+          ruby "$GITHUB_WORKSPACE/scripts/pfs" compile /tmp/ci_scaffold.pfs \
+            --as ci_scaffold_pfs --grammar-out /tmp/ci_scaffold.parg \
+            --artifact-out /tmp/ci_scaffold.json --parsanol-version "$PARSANOL_VERSION"
+          printf 'DEMO 100\nDEMO 100:2020/A1:2021\n# kept verbatim\n' > /tmp/specimen.txt
+          ruby "$GITHUB_WORKSPACE/scripts/pfs" capture /tmp/specimen.txt \
+            --scheme ci_scaffold --out /tmp/ci_capture.pfs
+          ruby "$GITHUB_WORKSPACE/scripts/pfs" lint /tmp/ci_capture.pfs
 
           PARSANOL_VERSION="$PARSANOL_VERSION" \
             rspec spec --format progress
