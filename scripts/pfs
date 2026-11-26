@@ -1,80 +1,294 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# The PFS compiler CLI.
+# The PFS CLI (issue #152): the composition layer's tooling.
 #
 #   ruby scripts/pfs compile DEFINITION.pfs --as FLAVOR_KEY [options]
+#   ruby scripts/pfs new ORG [options]          the composed-flavor scaffold
+#   ruby scripts/pfs lint DEFINITION.pfs        pre-compile diagnostics
+#   ruby scripts/pfs doctor [options]           the drift checks
+#   ruby scripts/pfs capture INPUT [options]    the lossless wizard substrate
+#   ruby scripts/pfs cutover KEY [options]      the dev-alias -> canonical gate
 #
-# Compiles a .pfs definition to grammars/<key>.parg (PFS header marked),
-# bakes artifacts/<key>.json through the pinned parsanol, verifies the
-# definition's REQUIRED examples against the baked artifact, and
-# optionally emits the Ruby flavor module (--ruby-out DIR).
+# compile: compiles a .pfs definition to grammars/<key>.parg (PFS header
+#   marked), bakes artifacts/<key>.json through the pinned parsanol,
+#   verifies the definition's REQUIRED examples against the baked
+#   artifact, and optionally emits the Ruby flavor module (--ruby-out DIR).
 #
-# The engine pin is mandatory (the bake-one.rb rule: a binstub resolves
-# the LATEST installed gem, so the compiler must be activated explicitly):
+# new: emits the composed-flavor scaffold — the six module bindings, the
+#   adoption dispatch, the dated supplement wrappers, stub examples that
+#   compile + verify green immediately. Scaffolding that does not run is
+#   debt.
+#
+# lint: the compile-time guarantees as pre-compile diagnostics (version
+#   pins, fragment/token collisions, citation errors, the v2 numeric-kind
+#   surface) — named, actionable rules; no engine pin needed.
+#
+# doctor: drift checks — artifact freshness vs the fleet pin, the
+#   contracts round state, gem parity, the testsuite attestation
+#   (testsuite#130). Re-seals through the compiler's own checksum
+#   machinery, so it runs at the pin like compile.
+#
+# capture: the lossless wizard substrate — the specimen identifiers enter
+#   as data (one per line), a draft schema is emitted with the rows in
+#   the REQUIRED format, and the verify loop (lint, then compile) shapes
+#   the grammar until green.
+#
+# cutover: the dev-alias -> canonical graduation — the readiness gates
+#   (testsuite#130 attestation, gem parity, committed outputs) and the
+#   mechanical plan (gem module, registry, testsuite dir, site data).
+#   Mutates nothing.
+#
+# The engine pin is mandatory for compile and doctor (the bake-one.rb
+# rule: a binstub resolves the LATEST installed gem, so the compiler
+# must be activated explicitly):
 #   ruby scripts/pfs compile definitions/doi.pfs --as doi_pfs \
-#     --parsanol-version 1.3.126
+#     --parsanol-version 1.5.1.0
 
 require "optparse"
 
-options = {
-  grammar_out: nil,
-  artifact_out: nil,
-  ruby_out: nil,
-  parsanol_version: nil,
-}
-parser = OptionParser.new do |opts|
-  opts.banner = "Usage: ruby scripts/pfs compile DEFINITION.pfs --as KEY [options]"
-  opts.on("--as KEY", "the compiled flavor key (e.g. doi_pfs)") { |v| options[:flavor_key] = v }
-  opts.on("--grammar-out PATH") { |v| options[:grammar_out] = v }
-  opts.on("--artifact-out PATH") { |v| options[:artifact_out] = v }
-  opts.on("--ruby-out DIR", "emit the Ruby flavor module under DIR") { |v| options[:ruby_out] = v }
-  opts.on("--parsanol-version V", "the pinned compiler version (mandatory)") do |v|
-    options[:parsanol_version] = v
-  end
+REPO_ROOT = File.expand_path("..", __dir__)
+$LOAD_PATH.unshift(File.join(REPO_ROOT, "lib"))
+
+COMMANDS = %w[compile new lint doctor capture cutover].freeze
+
+def usage
+  <<~USAGE
+    Usage: ruby scripts/pfs COMMAND [args]
+
+    Commands:
+      compile DEFINITION.pfs --as KEY [--grammar-out P] [--artifact-out P]
+                             [--ruby-out DIR] --parsanol-version V
+                             compile, bake, verify the REQUIRED examples, emit
+      new ORG [--scheme KEY] [--title T] [--publisher P] [--prefixes A,B]
+              [--out PATH]
+                             the composed-flavor scaffold (compiles green)
+      lint DEFINITION.pfs    pre-compile diagnostics (PFS001..PFS999), no engine
+      doctor [--parsanol-version V] [--gem-root D] [--testsuite-root D]
+             [--no-reseal]   the drift checks (DRIFT001..DRIFT005)
+      capture INPUT [--scheme KEY] [--title T] [--publisher P] [--out PATH]
+                             the lossless wizard substrate (capture -> draft)
+      cutover KEY [--gem-root D] [--testsuite-root D]
+                             the dev-alias -> canonical readiness gates + plan
+  USAGE
 end
-parser.parse!
 
 command = ARGV.shift
-usage = ->(message) { abort "#{message}\n\n#{parser}" }
-
-usage.call("command must be `compile`") unless command == "compile"
-definition_path = ARGV.shift
-usage.call("a definition file is required") unless definition_path
-usage.call("--as KEY is required") unless options[:flavor_key]
-usage.call("--parsanol-version V is required") unless options[:parsanol_version]
-
-repo_root = File.expand_path("..", __dir__)
-source_rel = definition_path
-source_rel = source_rel.dup.force_encoding(Encoding::UTF_8)
-if source_rel.start_with?(repo_root)
-  source_rel = source_rel.delete_prefix("#{repo_root}/")
+if command.nil? || !COMMANDS.include?(command)
+  abort(usage + (command ? "\nunknown command #{command.inspect}" : ""))
 end
 
-# Pin the engine BEFORE anything requires parsanol (bake-one.rb rule).
-gem "parsanol", options[:parsanol_version]
+# --- engine pin: compile and doctor run at the fleet pin ---------------
+# (the bake-one.rb rule — pin BEFORE anything requires parsanol).
+if %w[compile doctor].include?(command)
+  pin = nil
+  if (i = ARGV.index("--parsanol-version"))
+    pin = ARGV[i + 1]
+  end
+  pin ||= begin
+    require "pubid/grammar/pfs"
+    Pubid::Grammar::Pfs::Doctor.fleet_pin(REPO_ROOT)
+  end
+  abort(usage + "\n--parsanol-version V is required (no fleet pin found in " \
+        ".github/workflows/parg-conformance.yml)") unless pin
 
-$LOAD_PATH.unshift(File.join(repo_root, "lib"))
+  gem "parsanol", pin
+  require "parsanol"
+  require "parsanol/parg"
+end
+
 require "pubid/grammar/pfs"
 
-result = Pubid::Grammar::Pfs::Compiler.compile(
-  definition_path,
-  source_rel: source_rel,
-  flavor_key: options[:flavor_key],
-  grammar_out: options[:grammar_out] || File.join(repo_root, "grammars", "#{options[:flavor_key]}.parg"),
-  artifact_out: options[:artifact_out] || File.join(repo_root, "artifacts", "#{options[:flavor_key]}.json"),
-  repo_root: repo_root,
-  parsanol_version: options[:parsanol_version],
-  ruby_out: options[:ruby_out],
-)
+Pfs = Pubid::Grammar::Pfs
 
-puts "compiled #{definition_path} (pfs:#{Pubid::Grammar::Pfs::SCHEMA_VERSION}) " \
-     "-> #{result.grammar_path}"
-puts "baked -> #{result.artifact_path} " \
-     "(checksum #{result.envelope["checksum"][0, 12]}..., " \
-     "compiler #{result.envelope["compiler_version"]})"
-puts "examples: #{result.definition.examples[:positives].size} positives, " \
-     "#{result.definition.examples[:negatives].size} negatives — verified against the baked artifact"
-unless result.ruby_files.empty?
-  puts "ruby flavor -> #{result.ruby_files.size} files under #{options[:ruby_out]}"
+case command
+when "compile"
+  options = { grammar_out: nil, artifact_out: nil, ruby_out: nil, parsanol_version: nil }
+  parser = OptionParser.new do |opts|
+    opts.banner = "Usage: ruby scripts/pfs compile DEFINITION.pfs --as KEY [options]"
+    opts.on("--as KEY", "the compiled flavor key (e.g. doi_pfs)") { |v| options[:flavor_key] = v }
+    opts.on("--grammar-out PATH") { |v| options[:grammar_out] = v }
+    opts.on("--artifact-out PATH") { |v| options[:artifact_out] = v }
+    opts.on("--ruby-out DIR", "emit the Ruby flavor module under DIR") { |v| options[:ruby_out] = v }
+    opts.on("--parsanol-version V", "the pinned compiler version (mandatory)") do |v|
+      options[:parsanol_version] = v
+    end
+  end
+  parser.parse!
+  definition_path = ARGV.shift
+  abort(parser.to_s + "\na definition file is required") unless definition_path
+  abort(parser.to_s + "\n--as KEY is required") unless options[:flavor_key]
+  abort(parser.to_s + "\n--parsanol-version V is required") unless options[:parsanol_version]
+
+  source_rel = definition_path.dup.force_encoding(Encoding::UTF_8)
+  source_rel = source_rel.delete_prefix("#{REPO_ROOT}/") if source_rel.start_with?(REPO_ROOT)
+
+  result = Pfs::Compiler.compile(
+    definition_path,
+    source_rel: source_rel,
+    flavor_key: options[:flavor_key],
+    grammar_out: options[:grammar_out] || File.join(REPO_ROOT, "grammars", "#{options[:flavor_key]}.parg"),
+    artifact_out: options[:artifact_out] || File.join(REPO_ROOT, "artifacts", "#{options[:flavor_key]}.json"),
+    repo_root: REPO_ROOT,
+    parsanol_version: options[:parsanol_version],
+    ruby_out: options[:ruby_out],
+  )
+
+  puts "compiled #{definition_path} (pfs:#{Pfs::SCHEMA_VERSION}) -> #{result.grammar_path}"
+  puts "baked -> #{result.artifact_path} " \
+       "(checksum #{result.envelope["checksum"][0, 12]}..., " \
+       "compiler #{result.envelope["compiler_version"]})"
+  puts "examples: #{result.definition.examples[:positives].size} positives, " \
+       "#{result.definition.examples[:negatives].size} negatives — verified against the baked artifact"
+  unless result.ruby_files.empty?
+    puts "ruby flavor -> #{result.ruby_files.size} files under #{options[:ruby_out]}"
+  end
+
+when "new"
+  options = { scheme: nil, title: nil, publisher: nil, prefixes: nil, out: nil }
+  parser = OptionParser.new do |opts|
+    opts.banner = "Usage: ruby scripts/pfs new ORG [options]"
+    opts.on("--scheme KEY", "the scheme key (default: the organization, snake_cased)") { |v| options[:scheme] = v }
+    opts.on("--title T", "the scheme title (default: the organization)") { |v| options[:title] = v }
+    opts.on("--publisher P", "the publisher token (default: the organization, uppercased)") { |v| options[:publisher] = v }
+    opts.on("--prefixes A,B", Array, "the head-dispatch tokens (default: the publisher)") { |v| options[:prefixes] = v }
+    opts.on("--out PATH", "the target .pfs (default: definitions/<scheme>.pfs)") { |v| options[:out] = v }
+  end
+  parser.parse!
+  org = ARGV.shift
+  abort(parser.to_s + "\nan ORG is required (e.g. `pfs new Acme`)") unless org
+
+  names = Pfs::Scaffold.derive_names(org)
+  scheme = options[:scheme] || names[:scheme]
+  title = options[:title] || names[:title]
+  publisher = options[:publisher] || names[:publisher]
+  prefixes = options[:prefixes] || [publisher]
+  out = options[:out] || File.join(REPO_ROOT, "definitions", "#{scheme}.pfs")
+
+  if File.exist?(out)
+    abort("#{out} exists — scaffolding never overwrites; pass --out or move the file")
+  end
+
+  text = Pfs::Scaffold.generate(org: org, scheme: scheme, title: title,
+                                publisher: publisher, prefixes: prefixes)
+  File.binwrite(out, text)
+
+  # The scaffold is its own first lint subject: any finding here is a
+  # generator bug (scaffolding that does not run is debt).
+  findings = Pfs::Linter.run(out)
+  unless findings.empty?
+    findings.each { |f| warn Pfs::Linter.format(f, out) }
+    abort("the scaffold lints dirty — this is a generator bug, please report it")
+  end
+
+  puts "scaffolded #{out} (scheme #{scheme}, publisher #{publisher})"
+  puts "next: lint it, compile it, round it — the wiring is in the file's header:"
+  puts "  ruby scripts/pfs lint #{out}"
+  puts "  ruby scripts/pfs compile #{out} --as #{scheme}_pfs --parsanol-version <fleet pin>"
+
+when "lint"
+  parser = OptionParser.new do |opts|
+    opts.banner = "Usage: ruby scripts/pfs lint DEFINITION.pfs"
+  end
+  parser.parse!
+  path = ARGV.shift
+  abort(parser.to_s + "\na definition file is required") unless path
+
+  findings = Pfs::Linter.run(path)
+  if findings.empty?
+    puts "#{path}: no findings"
+  else
+    findings.each { |f| puts Pfs::Linter.format(f, path) }
+    abort("#{path}: #{findings.size} finding(s) — the rule ids above carry the fix hints")
+  end
+
+when "doctor"
+  options = { parsanol_version: nil, gem_root: nil, testsuite_root: nil, reseal: true }
+  parser = OptionParser.new do |opts|
+    opts.banner = "Usage: ruby scripts/pfs doctor [options]"
+    opts.on("--parsanol-version V", "the engine pin (default: the fleet pin)") { |v| options[:parsanol_version] = v }
+    opts.on("--gem-root D", "the pubid gem checkout (default: ../pubid)") { |v| options[:gem_root] = v }
+    opts.on("--testsuite-root D", "the pubid-testsuite checkout (default: ../pubid-testsuite)") { |v| options[:testsuite_root] = v }
+    opts.on("--no-reseal", "skip the re-seal (envelope-internal freshness only)") do
+      options[:reseal] = false
+    end
+  end
+  parser.parse!
+
+  checks = Pfs::Doctor.run(
+    repo_root: REPO_ROOT,
+    pin: options[:parsanol_version],
+    gem_root: options[:gem_root],
+    testsuite_root: options[:testsuite_root],
+    reseal: options[:reseal],
+  )
+  checks.each { |c| puts Pfs::Doctor.format(c) }
+  if Pfs::Doctor.green?(checks)
+    puts "doctor: all green"
+  else
+    abort("doctor: drift found — every FAIL above carries the fix")
+  end
+
+when "capture"
+  options = { scheme: nil, title: nil, publisher: nil, out: nil }
+  parser = OptionParser.new do |opts|
+    opts.banner = "Usage: ruby scripts/pfs capture INPUT [options]"
+    opts.on("--scheme KEY", "the scheme key (default: derived from the publisher)") { |v| options[:scheme] = v }
+    opts.on("--title T", "the scheme title (default: the scheme key)") { |v| options[:title] = v }
+    opts.on("--publisher P", "the publisher token (default: derived from the rows)") { |v| options[:publisher] = v }
+    opts.on("--out PATH", "write the draft schema to PATH (default: print to stdout)") { |v| options[:out] = v }
+  end
+  parser.parse!
+  input = ARGV.shift
+  abort(parser.to_s + "\nan INPUT is required (a file of identifiers, one per line)") unless input
+  abort(parser.to_s + "\nINPUT #{input.inspect} is not a file") unless File.file?(input)
+
+  inputs = Pfs::Capture.read_inputs(File.read(input))
+  abort("no identifiers captured from #{input} (one per line, # comments skipped)") if inputs.empty?
+
+  publisher = options[:publisher] ||
+              inputs.first[/\A[^0-9\s]+/] ||
+              abort("cannot derive the publisher from the first row — pass --publisher")
+  scheme = options[:scheme] ||
+           publisher.downcase.gsub(/[^a-z0-9]+/, "_").gsub(/\A_+|_+\z/, "")
+  abort("cannot derive the scheme key — pass --scheme") if scheme.empty?
+  title = options[:title] || scheme
+
+  draft = Pfs::Capture.draft(scheme: scheme, title: title, publisher: publisher, inputs: inputs)
+  if options[:out]
+    File.binwrite(options[:out], draft)
+    Pfs::Capture.verify_lossless(options[:out], inputs) # the lossless guarantee
+    puts "captured #{inputs.size} identifier(s) -> #{options[:out]} (round-trip verified)"
+    puts "next: the verify loop — shape the grammar until compile is green:"
+    puts "  ruby scripts/pfs lint #{options[:out]}"
+    puts "  ruby scripts/pfs compile #{options[:out]} --as #{scheme}_pfs --parsanol-version <fleet pin>"
+  else
+    puts draft
+  end
+
+when "cutover"
+  options = { gem_root: nil, testsuite_root: nil }
+  parser = OptionParser.new do |opts|
+    opts.banner = "Usage: ruby scripts/pfs cutover KEY [options]"
+    opts.on("--gem-root D", "the pubid gem checkout (default: ../pubid)") { |v| options[:gem_root] = v }
+    opts.on("--testsuite-root D", "the pubid-testsuite checkout (default: ../pubid-testsuite)") { |v| options[:testsuite_root] = v }
+  end
+  parser.parse!
+  key = ARGV.shift
+  abort(parser.to_s + "\na compiled flavor KEY is required (e.g. acme_pfs)") unless key
+
+  gem_root = options[:gem_root] || File.expand_path("../pubid", REPO_ROOT)
+  testsuite_root = options[:testsuite_root] || File.expand_path("../pubid-testsuite", REPO_ROOT)
+  plan = Pfs::Cutover.plan(key: key, repo_root: REPO_ROOT,
+                           gem_root: gem_root, testsuite_root: testsuite_root)
+  plan[:steps].each { |s| puts Pfs::Cutover.format(s) }
+  puts
+  puts Pfs::Cutover.recipe(key: key, org: key.sub(/_pfs\z/, ""),
+                           gem_root: gem_root, testsuite_root: testsuite_root)
+  if plan[:ready]
+    puts "cutover: readiness gates GREEN — the mechanical plan above applies"
+  else
+    abort("cutover: readiness gates RED — resolve every gate FAIL before graduating " \
+          "(the recipe: docs/CUTOVER.md)")
+  end
 end
