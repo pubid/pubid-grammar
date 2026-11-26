@@ -29,11 +29,17 @@ module Pubid
         # names the token the publisher column defaults to when the
         # reference omits a publisher face (publisher-type defaults,
         # issue #121 feature 5); absent, the default is the organization's
-        # publisher. `designation` marks the typed-trio shape (the
-        # designation token selects the class but is not a publisher): the
-        # column keeps the organization default, the printed face prints
-        # the type's own abbr where the face names the publisher, and the
-        # identifier carries the declared stage's type/stage/typed_stage.
+        # publisher. `designation` marks the designation shape: the
+        # designation token selects the class but is not a publisher —
+        # the column keeps the organization default and the printed face
+        # prints the type's own abbr where the face names the publisher.
+        # `designation: true` is the FULL typed-trio shape: the identifier
+        # also carries the declared stage's type/stage/typed_stage (the
+        # coded PAS/PD/DD/TS rows). `designation: face` (issue #151, the
+        # tier-B standalone-AMD family) is the face-only shape: the token
+        # prints and the class is selected, but NOTHING serializes beyond
+        # `_type` — no type/stage/typed_stage (the coded
+        # StandaloneAmendment: `AMD 11015` is {_type, number}).
         # Mutually exclusive with `publisher_default`.
         Type = Struct.new(:name, :key, :web, :title, :short, :tag, :stage,
                           :tokens, :publisher_default, :adopted, :designation,

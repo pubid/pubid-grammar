@@ -1409,17 +1409,31 @@ module Pubid
           definition.types.find { |t| t.name == name } or raise Error, "unknown type #{name.inspect}"
         end
 
-        # The typed-trio types (the designation shape): the designation
+        # The designation types (the designation shape): the designation
         # token selects the class but is not a publisher — the column keeps
         # the organization default, the printed face prints the type's own
-        # abbr where the face names the publisher, and the identifier
-        # carries the declared stage's type/stage/typed_stage.
+        # abbr where the face names the publisher.
         def designation_types
           definition.types.select(&:designation)
         end
 
+        # The FULL typed-trio designations (`designation: true`): the
+        # identifier carries the declared stage's type/stage/typed_stage.
+        def trio_designation_types
+          definition.types.select { |t| t.designation == true }
+        end
+
+        # The face-only designations (`designation: face`, issue #151 —
+        # the tier-B standalone-AMD family): the token selects the class
+        # and prints the face, and NOTHING serializes beyond `_type` —
+        # no type/stage/typed_stage (the coded StandaloneAmendment:
+        # `AMD 11015` is {_type, number}).
+        def face_designation_types
+          definition.types.select { |t| t.designation == "face" }
+        end
+
         def designation_type?(type)
-          type.designation == true
+          !!type.designation
         end
 
         # The shared base: the version column, the flat-scalar tables, the
@@ -1656,14 +1670,27 @@ module Pubid
             lines << "      # token that selected the class is the designation face, not"
             lines << "      # a publisher — the column keeps the class default and the"
             lines << "      # identifier carries the stage entry's type/stage/typed_stage"
-            lines << "      # (the coded builder's cast)."
+            lines << "      # (the coded builder's cast). A face-only designation"
+            lines << "      # (designation: face) joins DESIGNATION_TOKENS without a row"
+            lines << "      # here — nothing serializes beyond _type."
             lines << "      DESIGNATION_STAGES = {"
-            designation_types.each do |type|
+            trio_designation_types.each do |type|
               stage = type.stage
               Array(type.tokens).each do |token|
                 lines << "        #{token.inspect} => { code: #{stage.code.inspect}, stage_code: #{stage.stage_code.inspect}, " \
                   "type_code: #{type.key.inspect}, abbr: #{ruby_array(stage.abbr)}, " \
                   "name: #{type.title.inspect}, harmonized_stages: #{ruby_array(stage.harmonized_stages)} },"
+              end
+            end
+            lines << "      }.freeze"
+            lines << ""
+            lines << "      # Every designation token (trio and face-only): the token"
+            lines << "      # that selected the class never lands on the publisher"
+            lines << "      # column — the column keeps the organization default."
+            lines << "      DESIGNATION_TOKENS = {"
+            designation_types.each do |type|
+              Array(type.tokens).each do |token|
+                lines << "        #{token.inspect} => true,"
               end
             end
             lines << "      }.freeze"
@@ -1750,7 +1777,7 @@ module Pubid
           if designation_types.any?
             lines << "        # A designation token selects the class but is not a publisher:"
             lines << "        # the column keeps the class default (the organization's)."
-            lines << "        if data[:publisher] && !DESIGNATION_STAGES.key?(data[:publisher].to_s)"
+            lines << "        if data[:publisher] && !DESIGNATION_TOKENS.key?(data[:publisher].to_s)"
           else
             lines << "        if data[:publisher]"
           end
@@ -2124,7 +2151,7 @@ module Pubid
               lines << "          #{field.name}: FACE_#{field.name}.fetch(root.#{field.name}, root.#{field.name}),"
             elsif field.name == "publisher"
               if designation_types.any?
-                lines << "          #{field.name}: (t = root.type&.abbr) && DESIGNATION_FACES.include?(t) ? t : (root.publisher&.respond_to?(:body) ? root.publisher.body : root.publisher),"
+                lines << "          #{field.name}: (t = root.type&.abbr || root.class.type[:short]) && DESIGNATION_FACES.include?(t) ? t : (root.publisher&.respond_to?(:body) ? root.publisher.body : root.publisher),"
               else
                 lines << "          #{field.name}: root.publisher&.respond_to?(:body) ? root.publisher.body : root.publisher,"
               end
@@ -2164,9 +2191,11 @@ module Pubid
           lines << "    # Human renderer, generated from the canonical template."
           lines << "    class Renderer < ::Pubid::Renderers::Base"
           if designation_types.any?
-            lines << "      # The designation faces (the typed trio): the token that"
-            lines << "      # selected the class prints where the face names the"
-            lines << "      # publisher — the column keeps the organization default."
+            lines << "      # The designation faces (the typed trio and the face-only"
+            lines << "      # designations): the token that selected the class prints"
+            lines << "      # where the face names the publisher — the column keeps"
+            lines << "      # the organization default. A face-only type carries no"
+            lines << "      # serialized type, so the face reads the class's own short."
             lines << "      DESIGNATION_FACES = #{ruby_array(designation_types.map(&:short))}.freeze"
             lines << ""
           end

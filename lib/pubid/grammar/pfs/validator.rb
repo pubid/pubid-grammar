@@ -507,15 +507,19 @@ module Pubid
                                        seen_abbrs)
             publisher_default = body["publisher_default"]
             designation = body["designation"] || false
-            unless [true, false].include?(designation)
-              raise InvalidDefinition.new("types.#{name}.designation",
-                                          "must be a boolean")
+            unless [true, false, "face"].include?(designation)
+              raise InvalidDefinition.new(
+                "types.#{name}.designation",
+                "must be a boolean, or \"face\" (the face-only designation — " \
+                "the token selects the class and prints the face, nothing " \
+                "serializes beyond _type)",
+              )
             end
             if designation
-              # The typed-trio shape: the designation token is not a
-              # publisher — the column keeps the organization default, so
-              # a publisher_default would re-introduce the column default
-              # the designation exists to avoid.
+              # The designation shape (either mode): the designation token
+              # is not a publisher — the column keeps the organization
+              # default, so a publisher_default would re-introduce the
+              # column default the designation exists to avoid.
               if publisher_default
                 raise InvalidDefinition.new(
                   "types.#{name}.designation",
@@ -524,13 +528,15 @@ module Pubid
                   "the column keeps the organization publisher",
                 )
               end
-              unless stage
-                raise InvalidDefinition.new(
-                  "types.#{name}.designation",
-                  "a designation type must declare its stage — the type/" \
-                  "stage/typed_stage trio the identifier carries is the " \
-                  "stage registry entry",
-                )
+              unless designation == "face"
+                unless stage
+                  raise InvalidDefinition.new(
+                    "types.#{name}.designation",
+                    "a designation type must declare its stage — the type/" \
+                    "stage/typed_stage trio the identifier carries is the " \
+                    "stage registry entry",
+                  )
+                end
               end
             end
             if publisher_default && !adopted

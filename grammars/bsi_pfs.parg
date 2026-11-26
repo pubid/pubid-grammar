@@ -1,5 +1,5 @@
 # PFS-generated grammar — DO NOT EDIT BY HAND.
-# Source: definitions/bsi.pfs (pfs:1) sha256:e16c91365a12ffa75c8645ce69774e04f808d85d531b1c2c3c0f75f614197cf8
+# Source: definitions/bsi.pfs (pfs:1) sha256:7e1696e2745aafddd810bedc0648b7a87a15ece39ddbace606e936af962c3a2b
 # Compiler: pubid/grammar/pfs 2.0.0
 # Flavor key: bsi_pfs (grammar PubidBsiPfs)
 # Regenerate: ruby scripts/pfs compile definitions/bsi.pfs --as bsi_pfs
@@ -38,7 +38,7 @@ grammar PubidBsiPfs version "2.0.0" edition 2 {
 
   # Fields: one capture rule per declared field; the whole pattern
   # is the capture.
-  bsi_publisher = (("BS" / "PAS" / "PD" / "DD" / "TS")) as publisher
+  bsi_publisher = (("BS" / "PAS" / "PD" / "DD" / "TS" / "AMD")) as publisher
   bsi_number = (1*(%x30-39) [%x41-5A]) as number
   bsi_part = (1*(digit / alpha) *(("." / "-") 1*(digit / alpha))) as part
   bsi_year = (4digit) as year
@@ -88,6 +88,8 @@ grammar PubidBsiPfs version "2.0.0" edition 2 {
     accept "PAS 003:1994"
     accept "DD 136-2:1986"
     accept "TS 1:1995"
+    accept "AMD 11015"
+    accept "AMD 6262"
     accept "BS EN 1073-2:2002"
     accept "BS EN ISO 105-B06:2020"
     accept "BS EN IEC 61851-1:2019"
@@ -117,7 +119,6 @@ grammar PubidBsiPfs version "2.0.0" edition 2 {
     reject "NA to BS EN 1996-1-2:2005"
     reject "BS 7722:2006 BOOK"
     reject "BS 31100:2021 ExComm"
-    reject "AMD 11015"
     reject "BS 1425:Supplement No. 1:1966"
     reject "BS 185 Index:1962"
     reject "BS 2782-10:Method 1006:1978"
@@ -129,6 +130,8 @@ grammar PubidBsiPfs version "2.0.0" edition 2 {
     example "PAS 003:1994" { publisher: "PAS" number: "003" year: "1994" }
     example "DD 136-2:1986" { publisher: "DD" number: "136" part: "2" year: "1986" }
     example "TS 1:1995" { publisher: "TS" number: "1" year: "1995" }
+    example "AMD 11015" { publisher: "AMD" number: "11015" }
+    example "AMD 6262" { publisher: "AMD" number: "6262" }
     example "BS EN 1073-2:2002" { publisher: "BS" adopted: "EN 1073-2:2002" }
     example "BS EN ISO 105-B06:2020" { publisher: "BS" adopted: "EN ISO 105-B06:2020" }
     example "BS EN IEC 61851-1:2019" { publisher: "BS" adopted: "EN IEC 61851-1:2019" }
