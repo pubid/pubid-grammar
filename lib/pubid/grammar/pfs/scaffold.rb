@@ -41,14 +41,13 @@ module Pubid
         # @return [Hash{Symbol => String}] scheme:, title:, publisher:
         def derive_names(org)
           scheme = org.downcase.gsub(/[^a-z0-9]+/, "_").gsub(/\A_+|_+\z/, "")
-          raise Error, "organization #{org.inspect} yields no scheme key — " \
-                       "pass --scheme explicitly" if scheme.empty?
+          unless scheme.match?(Validator::SCHEME)
+            raise Error, "organization #{org.inspect} yields no valid scheme " \
+                         "key (got #{scheme.inspect}) — pass --scheme explicitly"
+          end
 
-          publisher = org.upcase.gsub(/[^A-Z0-9]+/, "")
-          raise Error, "organization #{org.inspect} yields no publisher token — " \
-                       "pass --publisher explicitly" if publisher.empty?
-
-          { scheme: scheme, title: org, publisher: publisher }
+          { scheme: scheme, title: org,
+            publisher: org.upcase.gsub(/[^A-Z0-9]+/, "") }
         end
 
         # @param org [String] the organization (positional argument)
