@@ -37,6 +37,12 @@ module Pubid
           strict_visitor.accept(Psych.parse(File.read(path)))
         end
 
+        # The same strict surface for in-memory text (the tooling's
+        # emission checks — scaffold output, capture drafts).
+        def load_text(text)
+          strict_visitor.accept(Psych.parse(text))
+        end
+
         def strict_visitor
           class_loader = Psych::ClassLoader::Restricted.new(PERMITTED, [])
           scanner = Psych::ScalarScanner.new(class_loader)

@@ -353,6 +353,69 @@ The examples double as the grammar's embedded `test` block (accept /
 reject / example rows with the capture expectations the compiler derived
 at compile time), so the baked artifact replays them in every engine.
 
+## The tooling (`scripts/pfs`, issue #152)
+
+The compiler is one command of the PFS CLI. The rest of the commands
+make the composition layer usable without reading the compiler:
+
+```bash
+# the composed-flavor scaffold: the six module bindings, the adoption
+# dispatch, the dated supplement wrappers, REQUIRED stub examples —
+# the generated definition COMPILES + VERIFIES GREEN immediately
+# (scaffolding that does not run is debt), and its header carries the
+# compile/verify/round wiring
+ruby scripts/pfs new Acme Standards --scheme acme --out definitions/acme.pfs
+
+# the compile-time guarantees as PRE-compile diagnostics — no engine
+# pin needed. Every finding is a named, actionable rule:
+ruby scripts/pfs lint definitions/acme.pfs
+```
+
+| Lint rule | Guarantee (the compile refuses the same thing) |
+|---|---|
+| `PFS001` schema-version-pin | the `pfs:` major — a newer dialect fails closed |
+| `PFS002` module-pin | module bindings: unknown modules, stale versions, parameter contracts |
+| `PFS003` fragment-collision | a grammar name claimed twice across the composition (a silent rebinding if allowed) |
+| `PFS004` token-collision | co-bound modules competing for a head token |
+| `PFS005` reserved-token | `ed`/`amd`/`cor` claimed anywhere in the composition |
+| `PFS006` template-citation | a `{reference}` naming no declared field (the citation errors) |
+| `PFS007` numeric-kind-safety | the v2 type surface: `int` cores/atoms over string fields and vice versa — wrapper ordinals resolve to `number_kind`, not to a same-named document field |
+| `PFS008` supplement-declaration | `{supplements}` referenced with no declared section; generated captures colliding with fields |
+| `PFS009` examples-required | the REQUIRED live test panel |
+| `PFS010` unknown-key | a key outside the dialect (a newer dialect, not noise) |
+| `PFS999` unresolved | anything else the compiler refuses, carried with its citing rule |
+
+```bash
+# drift checks, over every compiled flavor (artifacts/*_pfs.json):
+#   DRIFT001 the fleet pin (.github/workflows/parg-conformance.yml,
+#            PARSANOL_VERSION) + the toolchain note — the seal is
+#            toolchain-sensitive, re-seal at the CI ruby
+#   DRIFT002 artifact freshness, re-sealed through the compiler's own
+#            checksum machinery (Compiler.bake) at the pin
+#   DRIFT003 the contracts round state (schemas/ + corpora/ pin the
+#            artifact checksum)
+#   DRIFT004 gem parity (the vendored data/parg/<key>.json is
+#            byte-identical)
+#   DRIFT005 the testsuite attestation ledger (testsuite#130:
+#            tests/<key>/_status.yaml, pfs-identity, clean)
+ruby scripts/pfs doctor
+
+# the lossless wizard substrate: the specimen identifiers enter as
+# DATA (one per line, strings verbatim, the round-trip verified at
+# write time), and a draft schema carries the rows in the REQUIRED
+# format. The loop: capture -> lint -> shape -> compile (verify)
+ruby scripts/pfs capture specimen.txt --scheme acme --out draft.pfs
+
+# the dev-alias -> canonical graduation: the readiness gates
+# (testsuite#130 attestation, gem parity, committed outputs) and the
+# mechanical plan (gem module, registry, testsuite dir, site data).
+# Mutates nothing — the recipe is docs/CUTOVER.md.
+ruby scripts/pfs cutover acme_pfs
+```
+
+The gem carries rake wrappers for the same commands (`rake pfs:doctor`
+and friends) over the sibling checkout.
+
 ## Compiling
 
 ```bash
