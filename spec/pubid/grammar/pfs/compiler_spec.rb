@@ -208,19 +208,6 @@ RSpec.describe Pubid::Grammar::Pfs::Compiler do
         )
     end
 
-    it "rejects an int-kind field (int patterns are a later extension) — " \
-       "the gap that keeps the supplement ordinal out of pfs:1" do
-      yaml = File.read(etsi_definition_path)
-        .sub(%r{^  year:\n    pattern: "4digit"\n    kind: string$},
-             "  year:\n    pattern: \"4digit\"\n    kind: integer")
-
-      expect { validate_definition(yaml) }
-        .to raise_error(
-          Pubid::Grammar::Pfs::InvalidDefinition,
-          /fields\.year\.kind: unsupported field kind "integer" — pfs:1 carries `string`/,
-        )
-    end
-
     it "accepts the int-kind URN core (phase 3 gap d) and emits the coded " \
        "schema's `core: [[\"number\", :int]]` shape" do
       result = compile_definition(File.read(etsi_definition_path), flavor_key: "etsi_pfs")
@@ -580,6 +567,134 @@ RSpec.describe Pubid::Grammar::Pfs::Compiler do
         .to raise_error(
           Pubid::Grammar::Pfs::InvalidDefinition,
           /urn\.official\[\d+\]\.adopted_mr: the definition declares no `adopted:` dispatch/,
+        )
+    end
+  end
+
+  describe "the numeric kinds (issue #151)" do
+    it "binds a kind: integer capture as an Integer and emits the integer column" do
+      result = compile_definition(<<~YAML)
+        pfs: 1
+        scheme: intdemo
+        organization: { name: Demo, publisher: DEMO, prefixes: ["DEMO "] }
+        types: { base: { key: demo } }
+        grammar: { digit: "%x30-39" }
+        fields:
+          number: { pattern: "1*digit", kind: string }
+          ordinal: { pattern: "1*digit", kind: integer }
+        templates: { canonical: '"DEMO " {number} "-" {ordinal}' }
+        urn: { namespace: demo, schema: { atoms: [], types: [] } }
+        examples:
+          positives:
+            - input: "DEMO 1-42"
+              renders: "DEMO 1-42"
+      YAML
+
+      # the compiled capture is a NUMBER, not the capture text
+      expect(result.captures.fetch("DEMO 1-42").fetch(:ordinal)).to eq(42)
+      expect(result.captures.fetch("DEMO 1-42").fetch(:ordinal)).to be_a(Integer)
+
+      identifier = result.ruby_files.find { |p| p.end_with?("/identifier.rb") }
+      expect(File.read(identifier)).to include("attribute :ordinal, :integer")
+      # the shared-column number keeps its inherited string kind
+      expect(File.read(identifier)).to include("attribute :number, :string")
+    end
+
+    it "declares and assigns the numeric column on the scheme-mode shared base" do
+      result = compile_definition(<<~YAML)
+        pfs: 1
+        scheme: numdemo
+        organization: { name: Demo, publisher: NM, prefixes: ["NM"] }
+        grammar: { digit: "%x30-39" }
+        types:
+          standard:
+            key: nmstd
+            title: "NM Standard"
+            short: "NM"
+            tag: "pubid:numdemo:standard"
+          report:
+            key: nmrep
+            title: "NM Report"
+            short: "NM R"
+            tag: "pubid:numdemo:report"
+            tokens: ["R"]
+        fields:
+          publisher:
+            pattern: '("NM" / "R")'
+            kind: string
+          ordinal:
+            pattern: "1*digit"
+            kind: integer
+        templates: { canonical: '{publisher} " " {ordinal}' }
+        urn:
+          namespace: numdemo
+          official:
+            - { field: publisher, lower: true }
+            - { field: ordinal }
+          schema:
+            atoms:
+              - { path: ordinal, prefix: ordinal }
+            types:
+              - { type: "pubid:numdemo_pfs:standard", token: nmstd, core: [] }
+        examples:
+          positives:
+            - input: "NM 42"
+              renders: "NM 42"
+      YAML
+
+      identifier = result.ruby_files.find { |p| p.end_with?("/identifier.rb") }
+      # the shared base declares the numeric column with its kind
+      expect(File.read(identifier)).to include("attribute :ordinal, :integer")
+      builder = result.ruby_files.find { |p| p.end_with?("/builder.rb") }
+      # and the builder assigns the bound Integer whole
+      expect(File.read(builder)).to include("identifier.ordinal = data[:ordinal] if data[:ordinal]")
+    end
+
+    it "rejects kind: integer on a shared ::Pubid::Identifier column (the " \
+       "fleet retype ruling)" do
+      yaml = File.read(doi_definition_path)
+        .sub(/^fields:\n/, "fields:\n  number:\n    pattern: '2*digit'\n    kind: integer\n")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /fields\.number\.kind: "number" is a shared ::Pubid::Identifier column/,
+        )
+    end
+
+    it "rejects kind: integer with sub_numbering (the separator fold is " \
+       "string-kind machinery)" do
+      yaml = File.read(doi_definition_path)
+        .sub(/    kind: string/, "    kind: integer\n    sub_numbering:\n      separators: [\".\"]")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /fields\.\w+\.sub_numbering: a numeric kind carries no sub-numbering/,
+        )
+    end
+
+    it "rejects kind: integer on a calendar field (the Components::Date fold " \
+       "is string-kind)" do
+      yaml = File.read(doi_definition_path)
+        .sub(/kind: string/, "kind: integer")
+        .sub("fields:\n  prefix:", "fields:\n  year:\n    pattern: '4digit'\n    kind: integer\n  prefix:")
+        .sub("templates:", "date:\n  fields: [year]\n\ntemplates:")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /date\.fields: a calendar field is string-kind/,
+        )
+    end
+
+    it "still rejects an unsupported kind, citing the numeric widening" do
+      yaml = File.read(doi_definition_path).sub(/kind: string/, "kind: float")
+
+      expect { validate_definition(yaml) }
+        .to raise_error(
+          Pubid::Grammar::Pfs::InvalidDefinition,
+          /unsupported field kind "float".*and `integer` \(a numeric kind/,
         )
     end
   end

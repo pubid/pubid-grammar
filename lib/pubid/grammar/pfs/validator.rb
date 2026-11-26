@@ -827,13 +827,16 @@ module Pubid
             pattern = apply_sub_numbering(name, pattern, body["sub_numbering"])
 
             kind = body["kind"] || "string"
-            unless %w[string list].include?(kind)
+            unless %w[string list integer].include?(kind)
               raise InvalidDefinition.new(
                 "fields.#{name}.kind",
                 "unsupported field kind #{kind.inspect} — pfs:1 carries `string` " \
-                "and `list` (a list binds its `item` capture per repetition)",
+                "and `list` (a list binds its `item` capture per repetition), " \
+                "and `integer` (a numeric kind: the column stores an Integer " \
+                "and the binding casts (integer))",
               )
             end
+            check_numeric_kind(name, kind, body)
 
             Definition::Field.new(
               name: name,
@@ -850,6 +853,43 @@ module Pubid
 
           check_field_references(list)
           list
+        end
+
+        # The numeric kind (issue #151): `kind: integer` widens the field
+        # type system — the column stores an Integer, the compiled
+        # binding casts (integer), the serialized hash carries the
+        # number. Two fail-closed boundaries:
+        #
+        # 1. The fleet-shared columns (Definition::SHARED_COLUMNS) stay
+        #    their shared kinds — a compiled flavor retyping `number` or
+        #    `publisher` would fork the determinism contract (the pubid
+        #    retype rulings). A numeric column is declared under its own
+        #    name.
+        # 2. The calendar binding folds its fields into the shared
+        #    Components::Date, whose fields are string-kind — a numeric
+        #    date field would flow an Integer into the component.
+        #
+        # Everything downstream is generic: the binding row reads the
+        # kind, the model attribute reads the kind, the render face and
+        # the URN segments stringify the value.
+        def check_numeric_kind(name, kind, body)
+          return unless kind == "integer"
+
+          if Definition::SHARED_COLUMNS.include?(name)
+            raise InvalidDefinition.new(
+              "fields.#{name}.kind",
+              "#{name.inspect} is a shared ::Pubid::Identifier column (the " \
+              "fleet's retype rulings keep it at its shared kind — no flavor " \
+              "may redeclare it); declare the numeric column under its own name",
+            )
+          end
+          if body["sub_numbering"]
+            raise InvalidDefinition.new(
+              "fields.#{name}.sub_numbering",
+              "a numeric kind carries no sub-numbering — the separator fold is " \
+              "string-kind machinery",
+            )
+          end
         end
 
         # The list render declaration: REQUIRED on a list field (the render
@@ -1316,6 +1356,19 @@ module Pubid
               "date.fields",
               "must be an array of declared field names, got " \
               "#{date_fields.inspect}",
+            )
+          end
+
+          # A calendar field folds into the shared Components::Date, whose
+          # fields are string-kind — a numeric kind would flow an Integer
+          # into the component (the numeric-kind boundary).
+          numeric = fields.select { |f| f.kind == "integer" && date_fields.include?(f.name) }
+          unless numeric.empty?
+            raise InvalidDefinition.new(
+              "date.fields",
+              "a calendar field is string-kind (the shared Components::Date " \
+              "fold), not numeric — #{numeric.map(&:name).inspect} declared " \
+              "`kind: integer`",
             )
           end
 

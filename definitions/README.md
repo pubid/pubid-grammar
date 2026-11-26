@@ -91,7 +91,8 @@ types:                          # REQUIRED — at least one
 fields:                         # REQUIRED — at least one
   prefix:
     pattern: '"10" "." 2*digit' # one PARG term; the whole pattern is the capture
-    kind: string                # string, or list (the collection bindings)
+    kind: string                # string, list (the collection bindings), or
+                                # integer (the numeric kinds — see below)
     sub_numbering:              # OPTIONAL — extension 6 (calconnect 0707.1)
       separators: [".", "-"]    # folds `[ (sep…) 1*digit ]` onto the pattern
 
@@ -228,6 +229,16 @@ features (pubid-grammar#121, merged as #122). All fail-closed:
   per repetition (`parts` binds `part` into `["1", "0"]`, dropped when
   empty). The list's `render:` composition drives the face (`prefix`
   glues each item before itself: "-1-0"; `infix` joins).
+- **the numeric kinds** (issue #151) — a `kind: integer` field widens the
+  type system: the column stores an Integer (the compiled binding casts
+  `(integer)`, the serialized hash carries the number, the render face
+  and the URN segments stringify it). Two fail-closed boundaries: the
+  shared ::Pubid::Identifier columns (`number`/`part`/`subpart` and the
+  component names) keep their fleet kinds — a numeric column is declared
+  under its own name — and a calendar field folds into the shared
+  Components::Date, so it stays string-kind. The supplement run's
+  `number_kind:` (integer default, string for cen/bsi) is the same
+  widening at the wrapper ordinal.
 - **conditional render segments** — canonical optionals render as
   presence guards, and an ALTERNATED optional renders its first
   alternative whose fields captured (`[" V" {version} / " ed." {edition}]`)
