@@ -1,10 +1,10 @@
 # PFS-generated grammar — DO NOT EDIT BY HAND.
 # Source: definitions/cen.pfs (pfs:1) sha256:b8f2c00e392dbc03c1fddedad141afa7c930c5430738721b7df0ac69a371d028
-# Compiler: pubid/grammar/pfs 0.1.0
+# Compiler: pubid/grammar/pfs 2.0.0
 # Flavor key: cen_pfs (grammar PubidCenPfs)
 # Regenerate: ruby scripts/pfs compile definitions/cen.pfs --as cen_pfs
 
-grammar PubidCenPfs version "0.1.0" edition 2 {
+grammar PubidCenPfs version "2.0.0" edition 2 {
 
   # Grammar fragments: named lexical terms declared under `grammar:`.
   digit = %x30-39
