@@ -1,6 +1,6 @@
 # PFS-generated grammar — DO NOT EDIT BY HAND.
 # Source: definitions/bsi.pfs (pfs:1) sha256:e16c91365a12ffa75c8645ce69774e04f808d85d531b1c2c3c0f75f614197cf8
-# Compiler: pubid/grammar/pfs 0.1.0
+# Compiler: pubid/grammar/pfs 2.0.0
 # Flavor key: bsi_pfs (grammar PubidBsiPfs)
 # Regenerate: ruby scripts/pfs compile definitions/bsi.pfs --as bsi_pfs
 # Module: iso.inner v1 (sha256:7a088d2a7814...)
@@ -9,7 +9,7 @@
 # Module: national.prefix v1 (sha256:c7aa2f2442e8...)
 # Module: supplements.core v1 (sha256:9fa9656375c7...)
 
-grammar PubidBsiPfs version "0.1.0" edition 2 {
+grammar PubidBsiPfs version "2.0.0" edition 2 {
 
   # Grammar fragments: named lexical terms declared under `grammar:`.
   iso_space = " "

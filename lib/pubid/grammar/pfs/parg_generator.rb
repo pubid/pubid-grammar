@@ -37,7 +37,7 @@ module Pubid
           lines = []
           lines.concat(header)
           lines << ""
-          lines << "grammar Pubid#{@module_name} version \"0.1.0\" edition 2 {"
+          lines << "grammar Pubid#{@module_name} version \"#{Pfs::VERSION}\" edition 2 {"
           lines.concat(fragments)
           lines.concat(field_rules)
           lines.concat(identifier_rule)
