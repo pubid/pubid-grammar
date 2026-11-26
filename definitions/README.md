@@ -273,6 +273,16 @@ features (pubid-grammar#121, merged as #122). All fail-closed:
   `Guide`, publisher-position `CR`/`ENV`); the generated builder
   dispatches the class from the captured token, and the token-free
   non-adopted type is the scheme default (cen declares nine families).
+- **the face-only designation** (issue #151) — `designation: face`: the
+  designation token selects the class and prints the face, and NOTHING
+  serializes beyond `_type` — no type/stage/typed_stage (the coded
+  BSI StandaloneAmendment: `AMD 11015` is `{_type, number}`).
+  `designation: true` stays the full typed-trio shape; both modes
+  refuse `publisher_default` (the column keeps the organization
+  default) and join the same not-a-publisher token set. bsi's
+  definitions/bsi.pfs header carries the tier-B/C ledger it unlocked:
+  every unabsorbed corpus family with the fail-closed reason it cannot
+  compose.
 - **draft-stage serialization** (#121 feature 2) — a free-standing
   `stages:` map names each draft stage's accepted spellings and its
   official-URN stage code (`pren: {tokens: ["prEN"], urn: proposal}`).
