@@ -1,5 +1,5 @@
 # PFS-generated grammar — DO NOT EDIT BY HAND.
-# Source: definitions/bsi.pfs (pfs:1) sha256:7e1696e2745aafddd810bedc0648b7a87a15ece39ddbace606e936af962c3a2b
+# Source: definitions/bsi.pfs (pfs:1) sha256:e8126cde50a41d8f0e6d8f3ec7e6d2717880637ee2cbce0fdae0ca6b0ee90a8e
 # Compiler: pubid/grammar/pfs 2.0.0
 # Flavor key: bsi_pfs (grammar PubidBsiPfs)
 # Regenerate: ruby scripts/pfs compile definitions/bsi.pfs --as bsi_pfs

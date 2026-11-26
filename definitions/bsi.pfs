@@ -447,6 +447,7 @@ urn:
       - { type: "pubid:bsi:draft-document", token: dd, core: [number] }
       - { type: "pubid:bsi:published-document", token: pd, core: [number] }
       - { type: "pubid:bsi:publicly-available-specification", token: pas, core: [number] }
+      - { type: "pubid:bsi:standalone-amendment", token: sa, core: [number] }
       - { type: "pubid:bsi:technical-specification", token: ts, core: [number] }
 
 # The MR-slug hooks (the coded columns): the number-part fused, the year.
