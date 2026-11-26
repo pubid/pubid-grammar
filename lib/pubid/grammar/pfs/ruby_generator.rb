@@ -1426,11 +1426,36 @@ module Pubid
         # stage compaction hook (the coded CenCenelec::Identifier shape),
         # the draft-aware mr_type, the publisher-prefix cut and the parse
         # funnel.
+        # The numeric-kind columns of the scheme-mode model (see
+        # scheme_identifier_file): a declared `kind: integer` field under
+        # its own name, never a shared column or a calendar field.
+        def numeric_model_columns
+          model_fields.select do |field|
+            field.kind == "integer" &&
+              !Definition::SHARED_COLUMNS.include?(field.name) &&
+              !(date_binding && date_binding.fields.include?(field.name))
+          end
+        end
+
         def scheme_identifier_file
           stages = definition.stages
           stage_table = stages.map do |stage|
             "        #{stage.name.inspect} => { stage_code: :#{stage.urn} },"
           end.join("\n")
+          # The NUMERIC-kind model columns (issue #151) beyond the shared
+          # ::Pubid::Identifier ones: the shared base covers
+          # number/part/subpart/version and the calendar binding's date,
+          # and every other column a scheme-mode definition declares is
+          # builder-side (the token dispatch and the component
+          # composition consume it — cen's `guide`, the fragment's
+          # ordinal). A numeric column is the case that needs a REAL
+          # model column of its own, so it is the one the emission
+          # declares (with the declared kind, so the column stores an
+          # Integer) and the builder assigns. A definition without one
+          # emits byte-identically with the pre-issue shape.
+          extra_rows = numeric_model_columns
+            .map { |field| "\n\n                  attribute :#{field.name}, :#{field.kind}" }
+            .join
           body(<<~RUBY)
             module Pubid
               module #{module_name}
@@ -1441,7 +1466,7 @@ module Pubid
                 # to its code by the class hooks below.
                 class Identifier < ::Pubid::Identifier
                   # The ETSI-style version suffix ("EN 302 326-2 V2.2.1").
-                  attribute :version, :string
+                  attribute :version, :string#{extra_rows}
 
                   # A published document holds no type, stage or typed stage, so
                   # a nil one means "published", not "any stage": `EN 1325` is
@@ -1716,6 +1741,12 @@ module Pubid
           lines << "        identifier.number = data[:number]&.to_s"
           lines << "        identifier.part = data[:part]&.to_s"
           lines << "        identifier.version = present_string(data[:version])"
+          # The numeric-kind columns (issue #151): the binding casts the
+          # capture to an Integer, so the column takes the bound value
+          # whole — a numeric column stores a number, never a string.
+          numeric_model_columns.each do |field|
+            lines << "        identifier.#{field.name} = data[:#{field.name}] if data[:#{field.name}]"
+          end
           if designation_types.any?
             lines << "        # A designation token selects the class but is not a publisher:"
             lines << "        # the column keeps the class default (the organization's)."

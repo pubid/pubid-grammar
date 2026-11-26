@@ -7,6 +7,19 @@ module Pubid
       # validator, the PARG generator and the Ruby generator all read; the
       # YAML file is the SSOT, this tree is its shape-checked projection.
       module Definition
+        # The ::Pubid::Identifier columns a compiled flavor never
+        # redeclares. The fleet retype rulings keep number/part/subpart
+        # :string for every flavor (a redeclaration forks the determinism
+        # contract), publisher/type/stage(/typed_stage)/copublishers are
+        # the shared components the builder composes, and
+        # date/edition/languages/locality/stage_iteration/_type are the
+        # shared surfaces. A field may CAPTURE one of these names (the
+        # builder consumes it); no emission may declare an attribute of
+        # that name with a different kind.
+        SHARED_COLUMNS = %w[
+          _type number part subpart stage_iteration date edition languages
+          publisher copublisher copublishers type stage locality typed_stage
+        ].freeze
         # organization: section.
         Organization = Struct.new(:name, :publisher, :prefixes, keyword_init: true)
         # types.<name>: a typed identifier class of the scheme. `tokens` are
