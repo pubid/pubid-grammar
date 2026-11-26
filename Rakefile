@@ -14,3 +14,14 @@ namespace :contracts do
     abort "schemas/ or corpora/ are stale — run `rake contracts:regen` and commit" unless clean
   end
 end
+
+namespace :telemetry do
+  desc "Triage a grammar-miss report (JSONL: input/consumer/context/timestamp) " \
+       "into the classified report + candidate test rows"
+  task :triage, [:file] do |_task, args|
+    file = args[:file]
+    abort "usage: rake telemetry:triage[<misses.jsonl>]" unless file
+    require "shellwords"
+    ruby "scripts/telemetry-triage.rb #{Shellwords.escape(file)}"
+  end
+end
