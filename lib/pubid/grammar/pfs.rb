@@ -36,6 +36,11 @@ module Pubid
       autoload :PargGenerator, "#{__dir__}/pfs/parg_generator"
       autoload :RubyGenerator, "#{__dir__}/pfs/ruby_generator"
       autoload :Compiler, "#{__dir__}/pfs/compiler"
+      autoload :Scaffold, "#{__dir__}/pfs/scaffold"
+      autoload :Linter, "#{__dir__}/pfs/linter"
+      autoload :Doctor, "#{__dir__}/pfs/doctor"
+      autoload :Capture, "#{__dir__}/pfs/capture"
+      autoload :Cutover, "#{__dir__}/pfs/cutover"
     end
   end
 end
