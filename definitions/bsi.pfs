@@ -39,12 +39,97 @@
 # head over the adoption chains (BS EN…, BS EN ISO…, BS EN IEC…, BS
 # HD…, DD CEN ISO/TS…, DD CLC/TS… — the adopted run delegated to the
 # owning flavors through the §4 coded hook), the plain BS face with
-# parts and years, the PAS/PD/DD/TS designations, BSI's plus-separated
+# parts and years, the PAS/PD/DD/TS designations, the face-only
+# standalone-AMD designation ("AMD 11015" — issue #151's tier-B family,
+# `designation: face`: the head token selects the class and prints the
+# face while nothing serializes beyond _type, the coded
+# StandaloneAmendment's own {_type, number}), BSI's plus-separated
 # amendment run, and the wrapper-with-adopted identity of the adoption
-# face. The escalation prefix (DISC), the AMD-keyword supplement
-# spelling (" BS 6305:1992 AMD1" — a space-separated face the
-# supplements declaration does not carry) and the draft "Draft BS"
-# face are declared negatives here and follow-up items.
+# face.
+#
+# ---------------------------------------------------------------------------
+# The tier-B/C ledger (issue #151): every corpus family the composition
+# does NOT absorb, with the fail-closed reason it cannot compose under
+# the declared surface today. The rows stay pinned in pubid's
+# spec/pubid/bsi_pfs/parity_spec.rb (653 unabsorbed after the AMD
+# composition); a family composes only by ADDING the declaration
+# surface it needs, never by relaxing a parity expectation.
+#
+#   COMPOSED under v2:
+#   standalone_amendment (4) — the face-only designation (above).
+#
+#   FAIL-CLOSED — second-scheme surfaces (a family that is its own
+#   scheme, composed as its own definition when it lands, not as
+#   declarations on this one):
+#   aerospace_standard (339) — the aerospace series (2S/3S/4S/A/B/C/G/
+#     T/TD heads, the AVD variants, CISPR routing); a whole sub-
+#     vocabulary of heads and number shapes.
+#   flex (23) — "BSI Flex 1886 v2.0:2024-09": its own head, the dotted
+#     v-version and the year-month date.
+#
+#   FAIL-CLOSED — needs a declared surface v2 does not carry:
+#   bundled_identifier (27) — the member run: members are WHOLE
+#     documents with per-separator capture ("; ", " and ", " & ",
+#     " TO "/" to "), synthesis modes ("BS 1580:Parts 1 and 2" builds
+#     the base + part members; "BS 2SP 68 to BS 2SP 71" repeats the
+#     head; "BS 9113 N001 to 004" is a zero-padded range). The
+#     supplements run carries kind+ordinal items, never documents.
+#   national_annex (18) — "NA to BS EN 1996-1-2:2005": a SECOND
+#     wrapper-with-adopted face (the `adopted:` dispatch is single per
+#     definition) whose base is itself an adoption chain, plus the
+#     NA's own amendment run between head and base ("NA+A1:2014 to
+#     BS EN 1997-1:2004+A1:2013").
+#   committee_document (6) — "14/30300822 DC": the designation token is
+#     TRAILING (after the number), the 2-digit year expands by a
+#     century rule (a semantic decode — the facets ruling keeps decode
+#     rules out of the declared surface), and the family's official-URN
+#     profile differs (no type-abbr/stage segment; the purn token is
+#     cd). Needs trailing-token designations and per-type URN profiles.
+#   addendum_document (22) — "BS 2000-0:Addendum No.  1:1983": the
+#     No.-worded addendum face with double spaces, three separators
+#     ("-", " ", ":"), the mid-face base year ("BS 449-2:1969 Addendum
+#     No.  1:1975") and the typed addendum_year column.
+#   supplement_document (18), explanatory_supplement (1) — the worded
+#     run ("Supplement No. 1") and the inverted headless form
+#     ("Supplement No. 1 (1970) to BS 1831:1969").
+#   expert_commentary (25), index (13), supplementary_index (1),
+#     method (14), test_method (6), section (11) — trailing suffix
+#     faces after the year ("Expert commentary", "Index [Issue n]",
+#     "Method nnnn", "Sections a and b") and the worded sub-numbering
+#     runs; trailing suffix faces are not a declared surface.
+#   detailed_specification (16) — the N-series sub-designation
+#     ("BS 9210 N0009-1:1978": zero-padded N ordinal with a dashed
+#     sub-number) as a face of its own.
+#   disc (9) — the escalation prefix before the designation ("DISC PD
+#     0005:1995"); a prefix chain the head dispatch does not carry.
+#   set (1) — the coded Set's own serialization raises
+#     (IncorrectModelError, the cross-flavor member type pinned in
+#     pubid's wrapper-root-number hand-off); composing the parse would
+#     flip the RAISE signature the parity harness pins, so it stays
+#     outside until the coded model is repaired.
+#   value_added_publication (6) — the parenthetical value-added
+#     suffixes ("(Book)", "(R2004)").
+#
+#   FAIL-CLOSED — the four declared shapes (same reasons, row-level):
+#   the AMD keyword supplement face ("BS 7671 AMD2", the plus members
+#     "BS EN 60335-2-27 AMD2", the letter ordinal "AMD AA") — a
+#     space-separated keyword face inside the plus run, which the run's
+#     face-digit item grammar refuses;
+#   the second_number slash column ("BS 4300/10:1967", "PD 6430/1:1970")
+#     — a slash sub-number the face does not declare;
+#   the CISPR aerospace routing ("BS CISPR 12:1997") — the coded flavor
+#     routes CISPR to the aerospace series, so the composed flavor
+#     refuses it rather than mis-representing the class;
+#   the parenthetical suffixes ("PD 6079-4:2006 (Book)").
+#
+#   FAMILY RESIDUALS — the rows inside otherwise-absorbed families fail
+#   under the same reasons: british_standard's 42 (the "BS 2316-1 and
+#   2"-shaped bundles, the addenda/supplements, the BS 4300/n slash
+#   series, the "BS 2011-3A & B" part alternation), consolidated_'s 46
+#   (the AMD-keyword members above), adopted_international_'s 7 (the PD
+#   CISPR TR adoptions), published_document's 2 (the slash column and
+#   the parenthetical suffix). The draft "Draft BS" face remains a
+#   declared negative and a follow-up item.
 
 pfs: 1
 
@@ -168,6 +253,22 @@ types:
       stage_code: published
       abbr: ["TS"]
       harmonized_stages: ["60.00", "60.60"]
+  # The face-only designation (issue #151, the tier-B standalone-AMD
+  # family): the head token selects the class and prints the face, and
+  # NOTHING serializes beyond _type — the coded StandaloneAmendment is
+  # exactly {_type, number} (no publisher, no type/stage/typed_stage;
+  # its TYPED_STAGES row is internal). `AMD` is a HEAD token here, a
+  # different position from the supplement-operator spellings the
+  # reserved list guards (publisher/prefixes/keys/stage abbreviations —
+  # none claimed; the amendment run keeps its own A/C faces).
+  standalone_amendment:
+    key: sa
+    web: standalone_amendment
+    title: "Standalone Amendment"
+    short: "AMD"
+    tag: "pubid:bsi:standalone-amendment"
+    tokens: ["AMD"]
+    designation: face
 
 # The wire shape (the coded BSI flavor's own): the publisher column
 # serializes NESTED ({"body": "DD"} — the adoption rows' publisher), so
@@ -245,10 +346,11 @@ grammar:
   alpha: '%x41-5A / %x61-7A'
 
 fields:
-  # The head token: the national body token and the designation faces
-  # that ARE the designation ("PAS 003"), cen's publisher-type rule.
+  # The head token: the national body token, the designation faces
+  # that ARE the designation ("PAS 003"), and the standalone-AMD head
+  # (the face-only designation) — cen's publisher-type rule.
   publisher:
-    pattern: '("BS" / "PAS" / "PD" / "DD" / "TS")'
+    pattern: '("BS" / "PAS" / "PD" / "DD" / "TS" / "AMD")'
     kind: string
   number:
     # The number carries a glued trailing letter ("BS 1000A:1961",
@@ -374,6 +476,10 @@ examples:
       renders: "DD 136-2:1986"
     - input: "TS 1:1995"
       renders: "TS 1:1995"
+    - input: "AMD 11015"
+      renders: "AMD 11015"
+    - input: "AMD 6262"
+      renders: "AMD 6262"
     - input: "BS EN 1073-2:2002"
       renders: "BS EN 1073-2:2002"
     - input: "BS EN ISO 105-B06:2020"
@@ -417,7 +523,6 @@ examples:
     - "NA to BS EN 1996-1-2:2005"
     - "BS 7722:2006 BOOK"
     - "BS 31100:2021 ExComm"
-    - "AMD 11015"
     - "BS 1425:Supplement No. 1:1966"
     - "BS 185 Index:1962"
     - "BS 2782-10:Method 1006:1978"
