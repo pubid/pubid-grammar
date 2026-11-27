@@ -179,15 +179,15 @@ grammar PubidIeee version "0.1.0" edition 2 {
   rev_inline = ((rev_numbered) / (rev_lettered) / (rev_bare))
   draft_version = {
       (!(("R" dash)) [("D" !("IS"))]
-        ((((1*2digit dot 1*2digit dot 1*2digit)))
-          / ((((1*2digit dot 1*2digit [lower])))
+        ((((((1*2digit dot 1*2digit dot 1*2digit !(digit))))
+            / (((1*2digit dot 1*2digit [lower])))
             / ((dot (!(("19" / "20") 2digit 0*2lower !(1*digit))) (1*((digit / upper / lower) / dot))))
             / (((1*digit "+" 1*digit))) / (((1*digit [dot] "e" 1*digit)))
             / ((((dash) (!(("19" / "20") 2digit 0*2lower !(1*digit))) (1*(digit / upper / lower))
                   [(("-d") / (("_") *(digit / upper / lower)))]))
               / (((dash) (("19" / "20") 2digit 0*2lower !(1*digit)) as draft_version_dash_year
                   [dash (month_numeric) as draft_version_dash_month])))
-            / (((1*(digit / upper / lower)) [(("-d") / (("_") *(digit / upper / lower)))]))) as draft_version_composite))
+            / (((1*(digit / upper / lower)) [(("-d") / (("_") *(digit / upper / lower)))]))) as draft_version_composite)))
   }
   # A draft date may comma-join its month and year (", Feb, 2011")
   # - the canonical forced-comma render (IEEE publisher, dated draft).
@@ -264,7 +264,8 @@ grammar PubidIeee version "0.1.0" edition 2 {
               / (comma
                 (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39) / ("20" ("1" / "0") ("x" / "X" / %x30-39))) as cor_year)
               / ((dash / ":" / space)
-                (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39) / ("20" ("1" / "0") ("x" / "X" / %x30-39))) as cor_year))]) as corrigendum)
+                (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39) / ("20" ("1" / "0") ("x" / "X" / %x30-39))) as cor_year
+                [dash (month_numeric) as cor_month !(%x30-39)]))]) as corrigendum)
   }
   amendment = {
       (((((("_" / slash / dash / space)) (("Amendment" / "Amd")) [(dash / dot / space)] [space]
@@ -643,7 +644,8 @@ grammar PubidIeee version "0.1.0" edition 2 {
           / (comma
             (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39) / ("20" ("1" / "0") ("x" / "X" / %x30-39))) as cor_year)
           / ((dash / ":" / space)
-            (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39) / ("20" ("1" / "0") ("x" / "X" / %x30-39))) as cor_year))]
+            (("19" / "20") 2%x30-39 0*2%x61-7A !(1*%x30-39) / ("20" ("1" / "0") ("x" / "X" / %x30-39))) as cor_year
+            [dash (month_numeric) as cor_month !(%x30-39)]))]
       [draft] [parenthetical]
   }
   interpretation_identifier = {
@@ -692,6 +694,20 @@ grammar PubidIeee version "0.1.0" edition 2 {
                 / (("C" 2%x30-39 dot %x30-39 space ("No" / "NO") dot space (1*(%x30-39 / ".")) ":" 2%x30-39))
                 / (("C" (1*(%x30-39 / ".")) ":" 2%x30-39))) as csa_portion))))
   }
+  # The ISO adoption spelling of an IEEE-printed number glues its year
+  # with a colon ("IEEE 8802-1AE:2013/Amd.1-2015", relaton-data-ieee#10).
+  # Only the BARE "IEEE" publisher takes it: no copublisher and no type
+  # word, so the colon-year rows pubid-testsuite keeps negative ("IEEE Std
+  # 24748-3:2012", "ISO/IEC 14515-1:2000", "IEC 62527:2007(E)") still fail
+  # and reach the downstream fallbacks. The shared `year` rule keeps its
+  # dot/dash contract. The tree keeps the generic route's shape
+  # (publishers, number, part_subpart_year {part, year}); pubid reads the
+  # colon from the input (the ISO-led colon-year rule).
+  ieee_colon_year_identifier = {
+      ((((("IEEE") as publisher) !(slash) ((*copublisher) as copublishers)) as publishers) space)
+        ((number)) ((([part] ":" date_year_only)) as part_subpart_year)
+        [amendment] [parenthetical]
+  }
   identifier = {
       combined_aiee_identifier / aiee_identifier / ire_identifier / nesc_identifier / ieee_astm_si_psi
       / multi_numbered_identifier / csa_dual_published / s_designation / corrigendum_identifier
@@ -699,6 +715,7 @@ grammar PubidIeee version "0.1.0" edition 2 {
       / joint_development_iso_format / joint_development_ieee_tail_format / joint_development_iso_iec_edition
       / joint_development_embedded_stage / iec_ieee_copublished / number_first_identifier
       / ieee_approved_draft_identifier / ieee_draft_p_identifier / ieee_p_identifier / ansi_p_identifier
+      / ieee_colon_year_identifier
       / (((((((((publisher)) ((*copublisher) as copublishers)) as publishers) space)))))
       [((draft_status)) as draft_status] [(("Draft Std") as type [space])]
       [((("Draft Std" / "STD" / "Standard" / "Std No." / "Std" / "PTC" / (("N" / "n") "o.")
@@ -746,6 +763,7 @@ grammar PubidIeee version "0.1.0" edition 2 {
     amd_year -> amd_year (string)
     cor_number -> cor_number (string)
     cor_year -> cor_year (string)
+    cor_month -> cor_month (string)
     int_year -> int_year (string)
     conf_number -> conf_number (string)
     conf_year -> conf_year (string)
@@ -907,5 +925,47 @@ accept "IEEE/NACE Draft P2638/D2.4, Jan, 2020"
     accept "Std 11073-10417-2009"
     accept "Std 802.15.4j-2013"
     reject "nonsense"
+    # relaton-data-ieee#10 group 1: the dotted-triple draft version is
+    # captured (draft_version_composite), alone and before a dash date
+    capture "IEEE Std P754/D1.2.6" { draft_version_composite: "1.2.6" }
+    capture "IEEE P1547/D6.7.2-2017-05" {
+      draft_version_composite: "6.7.2"
+      draft_version_dash_year: "2017"
+      draft_version_dash_month: "05"
+    }
+    capture "IEEE P3810/D2.1.2-2023-04" { draft_version_composite: "2.1.2" }
+    capture "IEEE P11073.10201/D2.1.10-2018-10" { draft_version_composite: "2.1.10" }
+    capture "IEEE P802.3bm/D3.23.3-2014-11" { draft_version_composite: "3.23.3" }
+    capture "IEEE P1901.2/D0.09.00-2013-06" { draft_version_composite: "0.09.00" }
+    accept "IEEE Draft PC37.233/D4.2.1-2021-03"
+    accept "IEEE P11073.10103/D1.05.02-2011-09"
+    accept "IEEE P2023/D5.04.1-2025-05"
+    accept "IEEE P802.22/D6.0.0-2019-05"
+    # group 2: a corrigendum year takes a numeric month (cor_month)
+    example "IEEE P1591.1/D-1/Cor1-2025-05" { cor_year: "2025" cor_month: "05" }
+    example "IEEE P1591.1/D1/Cor. 1-2025-05" { cor_year: "2025" cor_month: "05" }
+    example "IEEE Std 802.3-2018/Cor 1-2019-05" { cor_year: "2019" cor_month: "05" }
+    example "IEEE P802.1AS/D-4.0/Cor1-2021-09" { cor_number: "1" cor_month: "09" }
+    accept "IEEE P802.21/D-02/Cor1-2017-07"
+    accept "IEEE PC37.92/D-1.0/Cor1-2026-01"
+    # cor_month takes exactly two digits; a longer run keeps the draft route
+    accept "IEEE Std 802.3-2018/Cor 1-2019-123"
+    capture "IEEE P1547/D1.2.345" { draft_version_composite: "1.2" }
+    # group 3: the bare IEEE publisher takes an ISO-style colon year
+    example "IEEE 8802-1AE:2013/Amd.1-2015" {
+      number: "8802"
+      year: "2013"
+      amd_number: "1"
+      amd_year: "2015"
+    }
+    example "IEEE 8802-3:2021/Amd 10-2021" { year: "2021" amd_number: "10" }
+    accept "IEEE 8802-1AE:2013/Amd.2-2015"
+    accept "IEEE 8802-1X:2013/Amd. 1"
+    # the colon year stays bare-IEEE only (pubid-testsuite negatives)
+    reject "IEEE Std 24748-3:2012"
+    reject "IEEE Unapproved Draft Std 16326:2009"
+    reject "ISO/IEC 14515-1:2000"
+    reject "IEC 62527:2007(E)"
+    reject "IEC/ISO/IEEE 80005-1:2012"
   }
 }
